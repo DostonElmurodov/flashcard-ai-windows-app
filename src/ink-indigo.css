@@ -252,3 +252,4 @@
 body{padding-top:36px}
 .app-shell{min-height:calc(100vh - 36px)}
 .app-shell .sidebar{top:36px}
+:root,:root *{scrollbar-color:#59616f #17191d}

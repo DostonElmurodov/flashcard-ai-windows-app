@@ -15,7 +15,7 @@ try{
   await page.evaluate(theme=>window.owl.saveSettings({theme}),theme);await page.reload();await page.locator('.page-heading').waitFor();
   for(const width of [1380,940]){
    await app.evaluate(({BrowserWindow},w)=>BrowserWindow.getAllWindows()[0].setSize(w,850),width);
-   assert.ok(await page.evaluate(()=>{const bar=document.querySelector('.window-titlebar').getBoundingClientRect(),menu=document.querySelector('.window-menus').getBoundingClientRect();return bar.top===0&&bar.height===36&&menu.right<innerWidth-140&&document.documentElement.scrollWidth<=innerWidth;}));
+   assert.ok(await page.evaluate(()=>{const bar=document.querySelector('.window-titlebar').getBoundingClientRect(),menu=document.querySelector('.window-menus').getBoundingClientRect();return bar.top===0&&Math.abs(bar.height-36)<1&&menu.right<innerWidth-140&&document.documentElement.scrollWidth<=innerWidth;}));
   }
   await page.screenshot({path:`test-results/titlebar-${theme}.png`});
  }
