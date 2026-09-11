@@ -29,6 +29,8 @@ Var appExe
 Var probeTicks
 Var disabledChecks
 Var uiErrors
+Var buttonWidth
+Var captionWidth
 !define MUI_PAGE_CUSTOMFUNCTION_SHOW TestShown
 !insertmacro customFinishPage
 !insertmacro MUI_LANGUAGE English
@@ -63,6 +65,27 @@ Function TestProbe
   ${If} $1 != "Opening Owl AI..."
    IntOp $uiErrors $uiErrors + 1
   ${EndIf}
+  ; Measure rendered caption against the resized control, including padding.
+  System::Alloc 16
+  Pop $R0
+  System::Call 'user32::GetClientRect(p r0,p R0)'
+  System::Call '*$R0(i,i,i .R1,i)'
+  StrCpy $buttonWidth $R1
+  System::Free $R0
+  SendMessage $0 ${WM_GETFONT} 0 0 $R0
+  System::Call 'user32::GetDC(p r0)p.R1'
+  System::Call 'gdi32::SelectObject(p R1,p R0)p.R2'
+  System::Call '*(i 0,i 0,i 0,i 0)p.R3'
+  System::Call 'user32::DrawTextW(p R1,w "Opening Owl AI...",i -1,p R3,i 1024)'
+  System::Call '*$R3(i,i,i .R4,i)'
+  StrCpy $captionWidth $R4
+  IntOp $R4 $R4 + 16
+  ${If} $buttonWidth < $R4
+   IntOp $uiErrors $uiErrors + 1
+  ${EndIf}
+  System::Free $R3
+  System::Call 'gdi32::SelectObject(p R1,p R2)'
+  System::Call 'user32::ReleaseDC(p r0,p R1)'
   IntOp $disabledChecks $disabledChecks + 1
   ; Even a queued Finish command must not launch a second worker.
   ${If} $probeTicks == 4
@@ -83,6 +106,8 @@ Function .onGUIEnd
  WriteINIStr "${TEST_DIR}\result-${OWL_SCENARIO}.ini" "Test" "DisabledChecks" "$disabledChecks"
  WriteINIStr "${TEST_DIR}\result-${OWL_SCENARIO}.ini" "Test" "Errors" "$uiErrors"
  WriteINIStr "${TEST_DIR}\result-${OWL_SCENARIO}.ini" "Test" "State" "$owlLaunchState"
+ WriteINIStr "${TEST_DIR}\result-${OWL_SCENARIO}.ini" "Test" "ButtonWidth" "$buttonWidth"
+ WriteINIStr "${TEST_DIR}\result-${OWL_SCENARIO}.ini" "Test" "CaptionWidth" "$captionWidth"
 FunctionEnd
 
 Section

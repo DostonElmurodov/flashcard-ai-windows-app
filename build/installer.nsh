@@ -37,6 +37,35 @@
  Function OwlFinishNoop
  FunctionEnd
 
+ Function OwlSizeFinishButton
+  ; Measure with the actual dialog font so Windows display scaling is respected.
+  GetDlgItem $0 $HWNDPARENT 1
+  SendMessage $0 ${WM_GETFONT} 0 0 $1
+  System::Call 'user32::GetDC(p r0)p.r2'
+  System::Call 'gdi32::SelectObject(p r2,p r1)p.r3'
+  System::Alloc 8
+  Pop $4
+  System::Call 'gdi32::GetTextExtentPoint32W(p r2,w "Opening Owl AI...",i 17,p r4)'
+  System::Call '*$4(i .r5,i)'
+  System::Free $4
+  System::Call 'gdi32::SelectObject(p r2,p r3)'
+  System::Call 'user32::ReleaseDC(p r0,p r2)'
+  System::Alloc 16
+  Pop $6
+  System::Call 'user32::GetWindowRect(p r0,p r6)'
+  System::Call 'user32::MapWindowPoints(p 0,p $HWNDPARENT,p r6,i 2)'
+  System::Call '*$6(i .r1,i .r2,i .r3,i .r4)'
+  System::Free $6
+  IntOp $4 $4 - $2
+  IntOp $7 $4 * 2
+  IntOp $5 $5 + $7
+  IntOp $1 $3 - $5
+  ; Keep the right edge and Cancel spacing; Back is unavailable after install.
+  GetDlgItem $9 $HWNDPARENT 3
+  ShowWindow $9 ${SW_HIDE}
+  System::Call 'user32::MoveWindow(p r0,i r1,i r2,i r5,i r4,i 1)'
+ FunctionEnd
+
  Function OwlFinishLeave
   ${If} $owlLaunchState == "done"
    Return
@@ -50,6 +79,7 @@
   ${EndIf}
 
   StrCpy $owlLaunchState "opening"
+  Call OwlSizeFinishButton
   GetDlgItem $0 $HWNDPARENT 1
   EnableWindow $0 0
   SendMessage $0 ${WM_SETTEXT} 0 "STR:Opening Owl AI..."
