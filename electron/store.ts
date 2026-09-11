@@ -15,10 +15,16 @@ export class Store {
   const version=Number(db.exec('PRAGMA user_version')[0]?.values[0]?.[0]??0);
   if(version>1)throw new Error('This database belongs to a newer Owl AI. Update the app before opening it.');
   if(version<1){if(existed)copyFileSync(path,path+'.pre-migration.bak');db.run(`BEGIN; CREATE TABLE IF NOT EXISTS decks(id TEXT PRIMARY KEY,data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS words(id TEXT PRIMARY KEY,deck_id TEXT NOT NULL REFERENCES decks(id) ON DELETE CASCADE,data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS reviews(attempt TEXT PRIMARY KEY,word_id TEXT NOT NULL,direction TEXT NOT NULL,at TEXT NOT NULL,result TEXT NOT NULL); CREATE TABLE IF NOT EXISTS settings(id INTEGER PRIMARY KEY CHECK(id=1),data TEXT NOT NULL); PRAGMA user_version=1; COMMIT;`);}
-  db.run('PRAGMA foreign_keys=ON'); const store=new Store(db,path);store.persist();return store;
+  db.run('PRAGMA foreign_keys=ON'); const store=new Store(db,path);store.activateOnlyDeck();store.persist();return store;
  }
  private rows<T>(sql:string,params:SqlValue[]=[]):T[]{const stmt=this.db.prepare(sql);try{stmt.bind(params);const result:T[]=[];while(stmt.step())result.push(stmt.getAsObject() as T);return result;}finally{stmt.free();}}
  private persist(){const tmp=this.path+'.tmp';writeFileSync(tmp,Buffer.from(this.db.export()));renameSync(tmp,this.path);}
+ private activateOnlyDeck(){
+  const rows=this.rows<{id:string,data:string}>('SELECT id,data FROM decks LIMIT 2');
+  if(rows.length!==1)return;
+  const deck=JSON.parse(rows[0].data) as Deck;
+  if(!deck.active)this.db.run('UPDATE decks SET data=? WHERE id=?',[JSON.stringify({...deck,active:true}),rows[0].id]);
+ }
  private transaction<T>(fn:()=>T):T {this.db.run('BEGIN');let result:T;try{result=fn();this.db.run('COMMIT');}catch(e){this.db.run('ROLLBACK');throw e;}this.persist();return result;}
  settings():Settings {const data=this.rows<{data:string}>('SELECT data FROM settings WHERE id=1')[0]?.data;return {...defaults,...(data?JSON.parse(data):{})};}
  saveSettings(patch:Partial<Settings>):Settings {const settings={...this.settings(),...patch};this.transaction(()=>this.db.run('INSERT OR REPLACE INTO settings VALUES(1,?)',[JSON.stringify(settings)]));return settings;}
@@ -34,13 +40,14 @@ export class Store {
  }
  saveDeck(input:Partial<Deck>&{name:string}):Deck {
   input=Object.fromEntries(Object.entries(input).filter(([,value])=>value!==undefined)) as typeof input;
-  const existing=input.id?this.snapshot().decks.find(x=>x.id===input.id):undefined;
+  const decks=this.snapshot().decks,existing=input.id?decks.find(x=>x.id===input.id):undefined;
   if(input.id&&!existing)throw new Error('This set no longer exists.');
   const settings=this.settings();const deck:Deck={id:randomUUID(),description:'',active:true,nativeLanguage:settings.nativeLanguage,learningLanguage:settings.learningLanguage,createdAt:new Date().toISOString(),...existing,...input,name:input.name.trim()};
   if(!deck.name)throw new Error('Give your set a name.');
+  if(decks.length===0||(existing&&decks.length===1))deck.active=true;
   this.transaction(()=>this.db.run('INSERT INTO decks VALUES(?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data',[deck.id,JSON.stringify(deck)]));return deck;
  }
- deleteDeck(id:string){this.transaction(()=>{this.db.run('DELETE FROM reviews WHERE word_id IN (SELECT id FROM words WHERE deck_id=?)',[id]);this.db.run('DELETE FROM words WHERE deck_id=?',[id]);this.db.run('DELETE FROM decks WHERE id=?',[id]);});}
+ deleteDeck(id:string){this.transaction(()=>{this.db.run('DELETE FROM reviews WHERE word_id IN (SELECT id FROM words WHERE deck_id=?)',[id]);this.db.run('DELETE FROM words WHERE deck_id=?',[id]);this.db.run('DELETE FROM decks WHERE id=?',[id]);this.activateOnlyDeck();});}
  addWords(deckId:string,drafts:Draft[]):number {
   if(!this.snapshot().decks.some(x=>x.id===deckId))throw new Error('Choose an existing set.');
   const existing=new Set(this.snapshot().words.filter(x=>x.deckId===deckId).map(x=>x.word.normalize('NFKC').toLowerCase()));
@@ -70,7 +77,7 @@ export class Store {
  backup(destination:string){if(destination.toLowerCase()===this.path.toLowerCase())throw new Error('Choose a different location for the backup.');this.persist();copyFileSync(this.path,destination);}
  async restore(source:string){
   const SQL=await initSqlJs({locateFile:()=>require.resolve('sql.js/dist/sql-wasm.wasm')});const candidate=new SQL.Database(readFileSync(source));
-  try{if(candidate.exec('PRAGMA integrity_check')[0]?.values[0]?.[0]!=='ok'||candidate.exec('PRAGMA user_version')[0]?.values[0]?.[0]!==1)throw new Error('Choose a valid Owl AI backup from this app version.');for(const table of ['decks','words','reviews','settings'])candidate.exec(`SELECT * FROM ${table} LIMIT 1`);const check=new Store(candidate,source);check.snapshot();const current=this.settings();const restored={...check.settings(),apiBase:current.apiBase,launchAtLogin:current.launchAtLogin};candidate.run('INSERT OR REPLACE INTO settings VALUES(1,?)',[JSON.stringify(restored)]);copyFileSync(this.path,this.path+'.before-restore.bak');const tmp=this.path+'.restore.tmp';writeFileSync(tmp,Buffer.from(candidate.export()));renameSync(tmp,this.path);this.db.close();this.db=new SQL.Database(candidate.export());}finally{candidate.close();}
+  try{if(candidate.exec('PRAGMA integrity_check')[0]?.values[0]?.[0]!=='ok'||candidate.exec('PRAGMA user_version')[0]?.values[0]?.[0]!==1)throw new Error('Choose a valid Owl AI backup from this app version.');for(const table of ['decks','words','reviews','settings'])candidate.exec(`SELECT * FROM ${table} LIMIT 1`);const check=new Store(candidate,source);check.snapshot();check.activateOnlyDeck();const current=this.settings();const restored={...check.settings(),apiBase:current.apiBase,launchAtLogin:current.launchAtLogin};candidate.run('INSERT OR REPLACE INTO settings VALUES(1,?)',[JSON.stringify(restored)]);copyFileSync(this.path,this.path+'.before-restore.bak');const tmp=this.path+'.restore.tmp';writeFileSync(tmp,Buffer.from(candidate.export()));renameSync(tmp,this.path);this.db.close();this.db=new SQL.Database(candidate.export());}finally{candidate.close();}
  }
  close(){this.persist();this.db.close();}
 }

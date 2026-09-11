@@ -6,6 +6,44 @@ import { Store } from '../electron/store';
 import { mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import initSqlJs from 'sql.js';
+
+test('the first and only set stays active, while multiple sets can be disabled',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'owl-test-'));const s=await Store.open(join(dir,'db.sqlite'));
+ try {
+  const first=s.saveDeck({name:'First',active:false});assert.equal(first.active,true);
+  assert.equal(s.saveDeck({...first,active:false}).active,true);
+  const second=s.saveDeck({name:'Second',active:false});assert.equal(second.active,false);
+  assert.equal(s.saveDeck({...first,active:false}).active,false);
+  assert.equal(s.snapshot().decks.filter(d=>d.active).length,0);
+ }finally{s.close();rmSync(dir,{recursive:true,force:true});}
+});
+
+test('deleting other sets activates the remaining set and its review cards persistently',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'owl-test-')),path=join(dir,'db.sqlite');let s=await Store.open(path);
+ try {
+  const first=s.saveDeck({name:'First'}),remaining=s.saveDeck({name:'Remaining',active:false});
+  s.addWords(remaining.id,[{word:'hello',translation:'привет'}]);assert.equal(s.queue().length,0);
+  s.deleteDeck(first.id);assert.equal(s.snapshot().decks[0].active,true);assert.equal(s.queue().length,1);
+  s.close();s=await Store.open(path);assert.equal(s.snapshot().decks[0].active,true);
+  s.deleteDeck(remaining.id);assert.equal(s.snapshot().decks.length,0);
+ }finally{s.close();rmSync(dir,{recursive:true,force:true});}
+});
+
+test('opening and restoring a legacy inactive only set activates it without altering the backup',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'owl-test-')),path=join(dir,'db.sqlite'),backup=join(dir,'legacy.sqlite');
+ let s=await Store.open(path);
+ try {
+  const deck=s.saveDeck({name:'Legacy'});s.backup(backup);
+  const SQL=await initSqlJs({locateFile:()=>require.resolve('sql.js/dist/sql-wasm.wasm')});
+  const legacy=new SQL.Database(readFileSync(backup));legacy.run('UPDATE decks SET data=?',[JSON.stringify({...deck,active:false})]);
+  writeFileSync(backup,legacy.export());legacy.close();const original=readFileSync(backup);
+  const opened=await Store.open(backup);try{assert.equal(opened.snapshot().decks[0].active,true);}finally{opened.close();}
+  writeFileSync(backup,original);
+  await s.restore(backup);assert.equal(s.snapshot().decks[0].active,true);assert.deepEqual(readFileSync(backup),original);
+  s.close();s=await Store.open(path);assert.equal(s.snapshot().decks[0].active,true);
+ }finally{s.close();rmSync(dir,{recursive:true,force:true});}
+});
 
 test('CSV handles quoted multiline values and deduplicates normalized pairs',()=>{
  const rows=parseImport('word,translation\n"hello","привет\nздравствуй"\ncat,кот\ncat,кот','auto','csv');

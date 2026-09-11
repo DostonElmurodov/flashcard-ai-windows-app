@@ -1,6 +1,7 @@
 import { _electron as electron } from 'playwright';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import assert from 'node:assert/strict';
 const data=resolve('test-results/smoke-profile-'+Date.now());mkdirSync(data,{recursive:true});
 const app=await electron.launch({executablePath:process.env.OWL_TEST_EXECUTABLE,args:process.env.OWL_TEST_EXECUTABLE?[]:['.'],env:{...process.env,OWL_TEST_DATA_DIR:data},timeout:30000});
 const page=await app.firstWindow();
@@ -11,6 +12,11 @@ try{
  await page.getByLabel('Set name',{exact:true}).fill('Everyday English');
  await page.getByPlaceholder('What would you like to learn?').fill('Little words for bigger conversations');
  await page.getByRole('button',{name:'Save set',exact:true}).click();
+ await page.getByRole('button',{name:'My sets',exact:true}).click();
+ const activeSet=page.getByRole('checkbox',{name:'Active for study',exact:true});
+ assert.ok(await activeSet.isChecked(),'The first set must be active');
+ assert.ok(await activeSet.isDisabled(),'The only set cannot be deactivated');
+ await page.getByRole('button',{name:/^Learn/}).first().click();
  await page.getByRole('button',{name:'Add cards',exact:true}).first().click();
  for(const [word,translation] of [['serendipity','счастливая случайность'],['wanderlust','жажда странствий'],['resilience','стойкость']]){
   await page.getByLabel('Word or phrase',{exact:true}).fill(word);
