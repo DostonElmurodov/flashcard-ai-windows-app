@@ -21,6 +21,7 @@ const mode=z.enum(['auto','pairs','words']);
 const apiBase=z.string().url().refine(value=>{const url=new URL(value);return !url.username&&!url.password&&!url.search&&!url.hash&&url.pathname==='/'&&(url.protocol==='https:'||(url.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(url.hostname)));},'Use an HTTPS server origin or localhost.');
 function handle(name:string,fn:(...args:any[])=>unknown){ipcMain.handle('owl:'+name,async(event,...args)=>{if(event.sender!==window.webContents||event.senderFrame!==window.webContents.mainFrame)return {ok:false,error:'Untrusted window.'};try{return {ok:true,value:await fn(...args)};}catch(error){return {ok:false,error:error instanceof z.ZodError?'Please check the entered values.':error instanceof Error?error.message:'The operation could not be completed.'};}});}
 function register(){
+ handle('openAppMenu',(name,x,y)=>{const index=['Owl AI','Edit','View'].indexOf(z.enum(['Owl AI','Edit','View']).parse(name));const zoom=window.webContents.getZoomFactor();const left=Math.round(z.number().int().min(0).max(10000).parse(x)*zoom),top=Math.round(z.number().int().min(0).max(10000).parse(y)*zoom);const menu=Menu.getApplicationMenu()?.items[index]?.submenu;if(!menu)return;return new Promise<void>(resolve=>menu.popup({window,x:left,y:top,callback:resolve}));});
  handle('systemTimeFormat',()=>systemTimeFormat(app.getSystemLocale()));
  handle('snapshot',()=>store.snapshot());
  handle('saveDeck',input=>store.saveDeck(z.object({id:id.optional(),name:str,description:z.string().max(2000).optional(),nativeLanguage:language.optional(),learningLanguage:language.optional(),active:z.boolean().optional()}).parse(input)));
@@ -56,7 +57,8 @@ function register(){
  handle('openSubscriptionManagement',()=>shell.openExternal('https://apps.apple.com/account/subscriptions'));
 }
 function windowBackground(){return nativeTheme.shouldUseDarkColors?'#17191d':'#eef2f9';}
-function configureTheme(){nativeTheme.themeSource=store.settings().theme;if(window&&!window.isDestroyed())window.setBackgroundColor(windowBackground());}
+function updateWindowTheme(){if(window&&!window.isDestroyed()){window.setBackgroundColor(windowBackground());window.setTitleBarOverlay({color:windowBackground(),symbolColor:nativeTheme.shouldUseDarkColors?'#eef0f4':'#101f39'});}}
+function configureTheme(){nativeTheme.themeSource=store.settings().theme;updateWindowTheme();}
 function configureLogin(){if(app.isPackaged&&!process.env.OWL_TEST_DATA_DIR)app.setLoginItemSettings({openAtLogin:store.settings().launchAtLogin,path:process.env.PORTABLE_EXECUTABLE_FILE??process.execPath});}
 function configureTray(){if(store.settings().keepInTray&&!tray){const svg='<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" rx="9" fill="#5144b8"/><circle cx="11" cy="14" r="6" fill="white"/><circle cx="21" cy="14" r="6" fill="white"/><circle cx="12" cy="14" r="2"/><circle cx="20" cy="14" r="2"/><path d="m13 21 3 4 3-4" fill="#f3b65a"/></svg>';tray=new Tray(nativeImage.createFromPath(join(__dirname,'../build/icon.png')).resize({width:32,height:32}));tray.setToolTip('Owl AI');tray.setContextMenu(Menu.buildFromTemplate([{label:'Open Owl AI',click:()=>window.show()},{label:'Quit',click:()=>app.quit()}]));tray.on('double-click',()=>window.show());}else if(!store.settings().keepInTray&&tray){tray.destroy();tray=null;}}
 if(!app.requestSingleInstanceLock())app.quit();else{
@@ -64,9 +66,10 @@ if(!app.requestSingleInstanceLock())app.quit();else{
  app.whenReady().then(async()=>{try{
   app.setAppUserModelId('com.mavrylo.owlai.windows');store=await Store.open(join(app.getPath('userData'),'owl.sqlite'));api=new Api(join(app.getPath('userData'),'account.enc'),()=>store.settings().apiBase);
   configureTheme();
-  nativeTheme.on('updated',()=>{if(window&&!window.isDestroyed())window.setBackgroundColor(windowBackground());});
-  window=new BrowserWindow({width:1380,height:930,minWidth:940,minHeight:680,title:'Owl AI',icon:join(__dirname,'../build/icon.png'),backgroundColor:windowBackground(),show:false,webPreferences:{preload:join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true}});
+  nativeTheme.on('updated',updateWindowTheme);
+  window=new BrowserWindow({width:1380,height:930,minWidth:940,minHeight:680,title:'Owl AI',titleBarStyle:'hidden',titleBarOverlay:{height:36,color:windowBackground(),symbolColor:nativeTheme.shouldUseDarkColors?'#eef0f4':'#101f39'},icon:join(__dirname,'../build/icon.png'),backgroundColor:windowBackground(),show:false,webPreferences:{preload:join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true}});
   Menu.setApplicationMenu(Menu.buildFromTemplate([{label:'Owl AI',submenu:[{role:'about'},{type:'separator'},{role:'quit'}]},{label:'Edit',submenu:[{role:'undo'},{role:'redo'},{type:'separator'},{role:'cut'},{role:'copy'},{role:'paste'},{role:'selectAll'}]},{label:'View',submenu:[{role:'resetZoom'},{role:'zoomIn'},{role:'zoomOut'},{role:'togglefullscreen'}]}]));
+  window.setMenuBarVisibility(false);
   window.webContents.setWindowOpenHandler(()=>({action:'deny'}));window.webContents.on('will-navigate',event=>event.preventDefault());window.webContents.session.setPermissionRequestHandler((_web,permission,callback)=>callback(permission==='notifications'));
   register();configureLogin();configureTray();await window.loadFile(join(__dirname,'../dist/index.html'));window.show();
   window.on('close',event=>{if(!quitting&&store.settings().keepInTray){event.preventDefault();window.hide();}});

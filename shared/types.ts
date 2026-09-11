@@ -9,7 +9,7 @@ export interface Entitlement { status:string; product_id?:string|null; expires_a
 export interface AccountState { profile:Profile|null; entitlement:Entitlement|null }
 export interface CatalogCard { client_card_id:string; word:string; translations:string[]; pronunciation?:string; examples:string[]; notes?:string; native_language:string; learning_language:string }
 export interface CatalogDeck { id:string; title:string; description?:string; word_count:number; cards:CatalogCard[] }
-export interface Bridge { systemTimeFormat():Promise<{hour12:boolean}>;
+export interface Bridge { openAppMenu(name:'Owl AI'|'Edit'|'View',x:number,y:number):Promise<void>; systemTimeFormat():Promise<{hour12:boolean}>;
  loginGoogle():Promise<AccountState|null>; cancelGoogleLogin():Promise<void>;
  snapshot():Promise<Snapshot>; saveDeck(input:Partial<Deck>&{name:string}):Promise<Deck>; deleteDeck(id:string):Promise<void>;
  addWords(deckId:string,words:Draft[]):Promise<number>; editWord(id:string,word:Draft):Promise<void>; deleteWord(id:string):Promise<void>;
