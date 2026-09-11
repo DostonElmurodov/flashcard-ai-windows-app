@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { z } from 'zod';
 import { Store } from './store';
+import {systemTimeFormat} from './time-format';
+import {reminderSlot} from './reminders';
 import { Api } from './api';
 import { googleSignIn } from './google';
 declare const GOOGLE_OAUTH_CLIENT_ID:string;
@@ -19,6 +21,7 @@ const mode=z.enum(['auto','pairs','words']);
 const apiBase=z.string().url().refine(value=>{const url=new URL(value);return !url.username&&!url.password&&!url.search&&!url.hash&&url.pathname==='/'&&(url.protocol==='https:'||(url.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(url.hostname)));},'Use an HTTPS server origin or localhost.');
 function handle(name:string,fn:(...args:any[])=>unknown){ipcMain.handle('owl:'+name,async(event,...args)=>{if(event.sender!==window.webContents||event.senderFrame!==window.webContents.mainFrame)return {ok:false,error:'Untrusted window.'};try{return {ok:true,value:await fn(...args)};}catch(error){return {ok:false,error:error instanceof z.ZodError?'Please check the entered values.':error instanceof Error?error.message:'The operation could not be completed.'};}});}
 function register(){
+ handle('systemTimeFormat',()=>systemTimeFormat(app.getSystemLocale()));
  handle('snapshot',()=>store.snapshot());
  handle('saveDeck',input=>store.saveDeck(z.object({id:id.optional(),name:str,description:z.string().max(2000).optional(),nativeLanguage:language.optional(),learningLanguage:language.optional(),active:z.boolean().optional()}).parse(input)));
  handle('deleteDeck',value=>store.deleteDeck(id.parse(value)));
@@ -31,7 +34,7 @@ function register(){
  handle('parse',(text,m)=>parseImport(z.string().max(5_000_000).parse(text),mode.parse(m)));
  handle('importFile',m=>importFile(window,mode.parse(m),store.settings().learningLanguage));
  handle('exportDeck',value=>exportDeck(window,store,id.parse(value)));
- handle('saveSettings',async value=>{const patch=z.object({nativeLanguage:language,learningLanguage:language,theme:z.enum(['light','dark','system']),accent:z.enum(['indigo','teal','rose']),darkAccent:z.enum(['indigo','teal','rose']),dailyGoal:z.number().int().min(0).max(200),direction:z.enum(['forward','reverse']),dayStart:z.number().int().min(0).max(1439),retention:z.number().min(.7).max(.97),reminders:z.boolean(),reminderTime:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),keepInTray:z.boolean(),launchAtLogin:z.boolean(),apiBase,onboardingComplete:z.boolean()}).partial().parse(value);if(patch.apiBase&&patch.apiBase!==store.settings().apiBase)await api.logout();if(patch.apiBase&&patch.apiBase!==store.settings().apiBase)api.clear();const settings=store.saveSettings(patch);if(patch.launchAtLogin!==undefined)app.setLoginItemSettings({openAtLogin:settings.launchAtLogin});configureTray();return settings;});
+ handle('saveSettings',async value=>{const patch=z.object({nativeLanguage:language,learningLanguage:language,theme:z.enum(['light','dark','system']),accent:z.enum(['indigo','teal','rose']),darkAccent:z.enum(['indigo','teal','rose']),dailyGoal:z.number().int().min(0).max(200),direction:z.enum(['forward','reverse']),dayStart:z.number().int().min(0).max(1439),retention:z.number().min(.7).max(.97),reminders:z.boolean(),reminderTime:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),reminderStart:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),reminderEnd:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),reminderCount:z.number().int().min(1).max(100),keepInTray:z.boolean(),launchAtLogin:z.boolean(),apiBase,onboardingComplete:z.boolean()}).partial().parse(value);if(patch.apiBase&&patch.apiBase!==store.settings().apiBase)await api.logout();if(patch.apiBase&&patch.apiBase!==store.settings().apiBase)api.clear();const settings=store.saveSettings(patch);if(patch.launchAtLogin!==undefined)app.setLoginItemSettings({openAtLogin:settings.launchAtLogin});configureTray();return settings;});
  handle('backup',async()=>{const result=await dialog.showSaveDialog(window,{title:'Back up your cards and progress',defaultPath:'Owl-AI-backup.sqlite',filters:[{name:'Owl AI backup',extensions:['sqlite']}]});if(result.canceled||!result.filePath)return false;store.backup(result.filePath);return true;});
  handle('restore',async()=>{const result=await dialog.showOpenDialog(window,{title:'Restore Owl AI backup',properties:['openFile'],filters:[{name:'Owl AI backup',extensions:['sqlite']}]});if(result.canceled)return false;const confirm=await dialog.showMessageBox(window,{type:'warning',message:'Replace local cards and progress with this backup?',detail:'A copy of your current database will be kept. Your account is not changed.',buttons:['Cancel','Restore backup'],defaultId:0,cancelId:0});if(confirm.response!==1)return false;await store.restore(result.filePaths[0]);configureTray();return true;});
  handle('account',()=>api.state());
@@ -62,7 +65,7 @@ if(!app.requestSingleInstanceLock())app.quit();else{
   window.webContents.setWindowOpenHandler(()=>({action:'deny'}));window.webContents.on('will-navigate',event=>event.preventDefault());window.webContents.session.setPermissionRequestHandler((_web,permission,callback)=>callback(permission==='notifications'));
   register();configureTray();await window.loadFile(join(__dirname,'../dist/index.html'));window.show();
   window.on('close',event=>{if(!quitting&&store.settings().keepInTray){event.preventDefault();window.hide();}});
-  let lastReminder='';setInterval(()=>{const settings=store.settings(),now=new Date(),time=now.toTimeString().slice(0,5),key=now.toDateString()+time;if(settings.reminders&&time===settings.reminderTime&&lastReminder!==key&&Notification.isSupported()){lastReminder=key;const count=store.queue().length;if(count){const notification=new Notification({title:'A little practice goes a long way',body:`You have ${count} cards ready to review in Owl AI.`});notification.on('click',()=>window.show());notification.show();}}},15000);
+  let lastReminder=store.settings().reminderLastSlot??'';setInterval(()=>{const settings=store.settings(),now=new Date(),key=reminderSlot(now,settings.reminderStart,settings.reminderEnd,settings.reminderCount);if(settings.reminders&&key&&lastReminder!==key&&Notification.isSupported()){const count=store.queue().length;if(count){lastReminder=key;const notification=new Notification({title:'A little practice goes a long way',body:`You have ${count} cards ready to review in Owl AI.`});notification.on('click',()=>window.show());notification.show();store.saveSettings({reminderLastSlot:key});}}},15000);
  }catch(error){dialog.showErrorBox('Owl AI could not start',error instanceof Error?error.message:String(error));app.quit();}});
  app.on('before-quit',()=>{quitting=true;googleAttempt?.abort();});app.on('will-quit',()=>{store?.close();});app.on('window-all-closed',()=>{if(!tray)app.quit();});
 }

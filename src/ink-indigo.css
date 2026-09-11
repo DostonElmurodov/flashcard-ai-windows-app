@@ -28,6 +28,12 @@
 .appearance-card strong{display:block;font-size:12px;margin-bottom:3px}
 .appearance-card small{display:block;font-size:11px;line-height:1.4;color:var(--muted)}
 .accent-label{font-size:12px;font-weight:600;margin:16px 0 9px}
+.reminder-window{display:grid;gap:12px;margin-bottom:14px}
+.time-field{border:0;padding:0;margin:0;min-width:0}
+.time-field legend{font-size:12px;font-weight:600;padding:0;margin-bottom:7px}
+.time-parts{display:flex;align-items:center;gap:6px;max-width:280px}
+.time-parts select{min-width:0;flex:1;padding:9px 6px;font-size:13px;background:var(--bg);color:var(--ink);border:1px solid var(--border);border-radius:7px}
+.time-parts>span{color:var(--muted)}
 .accent-label+.swatches{margin-top:0}
 .dark-accent-options{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
 .dark-accent-choice{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:7px;padding:7px 9px;font-size:12px;color:var(--ink);background:var(--surface)}

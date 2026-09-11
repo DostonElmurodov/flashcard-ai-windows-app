@@ -1,0 +1,5 @@
+export default function TimeField({label,value,hour12,onChange}:{label:string;value:string;hour12:boolean;onChange:(value:string)=>void}){
+ const [hour,minute]=value.split(':').map(Number),period=hour>=12?'PM':'AM';
+ const update=(h:number,m=minute)=>onChange(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+ return <fieldset className="time-field"><legend>{label}</legend><div className="time-parts"><select aria-label={`${label} hour`} value={hour12?(hour%12||12):hour} onChange={e=>update(hour12?Number(e.target.value)%12+(period==='PM'?12:0):Number(e.target.value))}>{Array.from({length:hour12?12:24},(_,i)=>{const h=hour12?i+1:i;return <option key={h} value={h}>{hour12?h:String(h).padStart(2,'0')}</option>;})}</select><span aria-hidden="true">:</span><select aria-label={`${label} minute`} value={minute} onChange={e=>update(hour,Number(e.target.value))}>{Array.from({length:60},(_,m)=><option key={m} value={m}>{String(m).padStart(2,'0')}</option>)}</select>{hour12&&<select aria-label={`${label} AM or PM`} value={period} onChange={e=>update(hour%12+(e.target.value==='PM'?12:0))}><option>AM</option><option>PM</option></select>}</div></fieldset>;
+}
