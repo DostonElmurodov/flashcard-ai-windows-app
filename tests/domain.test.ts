@@ -81,8 +81,25 @@ test('FSRS uses four distinct previews and updates repetitions',()=>{
  assert.equal(again.reps,1); assert.ok(new Date(easy.due).getTime()>new Date(again.due).getTime());
  assert.ok(easy.stability>0);
 });
-test('study day before boundary belongs to previous calendar day',()=>{
- const d=new Date(2026,8,8,3,30); assert.equal(studyDayStart(d,240).getDate(),7);
+test('study day starts at local midnight',()=>{
+ const d=new Date(2026,8,8,3,30); assert.equal(studyDayStart(d,0).getTime(),new Date(2026,8,8).getTime());
+});
+
+test('legacy day start cannot delay daily limit and activity reset past midnight',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'owl-midnight-')),path=join(dir,'db.sqlite');let s=await Store.open(path);
+ try {
+  const deck=s.saveDeck({name:'Midnight'});s.addWords(deck.id,[{word:'one',translation:'один'},{word:'two',translation:'два'}]);
+  const word=s.snapshot().words[0];s.close();
+  const SQL=await initSqlJs({locateFile:()=>require.resolve('sql.js/dist/sql-wasm.wasm')});const db=new SQL.Database(readFileSync(path));
+  db.run('UPDATE settings SET data=?',[JSON.stringify({dayStart:240,dailyGoal:1,startupDefaultsVersion:1})]);
+  db.run('INSERT INTO reviews VALUES(?,?,?,?,?)',['midnight-test',word.id,'forward',new Date(2026,8,8,23,59).toISOString(),JSON.stringify({firstIntroduction:true})]);
+  writeFileSync(path,db.export());db.close();s=await Store.open(path);
+  assert.equal(s.queue(undefined,new Date(2026,8,8,23,59,59)).length,0);
+  assert.equal(s.snapshot(new Date(2026,8,8,23,59,59)).reviewedToday,1);
+  assert.equal(s.queue(undefined,new Date(2026,8,9,0,0)).length,1);
+  assert.equal(s.snapshot(new Date(2026,8,9,0,0)).reviewedToday,0);
+  assert.equal(s.saveSettings({dayStart:240}).dayStart,0);
+ }finally{s.close();rmSync(dir,{recursive:true,force:true});}
 });
 test('store survives restart, prevents duplicate review attempts and preserves words',async()=>{
  const dir=mkdtempSync(join(tmpdir(),'owl-test-')); const path=join(dir,'cards.sqlite');
