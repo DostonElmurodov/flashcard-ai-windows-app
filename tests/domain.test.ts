@@ -8,6 +8,19 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import initSqlJs from 'sql.js';
 
+test('upgrading an existing profile enables all three options once without changing other data',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'owl-test-')),path=join(dir,'db.sqlite');let s=await Store.open(path);
+ try{
+  const deck=s.saveDeck({name:'Keep my words'});s.addWords(deck.id,[{word:'hello',translation:'привет'}]);s.close();
+  const SQL=await initSqlJs({locateFile:()=>require.resolve('sql.js/dist/sql-wasm.wasm')});const db=new SQL.Database(readFileSync(path));
+  db.run('INSERT OR REPLACE INTO settings VALUES(1,?)',[JSON.stringify({reminders:false,keepInTray:false,launchAtLogin:false,theme:'dark',reminderStart:'09:00',reminderEnd:'18:00',reminderCount:6})]);writeFileSync(path,db.export());db.close();
+  s=await Store.open(path);assert.equal(s.settings().reminders,true);assert.equal(s.settings().keepInTray,true);assert.equal(s.settings().launchAtLogin,true);
+  assert.equal(s.settings().theme,'dark');assert.equal(s.settings().reminderStart,'09:00');assert.equal(s.settings().reminderCount,6);assert.equal(s.snapshot().words.length,1);
+  s.saveSettings({reminders:false,keepInTray:false,launchAtLogin:false});s.close();s=await Store.open(path);
+  assert.equal(s.settings().reminders,false);assert.equal(s.settings().keepInTray,false);assert.equal(s.settings().launchAtLogin,false);
+ }finally{s.close();rmSync(dir,{recursive:true,force:true});}
+});
+
 test('reminders default to enabled but a saved opt-out survives restart',async()=>{
  const dir=mkdtempSync(join(tmpdir(),'owl-test-')),path=join(dir,'db.sqlite');let s=await Store.open(path);
  try{
