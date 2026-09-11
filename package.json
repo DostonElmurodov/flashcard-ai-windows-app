@@ -1,6 +1,6 @@
 {
   "name": "owl-ai-windows",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Owl AI desktop flashcards and spaced repetition",
   "author": "Owl AI",
   "private": true,
@@ -73,7 +73,9 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "artifactName": "Owl-AI-Setup-${version}-${arch}.${ext}"
+      "artifactName": "Owl-AI-Setup-${version}-${arch}.${ext}",
+      "runAfterFinish": true,
+      "include": "build/installer.nsh"
     },
     "artifactName": "Owl-AI-${version}-${arch}.${ext}",
     "portable": {

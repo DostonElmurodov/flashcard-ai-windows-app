@@ -71,3 +71,5 @@
 .swatch.rose{background:#a53560}
 .search-field kbd,.word-tools select{color:var(--muted)}
 .sidebar button:focus-visible{outline:3px solid #c5d5ff;outline-offset:3px}
+
+.topbar{justify-content:flex-end}
