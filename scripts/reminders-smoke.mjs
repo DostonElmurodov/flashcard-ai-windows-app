@@ -4,6 +4,9 @@ import {resolve} from 'node:path';
 const app=await electron.launch({args:['.'],env:{...process.env,OWL_TEST_DATA_DIR:resolve('test-results/reminders-'+Date.now())}});
 try{
  const page=await app.firstWindow();await page.getByRole('button',{name:'Make room for discovery'}).click();await page.getByRole('button',{name:'Settings',exact:true}).click();
+ assert.ok(await page.getByRole('checkbox',{name:'Study reminders',exact:true}).isChecked());
+ assert.ok(await page.getByRole('checkbox',{name:'Open when Windows starts',exact:true}).isChecked());
+ await page.getByRole('checkbox',{name:'Study reminders',exact:true}).uncheck();
  assert.equal(await page.getByLabel('Start reminder time hour',{exact:true}).count(),0);
  await page.getByRole('checkbox',{name:'Study reminders',exact:true}).check();
  assert.equal(await page.getByLabel('Reminders per day',{exact:true}).inputValue(),'10');

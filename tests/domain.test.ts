@@ -8,6 +8,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import initSqlJs from 'sql.js';
 
+test('reminders default to enabled but a saved opt-out survives restart',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'owl-test-')),path=join(dir,'db.sqlite');let s=await Store.open(path);
+ try{
+  assert.equal(s.settings().reminders,true);
+  assert.equal(s.settings().launchAtLogin,true);
+  assert.equal(s.settings().reminderStart,'08:00');assert.equal(s.settings().reminderEnd,'20:00');assert.equal(s.settings().reminderCount,10);
+  s.saveSettings({reminders:false,launchAtLogin:false});s.close();s=await Store.open(path);assert.equal(s.settings().reminders,false);assert.equal(s.settings().launchAtLogin,false);
+ }finally{s.close();rmSync(dir,{recursive:true,force:true});}
+});
+
 test('the first and only set stays active, while multiple sets can be disabled',async()=>{
  const dir=mkdtempSync(join(tmpdir(),'owl-test-'));const s=await Store.open(join(dir,'db.sqlite'));
  try {
