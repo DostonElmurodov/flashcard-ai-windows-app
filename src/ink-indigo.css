@@ -243,7 +243,7 @@
 .word-card-grid .word-actions{grid-column:2;grid-row:2;justify-content:flex-end}
 .word-card-grid .word-detail{border-top:1px solid var(--border);margin:0 15px;padding:12px 0;font-size:12px;overflow-wrap:anywhere}
 @media(max-width:1000px){.word-list.word-card-grid{grid-template-columns:minmax(0,1fr)}}
-.window-titlebar{position:fixed;top:0;left:0;right:0;height:36px;display:flex;align-items:center;gap:18px;padding:0 150px 0 12px;background:var(--bg);color:var(--ink);z-index:100;-webkit-app-region:drag;user-select:none}
+.window-titlebar{position:fixed;top:0;left:0;right:0;height:36px;display:flex;align-items:center;gap:4px;padding:0 150px 0 12px;background:var(--bg);color:var(--ink);z-index:100;-webkit-app-region:drag;user-select:none}
 .window-title{display:flex;align-items:center;gap:8px;font-size:12px;white-space:nowrap}
 .window-title>svg{color:var(--accent)}
 .window-menus{display:flex;align-items:center;gap:2px;-webkit-app-region:no-drag}
