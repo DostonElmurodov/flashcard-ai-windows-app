@@ -113,7 +113,16 @@
 .practice-icon svg{width:21px;height:21px}
 .learn-page .section-line{margin-bottom:10px}
 .learn-page .section-line h2{font-size:16px}
-.learn-page .collection-strip{gap:9px;margin-bottom:16px}
+.collections-section{margin-bottom:16px}
+.collection-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.learn-page .collection-strip{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:0}
+.collection-mini{display:grid;align-content:start;gap:5px;min-width:0;text-align:left;padding:10px 12px;border:1px solid var(--border);border-left:3px solid var(--action);border-radius:8px;background:var(--surface);color:var(--ink)}
+.collection-mini:hover,.collection-mini[aria-pressed=true]{border-color:var(--accent);background:var(--soft)}
+.collection-name{font-size:13px;font-weight:600;line-height:1.4;overflow-wrap:anywhere}
+.collection-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:11px;line-height:1.45;color:var(--muted)}
+.collection-meta .deck-languages{font-size:11px}
+@media(max-width:800px){.learn-page .collection-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.learn-page .collection-strip{grid-template-columns:minmax(0,1fr)}}
 .learn-page .deck-tile{padding:10px 12px;border-radius:8px}
 .learn-page .deck-tile-top{margin-bottom:6px}
 .learn-page .deck-icon{width:22px;height:22px;border-radius:6px}
