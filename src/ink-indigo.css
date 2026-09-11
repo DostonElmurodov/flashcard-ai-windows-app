@@ -228,3 +228,18 @@
  .word-tools .search-field{min-width:0}
 }
 @media(pointer:coarse){.button,.heading-actions button,.nav-item,.create-nav,.premium-nudge button{min-height:44px}.heading-actions button{min-width:44px}}
+.word-list.word-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;border:0;border-radius:0;background:transparent;overflow:visible;align-items:start}
+.word-card-grid .word-mini-card{min-width:0;background:var(--surface);border:1px solid var(--border);border-radius:11px;overflow:hidden}
+.learn-page .word-card-grid .word-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 12px;padding:13px 15px}
+.word-card-grid .word-primary{grid-column:1;grid-row:1;align-items:flex-start;gap:8px}
+.word-card-grid .word-expand{overflow-wrap:anywhere}
+.word-card-grid .word-expand strong{font-size:15px;line-height:1.4}
+.word-card-grid .word-expand span{font-size:12px;white-space:normal;max-width:none;overflow:visible;text-overflow:clip;line-height:1.5;margin-top:5px}
+.word-card-grid .word-primary>.icon-button{opacity:1;color:var(--accent);background:var(--soft);padding:5px;margin-top:0}
+.word-card-grid .review-date{grid-column:2;grid-row:1;align-self:start;font-size:10px;line-height:1.5;color:var(--muted);background:var(--bg);border-radius:6px;padding:4px 8px;white-space:nowrap}
+.word-card-grid .review-date.new{color:var(--accent);background:var(--soft)}
+.word-card-grid .set-tag{grid-column:1;grid-row:2;display:flex;align-items:center;gap:6px;min-width:0;font-size:11px;white-space:normal;overflow-wrap:anywhere}
+.word-card-grid .set-tag svg{flex-shrink:0}
+.word-card-grid .word-actions{grid-column:2;grid-row:2;justify-content:flex-end}
+.word-card-grid .word-detail{border-top:1px solid var(--border);margin:0 15px;padding:12px 0;font-size:12px;overflow-wrap:anywhere}
+@media(max-width:1000px){.word-list.word-card-grid{grid-template-columns:minmax(0,1fr)}}
