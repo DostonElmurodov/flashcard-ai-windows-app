@@ -1,0 +1,81 @@
+{
+  "name": "owl-ai-windows",
+  "version": "0.1.0",
+  "description": "Owl AI desktop flashcards and spaced repetition",
+  "author": "Owl AI",
+  "private": true,
+  "main": "dist-electron/main.cjs",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "test": "tsx --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run typecheck && vite build && node scripts/build-electron.mjs",
+    "start": "electron .",
+    "package": "npm run build && electron-builder --win portable --x64",
+    "installer": "npm run build && electron-builder --win nsis --x64",
+    "smoke": "node scripts/smoke.mjs",
+    "test:integration": "node scripts/integration.mjs",
+    "test:imports": "node scripts/import-smoke.mjs"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^1.0.8",
+    "csv-parse": "^6.1.0",
+    "lucide-react": "^0.468.0",
+    "pdfjs-dist": "^6.2.108",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "sql.js": "^1.13.0",
+    "tesseract.js": "^6.0.1",
+    "ts-fsrs": "^5.2.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@types/sql.js": "^1.4.9",
+    "@vitejs/plugin-react": "^5.0.0",
+    "electron": "^44.2.0",
+    "electron-builder": "^26.0.12",
+    "esbuild": "^0.28.2",
+    "playwright": "^1.63.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vite": "^7.3.0"
+  },
+  "build": {
+    "appId": "com.mavrylo.owlai.windows",
+    "productName": "Owl AI",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json",
+      "build/icon.png"
+    ],
+    "asarUnpack": [
+      "node_modules/sql.js/dist/*.wasm",
+      "node_modules/tesseract.js-core/**/*"
+    ],
+    "win": {
+      "target": [
+        "portable",
+        "nsis"
+      ],
+      "icon": "build/icon.ico",
+      "signExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "artifactName": "Owl-AI-Setup-${version}-${arch}.${ext}"
+    },
+    "artifactName": "Owl-AI-${version}-${arch}.${ext}",
+    "portable": {
+      "artifactName": "Owl-AI-Portable-${version}-${arch}.${ext}"
+    }
+  }
+}
