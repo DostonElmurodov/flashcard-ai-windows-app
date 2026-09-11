@@ -6,8 +6,8 @@ An Electron desktop app for local vocabulary sets, FSRS study, imports and accou
 
 Windows x64 builds are in `release/`:
 
-- `Owl-AI-Setup-0.1.12-x64.exe` — install with a selectable destination and desktop shortcut.
-- `Owl-AI-Portable-0.1.12-x64.exe` — run without installing.
+- `Owl-AI-Setup-0.1.13-x64.exe` — install with a selectable destination and desktop shortcut.
+- `Owl-AI-Portable-0.1.13-x64.exe` — run without installing.
 - `win-unpacked/Owl AI.exe` — unpacked application for local verification.
 
 After installation, **Run Owl AI after Finish** remains available. When checked, Finish expands to fit its caption at the current Windows font/display scale, disables itself and shows **Opening Owl AI...** while a separate launch helper opens the application. The visible installer remains responsive; repeated clicks cannot start extra launches. It closes when Windows accepts the launch. If the helper fails or exceeds 20 seconds, Finish becomes available again with instructions to open the desktop or Start menu shortcut. The original hang was not captured directly; Windows shell activation is now isolated from the installer UI thread.

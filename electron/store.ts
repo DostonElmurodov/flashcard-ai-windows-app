@@ -4,7 +4,7 @@ import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { Deck,Draft,Word,Settings,Snapshot,ReviewCard } from '../shared/types';
 import { newCard,scheduleCard,studyDayStart } from './scheduler';
-const defaults:Settings={nativeLanguage:'ru',learningLanguage:'en-us',theme:'light',accent:'indigo',dailyGoal:5,direction:'forward',dayStart:240,retention:.9,reminders:false,reminderTime:'19:00',keepInTray:false,launchAtLogin:false,apiBase:'https://api.mavrylo.com',onboardingComplete:false};
+const defaults:Settings={nativeLanguage:'ru',learningLanguage:'en-us',theme:'light',accent:'indigo',darkAccent:'teal',dailyGoal:5,direction:'forward',dayStart:240,retention:.9,reminders:false,reminderTime:'19:00',keepInTray:false,launchAtLogin:false,apiBase:'https://api.mavrylo.com',onboardingComplete:false};
 export class Store {
  private constructor(private db:Database,private path:string){}
  static async open(path:string):Promise<Store>{

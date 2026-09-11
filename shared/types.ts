@@ -2,7 +2,7 @@ export interface Draft { word:string; translation:string; pronunciation?:string;
 export interface Deck { id:string; name:string; description:string; nativeLanguage:string; learningLanguage:string; active:boolean; createdAt:string }
 export interface ReviewCard { due:string; stability:number; difficulty:number; elapsed_days:number; scheduled_days:number; reps:number; lapses:number; state:number; last_review?:string; learning_steps:number }
 export interface Word extends Draft { id:string; deckId:string; createdAt:string; card:ReviewCard; reverse:ReviewCard }
-export interface Settings { nativeLanguage:string; learningLanguage:string; theme:'light'|'dark'|'system'; accent:'indigo'|'teal'|'rose'; dailyGoal:number; direction:'forward'|'reverse'; dayStart:number; retention:number; reminders:boolean; reminderTime:string; keepInTray:boolean; launchAtLogin:boolean; apiBase:string; onboardingComplete:boolean }
+export interface Settings { nativeLanguage:string; learningLanguage:string; theme:'light'|'dark'|'system'; accent:'indigo'|'teal'|'rose'; darkAccent:'indigo'|'teal'|'rose'; dailyGoal:number; direction:'forward'|'reverse'; dayStart:number; retention:number; reminders:boolean; reminderTime:string; keepInTray:boolean; launchAtLogin:boolean; apiBase:string; onboardingComplete:boolean }
 export interface Snapshot { decks:Deck[]; words:Word[]; settings:Settings; reviewedToday:number; streak:number; activity:{date:string;count:number}[] }
 export interface Profile { id:string; email:string|null; display_name?:string; provider?:string }
 export interface Entitlement { status:string; product_id?:string|null; expires_at?:string|null; is_trial:boolean; auto_renew:boolean; was_ever_paid:boolean; source?:string|null; checked_at?:string }

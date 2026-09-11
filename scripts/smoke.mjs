@@ -35,7 +35,7 @@ try{
  const snapshot=await page.evaluate(()=>window.owl.snapshot());
  if(snapshot.words.length!==3||snapshot.reviewedToday!==1)throw new Error('Card creation/review did not persist.');
  await page.getByRole('button',{name:'Settings',exact:true}).click();
- await page.getByLabel('Appearance',{exact:true}).selectOption('dark');
+ await page.getByRole('group',{name:'Appearance',exact:true}).getByRole('button',{name:'Dark',exact:true}).click();
  await page.getByRole('button',{name:'Save preferences'}).click();
  await page.getByRole('button',{name:/^Learn/}).first().click();
  await page.screenshot({path:'test-results/dark.png',fullPage:true});
