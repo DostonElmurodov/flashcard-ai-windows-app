@@ -1,0 +1,73 @@
+/* Ink & Indigo: shared product surfaces, with a permanently dark app sidebar. */
+:root {
+ --bg:#eef2f9;--surface:#ffffff;--ink:#101f39;--muted:#526179;
+ --border:#cfdaea;--accent:#3158ed;--soft:#e6ecff;--deep:#233ca8;
+ --action:#3158ed;--on-action:#ffffff;--positive:#16613f;--positive-bg:#dbf1e6;
+ --shadow:0 4px 16px #13234006;--danger:#b52e43;
+ color:var(--ink);background:var(--bg);color-scheme:light;
+}
+:root[data-theme=dark] {
+ --bg:#111c30;--surface:#1b2940;--ink:#f3f6ff;--muted:#bcc9df;
+ --border:#394861;--accent:#9bb5ff;--soft:#22345c;--deep:#3158ed;
+ --action:#3158ed;--positive:#b4f6d4;--positive-bg:#204838;
+ --shadow:none;--danger:#ff9baa;color-scheme:dark;
+}
+:root[data-accent=teal]{--accent:#147466;--soft:#e0f2ed;--deep:#14594f;--action:#147466}
+:root[data-accent=rose]{--accent:#a53560;--soft:#fae6ee;--deep:#802749;--action:#a53560}
+:root[data-theme=dark][data-accent=teal]{--accent:#81dcc9;--soft:#1e403e;--deep:#147466;--action:#147466}
+:root[data-theme=dark][data-accent=rose]{--accent:#ffb0cd;--soft:#493048;--deep:#a53560;--action:#a53560}
+.button{background:var(--action);color:var(--on-action);border-radius:8px}
+.button.secondary{background:var(--surface);color:var(--ink)}
+.button.destructive{background:#b52e43;color:#fff}
+.button:hover{transform:none;filter:brightness(1.08)}
+.sidebar{background:#132340;color:#f3f6ff;border-color:#2c4163}
+.sidebar .brand,.sidebar .brand>span{color:#f3f6ff}
+.sidebar .brand-ai,.sidebar .brand>svg{color:#94adff}
+.sidebar .brand small,.sidebar .nav-label,.sidebar .sidebar-empty{color:#afbed8}
+.sidebar .nav-item{color:#c4d0e5}
+.sidebar .nav-item:hover{color:#fff;background:#213654}
+.sidebar .nav-item.active{background:var(--action);color:#fff}
+.sidebar .nav-count{background:#fff;color:var(--action)}
+.sidebar .create-nav{background:#1c3151;border:1px solid #6884be;color:#fff}
+.sidebar .create-nav:hover{background:#294570}
+.sidebar .sidebar-divider{background:#304667}
+.sidebar .sidebar-set{color:#c4d0e5}
+.sidebar .sidebar-set:hover,.sidebar .sidebar-set.chosen{background:#263d60;color:#fff}
+.sidebar .set-dot{background:#8faaff}
+.sidebar .premium-nudge{background:#1c3151;border-color:#405a83}
+.sidebar .premium-mini,.sidebar .premium-nudge button{color:#ccd8ff}
+.sidebar .premium-nudge p{color:#b8c8e1}
+.sidebar .account-nav{color:#fff;border-color:#304667}
+.sidebar .account-nav small,.sidebar .account-nav>svg{color:#afbed8}
+.avatar{background:var(--action);color:#fff}
+.topbar{background:var(--surface)}
+.breadcrumb,.page-heading p,.local-badge,.page-footer{color:var(--muted)}
+.panel,.stat-card,.deck-tile,.word-list{box-shadow:none}
+.learn-page .stat-card:nth-child(2){background:var(--action);border-color:var(--action);color:#fff}
+.learn-page .stat-card:nth-child(2)>span,.learn-page .stat-card:nth-child(2) strong{color:#fff}
+.learn-page .stat-card:nth-child(2) .stat-icon{background:#ffffff20;color:#fff}
+.stat-icon.purple,.stat-icon.pink{background:var(--soft);color:var(--accent)}
+.stat-icon.green{background:var(--positive-bg);color:var(--positive)}
+.practice-bar{background:var(--soft);border-color:var(--border)}
+.deck-tile{border-left:3px solid var(--action)}
+.deck-tile:hover{box-shadow:none;border-color:var(--accent)}
+.deck-tile .deck-icon{background:var(--soft);color:var(--accent)}
+.deck-tile.selected{background:var(--soft)}
+.deck-languages,.deck-tile-bottom,.deck-controls,.set-tag{color:var(--muted)}
+.new-deck-tile{border-color:var(--border);color:var(--ink);background:var(--surface)}
+.new-deck-tile>span{color:var(--accent);background:var(--soft)}
+.new-deck-tile small{color:var(--muted)}
+.word-table-head{background:var(--bg);color:var(--muted)}
+.review-date{color:var(--positive)}
+.review-date.new{color:var(--accent)}
+.method{color:var(--ink)}
+.method.selected{border-color:var(--accent);color:var(--accent)}
+.segmented button.selected{background:var(--action);color:#fff;box-shadow:none}
+.premium-panel{background:linear-gradient(145deg,#233fa3,#132340)}
+.premium-mark,.premium-panel>p,.premium-panel .devices,.premium-panel .steps{color:#dce6ff}
+.premium-status{background:#ffffff12;border-color:#ffffff40;color:#fff}
+.swatch.indigo{background:#3158ed}
+.swatch.teal{background:#147466}
+.swatch.rose{background:#a53560}
+.search-field kbd,.word-tools select{color:var(--muted)}
+.sidebar button:focus-visible{outline:3px solid #c5d5ff;outline-offset:3px}

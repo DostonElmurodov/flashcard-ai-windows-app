@@ -6,8 +6,8 @@ An Electron desktop app for local vocabulary sets, FSRS study, imports and accou
 
 Windows x64 builds are in `release/`:
 
-- `Owl-AI-Setup-0.1.3-x64.exe` — install with a selectable destination and desktop shortcut.
-- `Owl-AI-Portable-0.1.3-x64.exe` — run without installing.
+- `Owl-AI-Setup-0.1.4-x64.exe` — install with a selectable destination and desktop shortcut.
+- `Owl-AI-Portable-0.1.4-x64.exe` — run without installing.
 - `win-unpacked/Owl AI.exe` — unpacked application for local verification.
 
 The builds are not code-signed. A release signing certificate is not configured in this workspace.
@@ -16,6 +16,7 @@ The first launch asks for native and learning languages. No account is required 
 
 ## Implemented
 
+- Ink & Indigo visual theme with a navy sidebar, saturated blue actions, stronger contrast and coordinated light/dark appearances.
 - Compact Learn dashboard with Words collected, Ready to review, Practiced today and Day streak at the top, set management, vocabulary search/edit/delete, responsive layout, light/dark/system appearance and three accents.
 - Local SQLite persistence, migrations, CSV export, whole-database backup/restore. Logout and account deletion preserve local cards.
 - FSRS-6 with the iOS project's 21 weights, learning/relearning steps, four grades, retention preference, independent forward/reverse state and daily new-word limits.
