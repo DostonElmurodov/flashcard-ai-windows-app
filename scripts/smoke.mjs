@@ -10,12 +10,14 @@ try{
  await page.getByRole('button',{name:'Create a set',exact:true}).first().click();
  await page.getByLabel('Set name',{exact:true}).fill('Everyday English');
  await page.getByPlaceholder('What would you like to learn?').fill('Little words for bigger conversations');
+ await page.getByRole('button',{name:'Save set',exact:true}).click();
+ await page.getByRole('button',{name:'Add cards',exact:true}).first().click();
  for(const [word,translation] of [['serendipity','счастливая случайность'],['wanderlust','жажда странствий'],['resilience','стойкость']]){
   await page.getByLabel('Word or phrase',{exact:true}).fill(word);
   await page.getByLabel('Translation',{exact:true}).fill(translation);
   await page.getByRole('button',{name:'Add to preview'}).click();
  }
- await page.getByRole('button',{name:'Save set',exact:true}).click();
+ await page.getByRole('button',{name:'Save cards',exact:true}).click();
  await page.getByRole('button',{name:'Start today’s practice'}).waitFor();
  await page.screenshot({path:'test-results/learn.png',fullPage:true});
  await page.getByRole('button',{name:'Start today’s practice'}).click();

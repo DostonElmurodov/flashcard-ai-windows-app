@@ -4,3 +4,6 @@ dist-electron/
 release/
 *.log
 test-results/
+build/google-oauth.local.json
+.env
+.env.*

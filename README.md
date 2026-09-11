@@ -6,13 +6,13 @@ An Electron desktop app for local vocabulary sets, FSRS study, imports and accou
 
 Windows x64 builds are in `release/`:
 
-- `Owl-AI-Setup-0.1.0-x64.exe` — install with a selectable destination and desktop shortcut.
-- `Owl-AI-Portable-0.1.0-x64.exe` — run without installing.
+- `Owl-AI-Setup-0.1.1-x64.exe` — install with a selectable destination and desktop shortcut.
+- `Owl-AI-Portable-0.1.1-x64.exe` — run without installing.
 - `win-unpacked/Owl AI.exe` — unpacked application for local verification.
 
 The builds are not code-signed. A release signing certificate is not configured in this workspace.
 
-The first launch asks for native and learning languages. No account is required for local study. Create a set, enter cards manually or import a file, review the preview, then save. The daily queue uses active sets matching the selected languages. Change the new-word goal and review direction in Settings.
+The first launch asks for native and learning languages. No account is required for local study. Create a set using its name, description and languages. Then open the set and choose Add cards to enter words or import a file, preview them, and choose Save cards. The daily queue uses active sets matching the selected languages. Change the new-word goal and review direction in Settings.
 
 ## Implemented
 
@@ -23,7 +23,7 @@ The first launch asks for native and learning languages. No account is required 
 - Manual cards, AI translation, pasted text, CSV/TSV/TXT, PDF text, image OCR and scanned PDF OCR. Words/Pairs/Auto modes and editable previews. Imports above 2,000 unique cards are rejected explicitly. Files are limited to 20 MB and PDFs to 100 pages.
 - Speech through installed Windows voices; repeated playback alternates normal and slow speed.
 - Configurable local reminders while running, optional tray background mode and opt-in Windows startup.
-- Email account registration/login/logout/deletion, encrypted account credentials, automatic session refresh and server-authoritative Premium status.
+- Google sign-in/account creation through the system browser (requires desktop OAuth release configuration), email account registration/login/logout/deletion, encrypted account credentials, automatic session refresh and server-authoritative Premium status.
 - Account catalog search/import, publishing and unpublishing sets. Published sets require backend approval before they appear in the public catalog.
 - An existing Apple subscription can be linked to the same account on iPhone and used on Windows, using the accompanying backend/iOS changes.
 
@@ -44,7 +44,11 @@ The current desktop app does not sell a second subscription. Apple remains the p
 
 Backend contract and production configuration: `../mavrylo/docs/shared-subscription-api.md`. Required new production settings are `AccountAi__DailyQuota` and `AccountAi__RequestsPerMinute` (initial recommended values 200 and 30). Keep existing App Attest, StoreKit, JWT and provider protection enabled.
 
-Settings → Connection accepts an HTTPS origin, or loopback HTTP for local development. Changing servers clears account credentials. There is no desktop App Attest bypass, bundled provider key, or local Premium switch.
+The Connection section is hidden in Settings. The existing internal configuration still accepts an HTTPS origin or loopback HTTP for development tests. Changing servers clears account credentials. There is no desktop App Attest bypass, bundled provider key, or local Premium switch.
+
+Google setup and release requirements: [Google sign-in](docs/google-sign-in.md). The desktop OAuth client ID must be configured at build time and added to the backend audience allowlist. No real Google sign-in has been verified in this workspace yet.
+
+Subscription status refreshes automatically. The manual refresh and Apple management buttons are hidden in Profile.
 
 ## Development
 
@@ -66,6 +70,8 @@ npm run typecheck
 npm run smoke
 npm run test:imports
 npm run test:integration
+npm run test:ui
+npm run test:google
 node scripts/security-smoke.mjs
 npm run package
 npm run installer

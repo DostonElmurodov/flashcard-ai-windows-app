@@ -1,6 +1,6 @@
 {
   "name": "owl-ai-windows",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Owl AI desktop flashcards and spaced repetition",
   "author": "Owl AI",
   "private": true,
@@ -15,7 +15,9 @@
     "installer": "npm run build && electron-builder --win nsis --x64",
     "smoke": "node scripts/smoke.mjs",
     "test:integration": "node scripts/integration.mjs",
-    "test:imports": "node scripts/import-smoke.mjs"
+    "test:imports": "node scripts/import-smoke.mjs",
+    "test:google": "node scripts/google-session-smoke.mjs",
+    "test:ui": "node scripts/settings-flow-smoke.mjs"
   },
   "dependencies": {
     "@napi-rs/canvas": "^1.0.8",

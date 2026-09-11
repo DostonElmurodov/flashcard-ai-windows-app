@@ -10,6 +10,7 @@ export interface AccountState { profile:Profile|null; entitlement:Entitlement|nu
 export interface CatalogCard { client_card_id:string; word:string; translations:string[]; pronunciation?:string; examples:string[]; notes?:string; native_language:string; learning_language:string }
 export interface CatalogDeck { id:string; title:string; description?:string; word_count:number; cards:CatalogCard[] }
 export interface Bridge {
+ loginGoogle():Promise<AccountState|null>; cancelGoogleLogin():Promise<void>;
  snapshot():Promise<Snapshot>; saveDeck(input:Partial<Deck>&{name:string}):Promise<Deck>; deleteDeck(id:string):Promise<void>;
  addWords(deckId:string,words:Draft[]):Promise<number>; editWord(id:string,word:Draft):Promise<void>; deleteWord(id:string):Promise<void>;
  saveSettings(settings:Partial<Settings>):Promise<Settings>; queue(deckId?:string):Promise<Word[]>; previews(wordId:string):Promise<Record<number,string>>; review(wordId:string,grade:number,attemptId:string):Promise<Word>;

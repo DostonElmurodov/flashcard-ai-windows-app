@@ -8,11 +8,23 @@ export class Api {
   if(existsSync(tokenPath)&&safeStorage.isEncryptionAvailable())try{const stored=JSON.parse(safeStorage.decryptString(readFileSync(tokenPath)));if(stored.base===this.base())this.session=stored.session;}catch{/* An unreadable token never grants access. */}
  }
  state():AccountState{return {profile:this.session?.profile??null,entitlement:this.entitlement};}
+ async loginGoogle(authorize:()=>Promise<string|null>,signal?:AbortSignal){
+  const generation=++this.generation;
+  const idToken=await authorize();
+  signal?.throwIfAborted();
+  if(generation!==this.generation)throw new Error('The account changed. Please sign in again.');
+  if(idToken===null)return null;
+  const response=await this.send('/owlai/account/google/session','POST',{id_token:idToken},undefined,signal);
+  const session=await this.result<Session>(response);
+  signal?.throwIfAborted();
+  if(generation!==this.generation)throw new Error('The account changed. Please sign in again.');
+  this.entitlement=null;this.save(session);return this.state();
+ }
  private save(session:Session){if(!safeStorage.isEncryptionAvailable())throw new Error('Windows secure credential storage is unavailable. Sign-in was not saved.');const tmp=this.tokenPath+'.tmp';writeFileSync(tmp,safeStorage.encryptString(JSON.stringify({base:this.base(),session})));renameSync(tmp,this.tokenPath);this.session=session;}
  clear(){this.generation++;this.session=null;this.entitlement=null;if(existsSync(this.tokenPath))unlinkSync(this.tokenPath);}
- private async send(path:string,method:string,body:unknown,token?:string):Promise<Response>{
+ private async send(path:string,method:string,body:unknown,token?:string,signal?:AbortSignal):Promise<Response>{
   const url=new URL(this.base());if(url.protocol!=='https:'&&!(url.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(url.hostname)))throw new Error('Use HTTPS, or localhost for a development server.');
-  return fetch(new URL(path,url),{method,headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(30000),redirect:'error'});
+  return fetch(new URL(path,url),{method,headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.any([AbortSignal.timeout(30000),...(signal?[signal]:[])]),redirect:'error'});
  }
  private async result<T>(response:Response):Promise<T>{if(response.status===204)return undefined as T;const text=await response.text();let data:any;try{data=JSON.parse(text);}catch{throw new Error(`Server returned an unreadable response (${response.status}).`);}if(!response.ok){const message=response.status===402?'An active shared Premium subscription is needed. Link your Apple purchase in Owl AI on iPhone.':response.status===429?'You have reached the request limit. Please try again later.':response.status===404?'This server does not have desktop support enabled yet.':data.error??data.title??`Request failed (${response.status}).`;throw new Error(message);}return data as T;}
  async login(email:string,password:string,confirmation?:string){const generation=++this.generation;const response=await this.send(confirmation===undefined?'/owlai/account/email/session':'/owlai/account/register','POST',confirmation===undefined?{email,password}:{email,password,confirm_password:confirmation});const session=await this.result<Session>(response);if(generation!==this.generation)throw new Error('The account changed. Please sign in again.');this.entitlement=null;this.save(session);return this.state();}

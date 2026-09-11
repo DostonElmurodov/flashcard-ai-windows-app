@@ -4,6 +4,10 @@ import { pathToFileURL } from 'node:url';
 import { z } from 'zod';
 import { Store } from './store';
 import { Api } from './api';
+import { googleSignIn } from './google';
+declare const GOOGLE_OAUTH_CLIENT_ID:string;
+declare const GOOGLE_OAUTH_CLIENT_SECRET:string;
+let googleAttempt:AbortController|null=null;
 import { parseImport } from './imports';
 import { importFile,exportDeck } from './files';
 import type { CatalogDeck } from '../shared/types';
@@ -31,6 +35,14 @@ function register(){
  handle('backup',async()=>{const result=await dialog.showSaveDialog(window,{title:'Back up your cards and progress',defaultPath:'Owl-AI-backup.sqlite',filters:[{name:'Owl AI backup',extensions:['sqlite']}]});if(result.canceled||!result.filePath)return false;store.backup(result.filePath);return true;});
  handle('restore',async()=>{const result=await dialog.showOpenDialog(window,{title:'Restore Owl AI backup',properties:['openFile'],filters:[{name:'Owl AI backup',extensions:['sqlite']}]});if(result.canceled)return false;const confirm=await dialog.showMessageBox(window,{type:'warning',message:'Replace local cards and progress with this backup?',detail:'A copy of your current database will be kept. Your account is not changed.',buttons:['Cancel','Restore backup'],defaultId:0,cancelId:0});if(confirm.response!==1)return false;await store.restore(result.filePaths[0]);configureTray();return true;});
  handle('account',()=>api.state());
+ handle('loginGoogle',async()=>{
+  if(googleAttempt)throw new Error('Google sign-in is already open in your browser.');
+  const controller=new AbortController();googleAttempt=controller;
+  try{return await api.loginGoogle(()=>googleSignIn({clientId:GOOGLE_OAUTH_CLIENT_ID,clientSecret:GOOGLE_OAUTH_CLIENT_SECRET},url=>shell.openExternal(url),{signal:controller.signal}),controller.signal);}
+  catch(error){if(controller.signal.aborted)return null;if(error instanceof Error&&error.name==='TimeoutError')throw new Error('Google sign-in timed out. Please try again.');throw error;}
+  finally{googleAttempt=null;if(!window.isDestroyed()){window.show();window.focus();}}
+ });
+ handle('cancelGoogleLogin',()=>{googleAttempt?.abort();});
  handle('login',(email,password,confirmation)=>api.login(z.string().email().max(254).parse(email),z.string().min(1).max(1024).parse(password),z.string().max(1024).optional().parse(confirmation)));
  handle('logout',()=>api.logout());handle('deleteAccount',()=>api.deleteAccount());handle('refreshEntitlement',()=>api.refreshEntitlement());
  handle('translate',(word,native,learning)=>api.translate(str.parse(word),language.parse(native),language.parse(learning)));
@@ -52,5 +64,5 @@ if(!app.requestSingleInstanceLock())app.quit();else{
   window.on('close',event=>{if(!quitting&&store.settings().keepInTray){event.preventDefault();window.hide();}});
   let lastReminder='';setInterval(()=>{const settings=store.settings(),now=new Date(),time=now.toTimeString().slice(0,5),key=now.toDateString()+time;if(settings.reminders&&time===settings.reminderTime&&lastReminder!==key&&Notification.isSupported()){lastReminder=key;const count=store.queue().length;if(count){const notification=new Notification({title:'A little practice goes a long way',body:`You have ${count} cards ready to review in Owl AI.`});notification.on('click',()=>window.show());notification.show();}}},15000);
  }catch(error){dialog.showErrorBox('Owl AI could not start',error instanceof Error?error.message:String(error));app.quit();}});
- app.on('before-quit',()=>{quitting=true;});app.on('will-quit',()=>{store?.close();});app.on('window-all-closed',()=>{if(!tray)app.quit();});
+ app.on('before-quit',()=>{quitting=true;googleAttempt?.abort();});app.on('will-quit',()=>{store?.close();});app.on('window-all-closed',()=>{if(!tray)app.quit();});
 }
