@@ -97,6 +97,24 @@
 .page-heading h1{font-size:23px;margin-bottom:4px}
 .heading-actions{display:flex;align-items:center;gap:9px;margin-left:auto;flex-shrink:0}
 .heading-actions .small-avatar{width:30px;height:30px}
+.help-button{display:inline-flex;align-items:center;gap:5px;min-height:32px;padding:6px 8px;border-radius:7px;font-size:12px;color:var(--muted)}
+.help-button:hover,.help-button[aria-current=page]{background:var(--soft);color:var(--accent)}
+.help-page{display:grid;gap:16px}
+.help-page .panel{min-width:0}
+.help-page h2{font-size:17px;margin-bottom:12px}
+.help-page p,.help-page li{font-size:13px;line-height:1.65;color:var(--muted)}
+.help-page strong,.help-page b{color:var(--ink);font-weight:600}
+.help-page .panel-title{gap:9px;margin-bottom:12px}
+.help-page .panel-title h2{margin:0}
+.help-columns{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.help-steps,.help-features{padding-left:21px;margin:12px 0 16px}
+.help-page li+li{margin-top:10px}
+.help-tip{padding:11px 13px;background:var(--soft);border-radius:8px}
+.help-faq details{border-top:1px solid var(--border);padding:12px 0}
+.help-faq details:last-child{padding-bottom:0}
+.help-faq summary{cursor:pointer;font-size:13px;font-weight:600;line-height:1.5}
+.help-faq details p{margin:10px 0 0}
+@media(max-width:1100px){.help-columns{grid-template-columns:1fr}}
 .button{padding:6px 11px;min-height:32px;gap:7px}
 .panel{padding:20px;border-radius:10px}
 .learn-page .stats-grid{gap:9px;margin-bottom:12px}
