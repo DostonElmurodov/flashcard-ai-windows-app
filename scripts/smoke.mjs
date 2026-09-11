@@ -15,9 +15,10 @@ try{
  for(const [word,translation] of [['serendipity','счастливая случайность'],['wanderlust','жажда странствий'],['resilience','стойкость']]){
   await page.getByLabel('Word or phrase',{exact:true}).fill(word);
   await page.getByLabel('Translation',{exact:true}).fill(translation);
-  await page.getByRole('button',{name:'Add to preview'}).click();
+  await page.getByRole('button',{name:'Save cards',exact:true}).click();
+  await page.waitForFunction(()=>document.querySelector('input[placeholder="Something worth remembering"]')?.value==='');
  }
- await page.getByRole('button',{name:'Save cards',exact:true}).click();
+ await page.getByRole('button',{name:/^Learn/}).first().click();
  await page.getByRole('button',{name:'Start today’s practice'}).waitFor();
  await page.screenshot({path:'test-results/learn.png',fullPage:true});
  await page.getByRole('button',{name:'Start today’s practice'}).click();

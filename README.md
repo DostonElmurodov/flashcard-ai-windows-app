@@ -6,13 +6,13 @@ An Electron desktop app for local vocabulary sets, FSRS study, imports and accou
 
 Windows x64 builds are in `release/`:
 
-- `Owl-AI-Setup-0.1.1-x64.exe` — install with a selectable destination and desktop shortcut.
-- `Owl-AI-Portable-0.1.1-x64.exe` — run without installing.
+- `Owl-AI-Setup-0.1.2-x64.exe` — install with a selectable destination and desktop shortcut.
+- `Owl-AI-Portable-0.1.2-x64.exe` — run without installing.
 - `win-unpacked/Owl AI.exe` — unpacked application for local verification.
 
 The builds are not code-signed. A release signing certificate is not configured in this workspace.
 
-The first launch asks for native and learning languages. No account is required for local study. Create a set using its name, description and languages. Then open the set and choose Add cards to enter words or import a file, preview them, and choose Save cards. The daily queue uses active sets matching the selected languages. Change the new-word goal and review direction in Settings.
+The first launch asks for native and learning languages. No account is required for local study. Create a set using its name, description and languages. Then open the set and choose Add cards. Enter a word and translation and choose Save cards to save immediately; the fields clear and the screen stays open for your next word. AI and imported cards use a preview and Save selected cards; this also keeps the screen open. The daily queue uses active sets matching the selected languages. Change the new-word goal and review direction in Settings.
 
 ## Implemented
 

@@ -8,3 +8,5 @@
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 .create-layout.single-panel{display:block;max-width:880px}.single-panel>.panel{width:100%}.google-sign-in{margin-top:24px}.google-letter{font-size:20px;font-weight:700;color:#4285f4}
+
+.card-entry-fields{border:0;padding:0;margin:0;min-width:0}

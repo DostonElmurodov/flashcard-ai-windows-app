@@ -19,9 +19,10 @@ try {
  assert.equal(await page.getByText('MAKE IT YOURS',{exact:true}).count(),0);
  await page.getByLabel('Word or phrase',{exact:true}).fill('journey');
  await page.getByLabel('Translation',{exact:true}).fill('путешествие');
- await page.getByRole('button',{name:'Add to preview'}).click();
+ assert.equal(await page.getByRole('button',{name:'Add to preview'}).count(),0);
  await page.getByRole('button',{name:'Save cards',exact:true}).click();
- await page.getByRole('button',{name:'Start today’s practice'}).waitFor();
+ await page.waitForFunction(()=>document.querySelector('input[placeholder="Something worth remembering"]')?.value==='');
+ assert.equal(await page.getByText('ADD YOUR CARDS',{exact:true}).count(),1,'Saving must leave card entry open');
  snapshot=await page.evaluate(()=>window.owl.snapshot());
  assert.equal(snapshot.decks.length,1);assert.equal(snapshot.words.length,1);assert.equal(snapshot.words[0].deckId,snapshot.decks[0].id);
  const deckId=snapshot.decks[0].id,wordId=snapshot.words[0].id;
@@ -35,8 +36,9 @@ try {
  await page.getByRole('button',{name:'Paste text',exact:true}).click();
  await page.getByPlaceholder('hello — привет\nthank you — спасибо').fill('airport — аэропорт');
  await page.getByRole('button',{name:'Preview cards',exact:true}).click();
- await page.getByRole('button',{name:'Save cards',exact:true}).click();
- await page.getByRole('button',{name:'Start today’s practice'}).waitFor();
+ await page.getByRole('button',{name:'Save selected cards',exact:true}).click();
+ await page.waitForFunction(()=>!document.querySelector('.draft-area'));
+ assert.equal(await page.getByText('ADD YOUR CARDS',{exact:true}).count(),1);
  snapshot=await page.evaluate(()=>window.owl.snapshot());
  assert.equal(snapshot.decks[0].id,deckId);assert.equal(snapshot.decks[0].name,'Travel words');
  assert.equal(snapshot.words.length,2);assert.ok(snapshot.words.some(word=>word.id===wordId));
