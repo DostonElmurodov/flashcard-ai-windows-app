@@ -6,6 +6,7 @@ try{
  const page=await app.firstWindow();await page.getByRole('button',{name:'Make room for discovery'}).click();await page.getByRole('button',{name:'Settings',exact:true}).click();
  assert.ok(await page.getByRole('checkbox',{name:'Study reminders',exact:true}).isChecked());
  assert.ok(await page.getByRole('checkbox',{name:'Open when Windows starts',exact:true}).isChecked());
+ assert.ok(await page.getByRole('checkbox',{name:'Keep running in the system tray',exact:true}).isChecked());
  await page.getByRole('checkbox',{name:'Study reminders',exact:true}).uncheck();
  assert.equal(await page.getByLabel('Start reminder time hour',{exact:true}).count(),0);
  await page.getByRole('checkbox',{name:'Study reminders',exact:true}).check();
@@ -30,5 +31,7 @@ try{
  assert.equal((await page.evaluate(()=>window.owl.snapshot())).settings.reminderStart,'00:00');
  await page.getByLabel('Start reminder time AM or PM',{exact:true}).selectOption('PM');await page.getByRole('button',{name:'Save preferences'}).click();
  assert.equal((await page.evaluate(()=>window.owl.snapshot())).settings.reminderStart,'12:00');
- console.log('PASS: reminders reveal 08:00–20:00, match Windows time format, edits persist, small window fits.');
+ assert.ok(await app.evaluate(({BrowserWindow})=>{const win=BrowserWindow.getAllWindows()[0];win.close();return !win.isDestroyed()&&!win.isVisible();}),'Closing the window should keep the app running in the tray');
+ await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].show());
+ console.log('PASS: enabled defaults, reminder time formats, saved settings, and closing to tray.');
 }finally{await app.close();}
