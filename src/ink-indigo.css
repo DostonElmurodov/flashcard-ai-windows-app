@@ -29,6 +29,7 @@
 .appearance-card small{display:block;font-size:11px;line-height:1.4;color:var(--muted)}
 .accent-label{font-size:12px;font-weight:600;margin:16px 0 9px}
 .reminder-window{display:grid;gap:12px;margin-bottom:14px}
+.settings-grid>.error{grid-column:1/-1}
 .time-field{border:0;padding:0;margin:0;min-width:0}
 .time-field legend{font-size:12px;font-weight:600;padding:0;margin-bottom:7px}
 .time-parts{display:flex;align-items:center;gap:6px;max-width:280px}
