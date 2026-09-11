@@ -97,6 +97,10 @@
 .page-heading h1{font-size:23px;margin-bottom:4px}
 .heading-actions{display:flex;align-items:center;gap:9px;margin-left:auto;flex-shrink:0}
 .heading-actions .small-avatar{width:30px;height:30px}
+.page-heading-leading{display:flex;align-items:center;gap:14px;min-width:0}
+.back-button{display:inline-flex;align-items:center;gap:5px;padding:7px 9px;min-height:32px;border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--ink);background:var(--surface);flex-shrink:0}
+.back-button:hover{background:var(--soft);border-color:var(--accent)}
+@media(pointer:coarse){.back-button{min-height:44px}}
 .help-button{display:inline-flex;align-items:center;gap:5px;min-height:32px;padding:6px 8px;border-radius:7px;font-size:12px;color:var(--muted)}
 .help-button:hover,.help-button[aria-current=page]{background:var(--soft);color:var(--accent)}
 .help-page{display:grid;gap:16px}

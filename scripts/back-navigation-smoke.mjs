@@ -1,0 +1,31 @@
+import {_electron as electron} from 'playwright';
+import assert from 'node:assert/strict';
+import {resolve} from 'node:path';
+const app=await electron.launch({args:['.'],env:{...process.env,OWL_TEST_DATA_DIR:resolve('test-results/back-'+Date.now())}});
+try{
+ const page=await app.firstWindow();
+ const back=()=>page.getByRole('button',{name:'Back',exact:true});
+ await page.getByRole('button',{name:'Make room for discovery'}).click();
+ const id=await page.evaluate(async()=>{const d=await window.owl.saveDeck({name:'Travel'});await window.owl.addWords(d.id,[{word:'journey',translation:'путешествие'}]);return d.id;});
+ await page.reload();await page.getByLabel('Filter set').selectOption(id);await page.getByPlaceholder('Find a word…').fill('journey');
+ assert.equal(await back().count(),0);
+ await page.getByRole('button',{name:'Help',exact:true}).click();await back().click();
+ assert.equal(await page.getByLabel('Filter set').inputValue(),id);assert.equal(await page.getByPlaceholder('Find a word…').inputValue(),'journey');
+ await page.getByRole('button',{name:'Add cards',exact:true}).click();await back().click();
+ assert.equal(await page.getByLabel('Filter set').inputValue(),id);assert.equal(await page.getByPlaceholder('Find a word…').inputValue(),'journey');
+ await page.getByRole('button',{name:'My sets',exact:true}).click();assert.equal(await back().count(),0);
+ await page.getByRole('button',{name:'Options for Travel',exact:true}).click();await page.getByRole('button',{name:'Edit set',exact:true}).click();
+ await page.getByRole('button',{name:'Help',exact:true}).click();await back().click();
+ assert.equal(await page.getByLabel('Set name',{exact:true}).inputValue(),'Travel');await back().click();
+ await page.getByRole('heading',{name:'My flashcard sets',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Create a set',exact:true}).first().click();await back().click();
+ await page.getByRole('heading',{name:'My flashcard sets',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Help',exact:true}).click();await page.locator('.help-page').getByRole('button',{name:'Create a set',exact:true}).click();await back().click();
+ await page.getByRole('heading',{name:'Help',exact:true}).waitFor();await back().click();
+ await page.getByRole('heading',{name:'My flashcard sets',exact:true}).waitFor();
+ await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setSize(940,760));
+ await page.getByRole('button',{name:'Create a set',exact:true}).first().click();
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth));
+ await page.screenshot({path:'test-results/back-create.png',fullPage:true});
+ console.log('PASS: Back restores page, selected set and search; nested Help/editor history works; primary pages have no Back; small layout fits.');
+}finally{await app.close();}
