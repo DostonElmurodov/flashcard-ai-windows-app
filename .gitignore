@@ -5,5 +5,6 @@ release/
 *.log
 test-results/
 build/google-oauth.local.json
+build/client_secret_*.json
 .env
 .env.*
