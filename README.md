@@ -33,6 +33,14 @@ The first launch asks for native and learning languages. No account is required 
 
 OCR downloads the selected learning language's recognition data on first use, then caches it under the app data directory. The selected file itself is processed locally. Windows speech voices are installed in Windows Settings, not downloaded by this app.
 
+### Spelling practice
+
+In Review, turn on **Spelling practice** to see the native translation and type the word you’re learning. The mode starts off and is remembered in the current workspace. **Check** or Enter shows green **Correct** or red **Try again** feedback; editing clears it. Matching ignores case and extra whitespace and accepts canonically equivalent Unicode, but accents and punctuation must match.
+
+Checking never reveals, grades, or advances a card. Use **Show answer**, then **Again**, **Hard**, **Good**, or **Easy** as usual. Input resets on the next card or when toggling the mode. Your saved review direction and schedules stay unchanged. While typing, Space and 1–4 enter characters.
+
+Run `npm run test:spelling-ui` for the real React Review flow, with screenshots under `test-results/spelling-practice/`.
+
 ### Second language in review
 
 In Settings, turn on **Second language in review**, choose a language, and save preferences. Cancelling the picker keeps it off; switching it off clears the choice. Your native language is excluded, and changing the native language to the selected secondary language clears it. Native and learning languages, cards, and review schedules remain unchanged.

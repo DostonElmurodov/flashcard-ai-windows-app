@@ -30,6 +30,7 @@ const bridge={
  resolve:(index:number,translation:string,explanation:string)=>calls[index].resolve({language_code:calls[index].language,translation,explanation}),
  reject:(index:number)=>calls[index].reject(new Error('Connection lost. Please try again.')),
  setSecondary:(value:string|null)=>{data={...data,settings:{...data.settings,secondaryReviewLanguage:value}};publish();},
+ updateWord:(id:string,word:string)=>{data={...data,words:data.words.map(row=>row.id===id?{...row,word}:row)};publish();},
  savedDrafts:()=>savedDrafts,
  snapshot:()=>data
 };
