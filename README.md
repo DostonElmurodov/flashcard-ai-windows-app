@@ -75,6 +75,7 @@ npm run test:imports
 npm run test:integration
 npm run test:ui
 npm run test:google
+npm run test:google-ui
 node scripts/security-smoke.mjs
 npm run package
 npm run installer

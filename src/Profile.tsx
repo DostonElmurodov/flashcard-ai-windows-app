@@ -5,7 +5,8 @@ import type { AccountState } from '../shared/types';
 import { Modal,errorMessage } from './components';
 export default function Profile({account,onChanged,notify}:{account:AccountState;onChanged:()=>Promise<void>;notify:(message:string)=>void}){
  const owl=useOwl();
- useEffect(()=>()=>{void owl.cancelGoogleLogin().catch(()=>{});},[owl]);
+ // Cancellation is unscoped: only leaving the profile cancels, not refreshing its IPC bridge.
+ useEffect(()=>()=>{void owl.cancelGoogleLogin().catch(()=>{});},[]);
  const [googlePending,setGooglePending]=useState(false),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[deleting,setDeleting]=useState(false),[resolving,setResolving]=useState(false);
  const run=async(fn:()=>Promise<void>)=>{setBusy(true);setError('');try{await fn();}catch(e){setError(errorMessage(e));}finally{try{await onChanged();}catch(e){setError(errorMessage(e));}setBusy(false);}};
  const premium=['premium','trial','grace'].includes(account.entitlement?.status??'');
