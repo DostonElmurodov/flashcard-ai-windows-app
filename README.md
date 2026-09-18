@@ -23,7 +23,7 @@ The first launch asks for native and learning languages. No account is required 
 - Local SQLite persistence, migrations, CSV export, whole-database backup/restore. Logout and account deletion preserve local cards.
 - FSRS-6 with the iOS project's 21 weights, learning/relearning steps, four grades, retention preference, independent forward/reverse state and daily new-word limits.
 - Review shortcuts: Space reveals the answer; 1–4 grade it. Ctrl+F opens vocabulary search.
-- Optional second language in revealed answers, with an AI translation and short explanation cached locally for repeat display.
+- Optional second language in revealed answers, with an AI translation cached locally for repeat display.
 - Manual cards, AI translation, pasted text, CSV/TSV/TXT, PDF text, image OCR and scanned PDF OCR. Words/Pairs/Auto modes and editable previews. Imports above 2,000 unique cards are rejected explicitly. Files are limited to 20 MB and PDFs to 100 pages.
 - Speech through installed Windows voices; repeated playback alternates normal and slow speed.
 - Configurable local reminders while running, optional tray background mode and opt-in Windows startup.
@@ -39,7 +39,7 @@ In Settings, turn on **Second language in review**, choose a language, and save 
 
 After **Translate with AI**, the preview displays the second-language translation before you save the card. Loading or retrying it does not block saving. Editing the source word hides its old secondary translation.
 
-After **Show answer**, the card displays a compact flag, language name, translation, and explanation. The first uncached request uses the protected account API and requires sign-in plus an active shared subscription or server-enabled test mode. It uses the card's source languages. Loading, errors, and retries never block grading, and there is no secondary audio control.
+After **Show answer**, the card displays a compact flag, language name, and translation, without an explanation. The first uncached request uses the protected account API and requires sign-in plus an active shared subscription or server-enabled test mode. It uses the card's source languages. Loading, errors, and retries never block grading, and there is no secondary audio control.
 
 Successful results live in a separate SQLite cache scoped to the API origin, account workspace, source word, source languages, and secondary language. Cached content remains readable offline without another AI request. Failed or malformed responses are not cached, and results arriving after a card, setting, or account change cannot replace the current content. The cache is included in that workspace's local backup; it is not synced as a new word.
 

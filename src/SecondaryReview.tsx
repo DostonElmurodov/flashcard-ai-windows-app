@@ -15,6 +15,6 @@ export default function SecondaryReview({wordId,preview,language,accessRevision}
  },[owl,wordId,preview?.word,preview?.native,preview?.learning,language,accessRevision,retry]);
  return <section className="secondary-review" aria-label={`Second language: ${languageName(language)}`} aria-live="polite">
   <div className="secondary-review-label"><LanguageFlag code={language}/><span>{languageName(language)}</span></div>
-  {content?<><p className="secondary-translation" lang={language} dir="auto">{content.translation}</p><p className="secondary-explanation" lang={language} dir="auto">{content.explanation}</p></>:error?<><p className="secondary-error">{error}</p><button className="text-button" onClick={()=>setRetry(value=>value+1)}>Retry translation</button></>:<p className="secondary-loading" role="status">Loading translation…</p>}
+  {content?<><p className="secondary-translation" lang={language} dir="auto">{content.translation}</p></>:error?<><p className="secondary-error">{error}</p><button className="text-button" onClick={()=>setRetry(value=>value+1)}>Retry translation</button></>:<p className="secondary-loading" role="status">Loading translation…</p>}
  </section>;
 }
