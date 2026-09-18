@@ -25,6 +25,7 @@ try{
   const {Api}=require(modulePath),fs=require('node:fs'),assert=require('node:assert/strict');
   const path=require('node:path').join(data,'fixture-account.enc');
   const api=new Api(path,()=>origin);
+  await assert.rejects(api.login('missing@example.test','fixture-password'),/server must be updated/i);
   const state=await api.loginGoogle(async()=> 'test-only-id-token');
   assert.equal(state.profile.provider,'google');assert.equal(state.access_token,undefined);
   assert.ok(!fs.readFileSync(path).includes(Buffer.from('test-only-access-token')));
