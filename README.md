@@ -53,6 +53,14 @@ Google setup and release requirements: [Google sign-in](docs/google-sign-in.md).
 
 Subscription status refreshes automatically. The manual refresh and Apple management buttons are hidden in Profile.
 
+### Shared test mode
+
+The backend setting `TestMode__Enabled=true` enables test mode for updated desktop and iOS clients. The desktop app reads the public `GET /owlai/config/feature-flags` response (`{"test_mode":true}`) without signing in, on launch, foreground focus, and every minute. The request bypasses HTTP caching. Test mode removes purchase promotion and the backend's commercial word/AI quotas; online account operations still require authentication and retain ownership checks. Actual subscription records are unchanged.
+
+The last successful boolean is saved beside `account.enc` in `account.enc.features.json`, scoped to the API origin, so standalone launches and offline restarts retain the same server's known mode. A new server defaults to normal mode. Missing, malformed, or failed responses never enable test mode; they preserve only a valid known value for the same server. Setting `TestMode__Enabled=false` and receiving a successful response restores the normal Premium UI and access rules. An offline client retains its cached display until it reconnects; the server always enforces its current rules.
+
+Existing Windows installations need a rebuilt client containing this feature; a server setting alone cannot update their UI. On a Windows build machine, run `npm ci` and `npm run installer`, then distribute the resulting `release/Owl-AI-Setup-<version>-x64.exe`. Users install that build and reopen Owl AI. This source change does not publish a release or change the application version.
+
 ## Development
 
 Use Node.js 22.12 or later with npm. Dependencies are locked in `package-lock.json`.

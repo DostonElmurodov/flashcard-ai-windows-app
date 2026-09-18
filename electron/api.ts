@@ -1,13 +1,16 @@
 import { safeStorage } from 'electron';
 import { existsSync,readFileSync,writeFileSync,renameSync,unlinkSync } from 'node:fs';
 import type { AccountState,Profile,Entitlement,Draft,CatalogDeck } from '../shared/types';
+import {FeatureFlags} from './feature-flags';
 interface Session {access_token:string;access_token_expires_at:string;refresh_token:string;profile:Profile}
 export class Api {
+ private featureFlags:FeatureFlags;
  private session:Session|null=null; private entitlement:Entitlement|null=null; private generation=0; private refreshing:Promise<void>|null=null;
  constructor(private tokenPath:string,private base:()=>string){
+  this.featureFlags=new FeatureFlags(tokenPath+'.features.json',base);
   if(existsSync(tokenPath)&&safeStorage.isEncryptionAvailable())try{const stored=JSON.parse(safeStorage.decryptString(readFileSync(tokenPath)));if(stored.base===this.base())this.session=stored.session;}catch{/* An unreadable token never grants access. */}
  }
- state():AccountState{return {profile:this.session?.profile??null,entitlement:this.entitlement};}
+ state():AccountState{return {profile:this.session?.profile??null,entitlement:this.entitlement,testMode:this.featureFlags.testMode};}
  async loginGoogle(authorize:()=>Promise<string|null>,signal?:AbortSignal){
   const generation=++this.generation;
   const idToken=await authorize();
@@ -32,7 +35,7 @@ export class Api {
   this.refreshing=(async()=>{const response=await this.send('/owlai/account/session/refresh','POST',{refresh_token:session.refresh_token});if(generation!==this.generation)return;if(response.status===401){this.clear();throw new Error('Your session expired. Please sign in again.');}const renewed=await this.result<Session>(response);if(generation===this.generation)this.save(renewed);})().finally(()=>{this.refreshing=null;});return this.refreshing;
  }
  async request<T>(path:string,method='POST',body?:unknown,signal?:AbortSignal):Promise<T>{if(!this.session)throw new Error('Sign in to your Owl AI account to continue.');const generation=this.generation;if(new Date(this.session.access_token_expires_at).getTime()<Date.now()+30000)await this.refresh();if(generation!==this.generation||!this.session)throw new Error('Your account session changed.');let response=await this.send(path,method,body,this.session.access_token,signal);if(response.status===401){await this.refresh();if(generation!==this.generation||!this.session)throw new Error('Your session expired.');response=await this.send(path,method,body,this.session.access_token,signal);}if(generation!==this.generation)throw new Error('Your account session changed.');return this.result<T>(response);}
- async refreshEntitlement(){const generation=this.generation;try{const ent=await this.request<Entitlement>('/owlai/account/entitlement','GET');if(generation===this.generation)this.entitlement=ent;return this.state();}catch(error){if(generation===this.generation)this.entitlement=null;throw error;}}
+ async refreshEntitlement(){await this.featureFlags.refresh();if(!this.session)return this.state();const generation=this.generation;try{const ent=await this.request<Entitlement>('/owlai/account/entitlement','GET');if(generation===this.generation)this.entitlement=ent;return this.state();}catch(error){if(generation===this.generation)this.entitlement=null;throw error;}}
  async logout(){const refresh=this.session?.refresh_token;this.clear();if(refresh)try{await this.send('/owlai/account/session/logout','POST',{refresh_token:refresh});}catch{/* Local logout succeeds offline; server session expires normally. */}}
  async deleteAccount(){await this.request('/owlai/account','DELETE');this.clear();}
  async translate(word:string,native:string,learning:string):Promise<Draft>{const result=await this.request<any>('/owlai/account/ai/word-detail','POST',{word,native_language:native,learning_language:learning});const translation=result.translations?.join('; ')??result.translation;if(typeof translation!=='string'||!translation.trim())throw new Error('No translation returned. Try a different word.');return {word:result.corrected_word??word,translation,pronunciation:result.pronunciation,examples:result.examples};}
