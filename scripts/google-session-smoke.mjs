@@ -8,7 +8,7 @@ const modulePath=resolve(data,'api.cjs');
 await build({entryPoints:['electron/api.ts'],outfile:modulePath,bundle:true,platform:'node',format:'cjs',external:['electron']});
 let received=0;
 const server=createServer(async(req,res)=>{
- if(req.url!=='/owlai/account/google/session'||req.method!=='POST'){res.writeHead(404);res.end();return;}
+ if(req.url!=='/owlai/account/desktop/google/session'||req.method!=='POST'){res.writeHead(404);res.end();return;}
  let raw='';for await(const chunk of req)raw+=chunk;
  if(JSON.parse(raw).id_token!=='test-only-id-token'){res.writeHead(400);res.end();return;}
  received++;await new Promise(resolve=>setTimeout(resolve,80));

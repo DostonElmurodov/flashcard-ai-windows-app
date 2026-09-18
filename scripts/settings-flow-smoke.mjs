@@ -49,8 +49,10 @@ try {
  await page.getByRole('button',{name:'Save preferences'}).click();
  await page.getByRole('button',{name:'Discover Premium'}).click();
  await page.getByRole('button',{name:'Continue with Google',exact:true}).waitFor();
+ assert.equal(await page.getByRole('button',{name:'Create account',exact:true}).count(),0,'Desktop must not offer account creation');
+ await page.getByRole('heading',{name:'Your iPhone account, on Windows.'}).waitFor();
  assert.equal(await page.getByRole('button',{name:'Refresh subscription'}).count(),0);
  assert.equal(await page.getByRole('button',{name:'Manage Apple subscription'}).count(),0);
  await page.screenshot({path:'test-results/profile-updated.png',fullPage:true});
- console.log('PASS: separate set/card flows, hidden connection and subscription actions, Google account button.');
+ console.log('PASS: separate set/card flows, hidden connection and subscription actions, iPhone-first existing-account login and Google account button.');
 } finally {await app.close();}

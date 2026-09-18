@@ -4,7 +4,7 @@ An Electron desktop app for local vocabulary sets, FSRS study, imports and accou
 
 ## Run the app
 
-Windows x64 builds are in `release/`:
+Previously built Windows x64 artifacts are in `release/` (0.1.27 does not include the new account-sync source changes):
 
 - `Owl-AI-Setup-0.1.27-x64.exe` — install with a selectable destination and desktop shortcut.
 - `Owl-AI-Portable-0.1.27-x64.exe` — run without installing.
@@ -26,7 +26,7 @@ The first launch asks for native and learning languages. No account is required 
 - Manual cards, AI translation, pasted text, CSV/TSV/TXT, PDF text, image OCR and scanned PDF OCR. Words/Pairs/Auto modes and editable previews. Imports above 2,000 unique cards are rejected explicitly. Files are limited to 20 MB and PDFs to 100 pages.
 - Speech through installed Windows voices; repeated playback alternates normal and slow speed.
 - Configurable local reminders while running, optional tray background mode and opt-in Windows startup.
-- Google sign-in/account creation through the system browser (requires desktop OAuth release configuration), email account registration/login/logout/deletion, encrypted account credentials, automatic session refresh and server-authoritative Premium status.
+- Existing iPhone account login through Google system-browser OAuth or email, logout/deletion, encrypted account credentials, automatic session refresh and server-authoritative Premium status.
 - Account catalog search/import, publishing and unpublishing sets. Published sets require backend approval before they appear in the public catalog.
 - An existing Apple subscription can be linked to the same account on iPhone and used on Windows, using the accompanying backend/iOS changes.
 
@@ -43,11 +43,11 @@ The completed sharing flow in code is:
 3. Sign in to the same account on Windows. Premium is refreshed from the server.
 4. Apple renewals, expiry, grace and refunds update the account's shared entitlement. Existing valid sources are considered together.
 
-The current desktop app does not sell a second subscription. Apple remains the payment source. Direct Windows checkout and cloud synchronization of words are outside this release. Account AI requires verified shared trial/Premium/grace; free local study does not.
+The current desktop app does not sell a second subscription. Apple remains the payment source. Direct Windows checkout is not included. Account-scoped collection/card/review-schedule sync is implemented in the current source; see `docs/account-sync.md` for its rollout and validation requirements. Account AI requires verified shared trial/Premium/grace; free local study does not.
 
 Backend contract and production configuration: `../mavrylo/docs/shared-subscription-api.md`. Required new production settings are `AccountAi__DailyQuota` and `AccountAi__RequestsPerMinute` (initial recommended values 200 and 30). Keep existing App Attest, StoreKit, JWT and provider protection enabled.
 
-The Connection section is hidden in Settings. The existing internal configuration still accepts an HTTPS origin or loopback HTTP for development tests. Changing servers clears account credentials. There is no desktop App Attest bypass, bundled provider key, or local Premium switch.
+The Connection section is hidden in Settings. The existing internal configuration still accepts an HTTPS origin or loopback HTTP for development tests. Sign out before changing servers. There is no desktop App Attest bypass, bundled provider key, or local Premium switch.
 
 Google setup and release requirements: [Google sign-in](docs/google-sign-in.md). The desktop OAuth client ID must be configured at build time and added to the backend audience allowlist. No real Google sign-in has been verified in this workspace yet.
 
@@ -80,7 +80,7 @@ npm run package
 npm run installer
 ```
 
-The integration script expects the companion Development backend on `http://127.0.0.1:5289` and uses only generated test accounts. It does not use production credentials. Smoke scripts create isolated profiles under `test-results`. `OWL_TEST_DATA_DIR` overrides the app data location for isolated testing; `OWL_TEST_EXECUTABLE` lets `scripts/smoke.mjs` target an unpacked packaged executable.
+The integration script expects the companion Development backend on `http://127.0.0.1:5289` and an existing iOS-enrolled test account in `OWL_TEST_ACCOUNT_EMAIL`/`OWL_TEST_ACCOUNT_PASSWORD`. It creates and removes only its own test set, never registers or deletes an account. `node scripts/account-sync-smoke.mjs` verifies real Electron account switching against an isolated local HTTP fixture without credentials. Smoke scripts create isolated profiles under `test-results`. `OWL_TEST_DATA_DIR` overrides the app data location for isolated testing; `OWL_TEST_EXECUTABLE` lets `scripts/smoke.mjs` target an unpacked packaged executable.
 
 ## Layout
 
@@ -94,7 +94,7 @@ The integration script expects the companion Development backend on `http://127.
 - `shared/types.ts` — renderer/main contracts and languages.
 - `tests/`, `scripts/*smoke.mjs`, `scripts/integration.mjs` — unit, real-window, file and HTTP checks.
 
-Data lives under Electron's per-user application data directory (`owl-ai-windows`): `owl.sqlite`, encrypted `account.enc`, and the OCR cache. Backups contain cards, review history and settings, never account credentials. Restore preserves the currently selected API origin and startup preference.
+Data lives under Electron's per-user application data directory (`owl-ai-windows`): guest `owl.sqlite`, per-origin/account `accounts/<sha256>.sqlite`, encrypted `account.enc`, and the OCR cache. Backups contain cards, review history and settings, never account credentials. Restore preserves the currently selected API origin and startup preference.
 
 ## Validation limits
 

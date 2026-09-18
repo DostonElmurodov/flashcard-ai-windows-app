@@ -4,10 +4,11 @@ import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { Deck,Draft,Word,Settings,Snapshot,ReviewCard } from '../shared/types';
 import { newCard,scheduleCard,studyDayStart } from './scheduler';
+import type {SyncRecord} from './sync';
 const defaults:Settings={nativeLanguage:'ru',learningLanguage:'en-us',theme:'light',accent:'indigo',darkAccent:'teal',dailyGoal:5,direction:'forward',dayStart:0,retention:.9,reminders:true,reminderTime:'19:00',reminderStart:'08:00',reminderEnd:'20:00',reminderCount:10,keepInTray:true,launchAtLogin:true,apiBase:'https://api.mavrylo.com',onboardingComplete:false};
 export class Store {
  private constructor(private db:Database,private path:string){}
- static async open(path:string):Promise<Store>{
+ static async open(path:string,owner='guest'):Promise<Store>{
   mkdirSync(dirname(path),{recursive:true});
   const SQL=await initSqlJs({locateFile:()=>require.resolve('sql.js/dist/sql-wasm.wasm')});
   const existed=existsSync(path); const db=new SQL.Database(existed?readFileSync(path):undefined);
@@ -15,7 +16,12 @@ export class Store {
   const version=Number(db.exec('PRAGMA user_version')[0]?.values[0]?.[0]??0);
   if(version>1)throw new Error('This database belongs to a newer Owl AI. Update the app before opening it.');
   if(version<1){if(existed)copyFileSync(path,path+'.pre-migration.bak');db.run(`BEGIN; CREATE TABLE IF NOT EXISTS decks(id TEXT PRIMARY KEY,data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS words(id TEXT PRIMARY KEY,deck_id TEXT NOT NULL REFERENCES decks(id) ON DELETE CASCADE,data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS reviews(attempt TEXT PRIMARY KEY,word_id TEXT NOT NULL,direction TEXT NOT NULL,at TEXT NOT NULL,result TEXT NOT NULL); CREATE TABLE IF NOT EXISTS settings(id INTEGER PRIMARY KEY CHECK(id=1),data TEXT NOT NULL); PRAGMA user_version=1; COMMIT;`);}
-  db.run('PRAGMA foreign_keys=ON'); const store=new Store(db,path);store.activateOnlyDeck();store.migrateReminderDefaults();store.persist();return store;
+  db.run('PRAGMA foreign_keys=ON');
+  db.run('CREATE TABLE IF NOT EXISTS sync_state(id INTEGER PRIMARY KEY CHECK(id=1),owner TEXT NOT NULL,baseline TEXT NOT NULL)');
+  const store=new Store(db,path),saved=store.rows<{owner:string}>('SELECT owner FROM sync_state WHERE id=1')[0];
+  if(saved&&saved.owner!==owner){db.close();throw new Error('This database belongs to a different account.');}
+  if(!saved)db.run('INSERT INTO sync_state VALUES(1,?,?)',[owner,'[]']);
+  store.activateOnlyDeck();store.migrateReminderDefaults();store.persist();return store;
  }
  private rows<T>(sql:string,params:SqlValue[]=[]):T[]{const stmt=this.db.prepare(sql);try{stmt.bind(params);const result:T[]=[];while(stmt.step())result.push(stmt.getAsObject() as T);return result;}finally{stmt.free();}}
  private persist(){const tmp=this.path+'.tmp';writeFileSync(tmp,Buffer.from(this.db.export()));renameSync(tmp,this.path);}
@@ -42,7 +48,7 @@ export class Store {
   const activityMap=new Map<string,number>();for(const log of logs){const day=studyDayStart(new Date(log.at),settings.dayStart).toLocaleDateString('en-CA');activityMap.set(day,(activityMap.get(day)??0)+1);}
   let streak=0;const cursor=studyDayStart(now,settings.dayStart);if(!activityMap.has(cursor.toLocaleDateString('en-CA')))cursor.setDate(cursor.getDate()-1);
   while(activityMap.has(cursor.toLocaleDateString('en-CA'))){streak++;cursor.setDate(cursor.getDate()-1);}
-  return {decks,words,settings,reviewedToday:logs.filter(x=>x.at>=start).length,streak,activity:[...activityMap].map(([date,count])=>({date,count})).slice(0,100)};
+  return {workspaceId:this.owner(),scopeRevision:this.owner(),decks,words,settings,reviewedToday:logs.filter(x=>x.at>=start).length,streak,activity:[...activityMap].map(([date,count])=>({date,count})).slice(0,100)};
  }
  saveDeck(input:Partial<Deck>&{name:string}):Deck {
   input=Object.fromEntries(Object.entries(input).filter(([,value])=>value!==undefined)) as typeof input;
@@ -65,9 +71,9 @@ export class Store {
  queue(deckId?:string,now=new Date()):Word[]{
   const {words,decks,settings}=this.snapshot(now);const start=studyDayStart(now,settings.dayStart);const end=new Date(start);end.setDate(end.getDate()+1);
   const introduced=new Set(this.rows<{word_id:string,result:string}>('SELECT word_id,result FROM reviews WHERE direction=? AND at>=?',[settings.direction,start.toISOString()]).filter(x=>JSON.parse(x.result).firstIntroduction).map(x=>x.word_id));
-  let remaining=Math.max(0,settings.dailyGoal-introduced.size);const active=new Set(decks.filter(x=>x.active&&(!deckId||x.id===deckId)&&x.nativeLanguage===settings.nativeLanguage&&x.learningLanguage===settings.learningLanguage).map(x=>x.id));
+  let remaining=Math.max(0,settings.dailyGoal-introduced.size);const active=new Set(decks.filter(x=>x.active&&(!deckId||x.id===deckId)).map(x=>x.id));
   const card=(w:Word)=>settings.direction==='forward'?w.card:w.reverse;
-  const candidates=words.filter(x=>active.has(x.deckId)).sort((a,b)=>new Date(card(a).due).getTime()-new Date(card(b).due).getTime());
+  const candidates=words.filter(x=>{const d=decks.find(d=>d.id===x.deckId);return active.has(x.deckId)&&x.translation.trim().length>0&&(x.nativeLanguage??d?.nativeLanguage)===settings.nativeLanguage&&(x.learningLanguage??d?.learningLanguage)===settings.learningLanguage;}).sort((a,b)=>new Date(card(a).due).getTime()-new Date(card(b).due).getTime());
   const due=candidates.filter(w=>{const c=card(w);return c.state!==0&&new Date(c.due)<(c.state===2?end:now);});
   const fresh=candidates.filter(w=>card(w).state===0).reverse().filter(()=>remaining-->0);
   return [...due,...fresh];
@@ -81,9 +87,23 @@ export class Store {
   this.transaction(()=>{this.db.run('UPDATE words SET data=? WHERE id=?',[JSON.stringify(word),id]);this.db.run('INSERT INTO reviews VALUES(?,?,?,?,?)',[attempt,id,settings.direction,now.toISOString(),JSON.stringify({word,firstIntroduction:previous.reps===0})]);});return word;
  }
  backup(destination:string){if(destination.toLowerCase()===this.path.toLowerCase())throw new Error('Choose a different location for the backup.');this.persist();copyFileSync(this.path,destination);}
+ preserveBeforeCloudReset(){this.backup(this.path+'.before-cloud-'+Date.now()+'.sqlite');}
+ owner():string {return this.rows<{owner:string}>('SELECT owner FROM sync_state WHERE id=1')[0]?.owner??'guest';}
+ syncBaseline():SyncRecord[]{return JSON.parse(this.rows<{baseline:string}>('SELECT baseline FROM sync_state WHERE id=1')[0]?.baseline??'[]');}
+ applySync(decks:Deck[],words:Word[],baseline:SyncRecord[]){
+  this.transaction(()=>{
+   const deckIds=new Set(decks.map(d=>d.id)),wordIds=new Set(words.map(w=>w.id));
+   for(const d of decks)this.db.run('INSERT INTO decks VALUES(?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data',[d.id,JSON.stringify(d)]);
+   for(const w of words)this.db.run('INSERT INTO words VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET deck_id=excluded.deck_id,data=excluded.data',[w.id,w.deckId,JSON.stringify(w)]);
+   for(const w of this.rows<{id:string}>('SELECT id FROM words'))if(!wordIds.has(w.id)){this.db.run('DELETE FROM reviews WHERE word_id=?',[w.id]);this.db.run('DELETE FROM words WHERE id=?',[w.id]);}
+   for(const d of this.rows<{id:string}>('SELECT id FROM decks'))if(!deckIds.has(d.id))this.db.run('DELETE FROM decks WHERE id=?',[d.id]);
+   this.db.run('UPDATE sync_state SET baseline=? WHERE id=1',[JSON.stringify(baseline)]);this.activateOnlyDeck();
+  });
+ }
  async restore(source:string){
+
   const SQL=await initSqlJs({locateFile:()=>require.resolve('sql.js/dist/sql-wasm.wasm')});const candidate=new SQL.Database(readFileSync(source));
-  try{if(candidate.exec('PRAGMA integrity_check')[0]?.values[0]?.[0]!=='ok'||candidate.exec('PRAGMA user_version')[0]?.values[0]?.[0]!==1)throw new Error('Choose a valid Owl AI backup from this app version.');for(const table of ['decks','words','reviews','settings'])candidate.exec(`SELECT * FROM ${table} LIMIT 1`);const check=new Store(candidate,source);check.snapshot();check.activateOnlyDeck();const current=this.settings();const restored={...check.settings(),apiBase:current.apiBase,launchAtLogin:current.launchAtLogin,startupDefaultsVersion:1};candidate.run('INSERT OR REPLACE INTO settings VALUES(1,?)',[JSON.stringify(restored)]);copyFileSync(this.path,this.path+'.before-restore.bak');const tmp=this.path+'.restore.tmp';writeFileSync(tmp,Buffer.from(candidate.export()));renameSync(tmp,this.path);this.db.close();this.db=new SQL.Database(candidate.export());}finally{candidate.close();}
+  try{if(candidate.exec('PRAGMA integrity_check')[0]?.values[0]?.[0]!=='ok'||candidate.exec('PRAGMA user_version')[0]?.values[0]?.[0]!==1)throw new Error('Choose a valid Owl AI backup from this app version.');for(const table of ['decks','words','reviews','settings'])candidate.exec(`SELECT * FROM ${table} LIMIT 1`);const tables=candidate.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='sync_state'");const backupOwner=tables.length?candidate.exec('SELECT owner FROM sync_state WHERE id=1')[0]?.values[0]?.[0]:'guest';if(backupOwner!==this.owner())throw new Error('This backup belongs to a different account or local workspace. Switch to its original workspace before restoring.');candidate.run("CREATE TABLE IF NOT EXISTS sync_state(id INTEGER PRIMARY KEY CHECK(id=1),owner TEXT NOT NULL,baseline TEXT NOT NULL)");candidate.run("INSERT OR IGNORE INTO sync_state VALUES(1,'guest','[]')");const check=new Store(candidate,source);check.snapshot();check.activateOnlyDeck();const current=this.settings();const restored={...check.settings(),apiBase:current.apiBase,launchAtLogin:current.launchAtLogin,startupDefaultsVersion:1};candidate.run('INSERT OR REPLACE INTO settings VALUES(1,?)',[JSON.stringify(restored)]);copyFileSync(this.path,this.path+'.before-restore.bak');const tmp=this.path+'.restore.tmp';writeFileSync(tmp,Buffer.from(candidate.export()));renameSync(tmp,this.path);this.db.close();this.db=new SQL.Database(candidate.export());this.db.run('PRAGMA foreign_keys=ON');}finally{candidate.close();}
  }
  close(){this.persist();this.db.close();}
 }
