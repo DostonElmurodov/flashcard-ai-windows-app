@@ -7,7 +7,7 @@ import { resolve } from 'node:path';
 // Only external Google/API responses are fixtures; no real account is used.
 const data=resolve('test-results/google-login-ui-'+Date.now());
 mkdirSync(data,{recursive:true});
-const app=await electron.launch({args:['.'],env:{...process.env,OWL_TEST_DATA_DIR:data}});
+const app=await electron.launch({executablePath:process.env.OWL_TEST_EXECUTABLE,args:process.env.OWL_TEST_EXECUTABLE?[]:['.'],env:{...process.env,OWL_TEST_DATA_DIR:data}});
 try {
  const page=await app.firstWindow();
  await page.getByRole('button',{name:'Make room for discovery'}).click();
