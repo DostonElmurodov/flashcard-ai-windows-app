@@ -1,16 +1,10 @@
-import {readFileSync,writeFileSync,renameSync} from 'node:fs';
-
-interface CachedFlags {origin:string;testMode:boolean}
+interface ConfirmedFlags {origin:string;testMode:boolean}
 
 export class FeatureFlags {
- private cached:CachedFlags|null=null;
+ private confirmed:ConfirmedFlags|null=null;
  private pending=new Map<string,Promise<void>>();
- constructor(private path:string,private base:()=>string,private request:typeof fetch=fetch){
-  try{
-   const value=JSON.parse(readFileSync(path,'utf8'));
-   if(typeof value?.origin==='string'&&typeof value?.testMode==='boolean')this.cached=value;
-  }catch{/* A missing or unreadable cache never enables test mode. */}
- }
+ // Legacy cache files are intentionally ignored: only a live server response can grant test access.
+ constructor(_legacyCachePath:string,private base:()=>string,private request:typeof fetch=fetch){}
  private origin():string|null{
   try{
    const url=new URL(this.base());
@@ -19,19 +13,21 @@ export class FeatureFlags {
    return url.origin;
   }catch{return null;}
  }
- get testMode(){const origin=this.origin();return origin!==null&&this.cached?.origin===origin&&this.cached.testMode;}
+ get testMode(){const origin=this.origin();return origin!==null&&this.confirmed?.origin===origin&&this.confirmed.testMode;}
  async refresh():Promise<void>{
-  const origin=this.origin();if(!origin)return;
+  const origin=this.origin();if(!origin){this.confirmed=null;return;}
   const pending=this.pending.get(origin);if(pending)return pending;
   const refresh=(async()=>{
    try{
     const response=await this.request(new URL('/owlai/config/feature-flags',origin),{method:'GET',cache:'no-store',redirect:'error',signal:AbortSignal.timeout(10000)});
-    if(!response.ok)return;
+    if(!response.ok)throw new Error('Feature flags unavailable');
     const value=await response.json();
-    if(typeof value?.test_mode!=='boolean'||this.origin()!==origin)return;
-    this.cached={origin,testMode:value.test_mode};
-    const tmp=this.path+'.tmp';writeFileSync(tmp,JSON.stringify(this.cached));renameSync(tmp,this.path);
-   }catch{/* Keep only the last successful value for this server when offline. */}
+    if(this.origin()!==origin)return;
+    if(typeof value?.test_mode!=='boolean')throw new Error('Invalid feature flags');
+    this.confirmed={origin,testMode:value.test_mode};
+   }catch{
+    if(this.origin()===origin)this.confirmed={origin,testMode:false};
+   }
   })().finally(()=>{this.pending.delete(origin);});
   this.pending.set(origin,refresh);return refresh;
  }
