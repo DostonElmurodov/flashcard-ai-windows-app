@@ -2,12 +2,13 @@ import initSqlJs, { type Database, type SqlValue } from 'sql.js';
 import { existsSync, readFileSync, writeFileSync, renameSync, copyFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import type { Deck,Draft,Word,Settings,Snapshot,ReviewCard } from '../shared/types';
+import type { Deck,Draft,Word,Settings,Snapshot,ReviewCard,ReviewTranslation } from '../shared/types';
 import { newCard,scheduleCard,studyDayStart } from './scheduler';
 import type {SyncRecord} from './sync';
-const defaults:Settings={nativeLanguage:'ru',learningLanguage:'en-us',theme:'light',accent:'indigo',darkAccent:'teal',dailyGoal:5,direction:'forward',dayStart:0,retention:.9,reminders:true,reminderTime:'19:00',reminderStart:'08:00',reminderEnd:'20:00',reminderCount:10,keepInTray:true,launchAtLogin:true,apiBase:'https://api.mavrylo.com',onboardingComplete:false};
+import {secondaryReviewLanguage} from '../shared/secondary-review';
+const defaults:Settings={secondaryReviewLanguage:null,nativeLanguage:'ru',learningLanguage:'en-us',theme:'light',accent:'indigo',darkAccent:'teal',dailyGoal:5,direction:'forward',dayStart:0,retention:.9,reminders:true,reminderTime:'19:00',reminderStart:'08:00',reminderEnd:'20:00',reminderCount:10,keepInTray:true,launchAtLogin:true,apiBase:'https://api.mavrylo.com',onboardingComplete:false};
 export class Store {
- private constructor(private db:Database,private path:string){}
+ private constructor(private db:Database,private path:string){db.run('CREATE TABLE IF NOT EXISTS review_translations(cache_key TEXT PRIMARY KEY,data TEXT NOT NULL)');}
  static async open(path:string,owner='guest'):Promise<Store>{
   mkdirSync(dirname(path),{recursive:true});
   const SQL=await initSqlJs({locateFile:()=>require.resolve('sql.js/dist/sql-wasm.wasm')});
@@ -38,8 +39,10 @@ export class Store {
   if(!deck.active)this.db.run('UPDATE decks SET data=? WHERE id=?',[JSON.stringify({...deck,active:true}),rows[0].id]);
  }
  private transaction<T>(fn:()=>T):T {this.db.run('BEGIN');let result:T;try{result=fn();this.db.run('COMMIT');}catch(e){this.db.run('ROLLBACK');throw e;}this.persist();return result;}
- settings():Settings {const data=this.rows<{data:string}>('SELECT data FROM settings WHERE id=1')[0]?.data;return {...defaults,...(data?JSON.parse(data):{}),dayStart:0};}
- saveSettings(patch:Partial<Settings>):Settings {const settings={...this.settings(),...patch,dayStart:0};if(settings.reminderStart===settings.reminderEnd)throw new Error('Choose different start and end reminder times.');this.transaction(()=>this.db.run('INSERT OR REPLACE INTO settings VALUES(1,?)',[JSON.stringify(settings)]));return settings;}
+ settings():Settings {const data=this.rows<{data:string}>('SELECT data FROM settings WHERE id=1')[0]?.data;const settings={...defaults,...(data?JSON.parse(data):{}),dayStart:0};return {...settings,secondaryReviewLanguage:secondaryReviewLanguage(settings.secondaryReviewLanguage,settings.nativeLanguage)};}
+ saveSettings(patch:Partial<Settings>):Settings {const settings={...this.settings(),...patch,dayStart:0};settings.secondaryReviewLanguage=secondaryReviewLanguage(settings.secondaryReviewLanguage,settings.nativeLanguage);if(settings.reminderStart===settings.reminderEnd)throw new Error('Choose different start and end reminder times.');this.transaction(()=>this.db.run('INSERT OR REPLACE INTO settings VALUES(1,?)',[JSON.stringify(settings)]));return settings;}
+ cachedReviewTranslation(key:string):unknown {const data=this.rows<{data:string}>('SELECT data FROM review_translations WHERE cache_key=?',[key])[0]?.data;try{return data?JSON.parse(data):null;}catch{return null;}}
+ saveReviewTranslation(key:string,value:ReviewTranslation){this.transaction(()=>this.db.run('INSERT OR REPLACE INTO review_translations VALUES(?,?)',[key,JSON.stringify(value)]));}
  snapshot(now=new Date()):Snapshot {
   const settings=this.settings(), start=studyDayStart(now,settings.dayStart).toISOString();
   const decks=this.rows<{data:string}>('SELECT data FROM decks ORDER BY rowid DESC').map(x=>JSON.parse(x.data) as Deck);

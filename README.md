@@ -23,6 +23,7 @@ The first launch asks for native and learning languages. No account is required 
 - Local SQLite persistence, migrations, CSV export, whole-database backup/restore. Logout and account deletion preserve local cards.
 - FSRS-6 with the iOS project's 21 weights, learning/relearning steps, four grades, retention preference, independent forward/reverse state and daily new-word limits.
 - Review shortcuts: Space reveals the answer; 1–4 grade it. Ctrl+F opens vocabulary search.
+- Optional second language in revealed answers, with an AI translation and short explanation cached locally for repeat display.
 - Manual cards, AI translation, pasted text, CSV/TSV/TXT, PDF text, image OCR and scanned PDF OCR. Words/Pairs/Auto modes and editable previews. Imports above 2,000 unique cards are rejected explicitly. Files are limited to 20 MB and PDFs to 100 pages.
 - Speech through installed Windows voices; repeated playback alternates normal and slow speed.
 - Configurable local reminders while running, optional tray background mode and opt-in Windows startup.
@@ -32,9 +33,17 @@ The first launch asks for native and learning languages. No account is required 
 
 OCR downloads the selected learning language's recognition data on first use, then caches it under the app data directory. The selected file itself is processed locally. Windows speech voices are installed in Windows Settings, not downloaded by this app.
 
+### Second language in review
+
+In Settings, turn on **Second language in review**, choose a language, and save preferences. Cancelling the picker keeps it off; switching it off clears the choice. Your native language is excluded, and changing the native language to the selected secondary language clears it. Native and learning languages, cards, and review schedules remain unchanged.
+
+After **Show answer**, the card displays a compact flag, language name, translation, and explanation. The first uncached request uses the protected account API and requires sign-in plus an active shared subscription or server-enabled test mode. It uses the card's source languages. Loading, errors, and retries never block grading, and there is no secondary audio control.
+
+Successful results live in a separate SQLite cache scoped to the API origin, account workspace, source word, source languages, and secondary language. Cached content remains readable offline without another AI request. Failed or malformed responses are not cached, and results arriving after a card, setting, or account change cannot replace the current content. The cache is included in that workspace's local backup; it is not synced as a new word.
+
 ## Server compatibility and shared subscription
 
-Default API origin: `https://api.mavrylo.com`. It must be deployed with the accompanying changes in `../mavrylo` before the new account AI/catalog/entitlement routes work. This implementation did **not** deploy the backend or release the iPhone app.
+Default API origin: `https://api.mavrylo.com`. The backend must include the accompanying changes in `../mavrylo` for the account AI/catalog/entitlement and review-translation routes to work.
 
 The completed sharing flow in code is:
 
@@ -82,6 +91,7 @@ npm run smoke
 npm run test:imports
 npm run test:integration
 npm run test:ui
+npm run test:secondary-ui
 npm run test:google
 npm run test:google-ui
 node scripts/security-smoke.mjs
@@ -90,6 +100,8 @@ npm run installer
 ```
 
 The integration script expects the companion Development backend on `http://127.0.0.1:5289` and an existing iOS-enrolled test account in `OWL_TEST_ACCOUNT_EMAIL`/`OWL_TEST_ACCOUNT_PASSWORD`. It creates and removes only its own test set, never registers or deletes an account. `node scripts/account-sync-smoke.mjs` verifies real Electron account switching against an isolated local HTTP fixture without credentials. Smoke scripts create isolated profiles under `test-results`. `OWL_TEST_DATA_DIR` overrides the app data location for isolated testing; `OWL_TEST_EXECUTABLE` lets `scripts/smoke.mjs` target an unpacked packaged executable.
+
+`npm run test:secondary-ui` exercises the real Settings and Review React components in headless Chromium with a deterministic desktop bridge fixture, including cancellation, reveal timing, grading during loading, retry, and stale-result rejection. It saves screenshots under `test-results/secondary-review/`. Set `OWL_TEST_BROWSER` to a Chrome/Chromium executable if needed; otherwise it uses installed Chrome on macOS or Playwright's Chromium. This is browser UI verification, not a Windows installer test.
 
 ## Layout
 

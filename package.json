@@ -18,7 +18,8 @@
     "test:imports": "node scripts/import-smoke.mjs",
     "test:google": "node scripts/google-session-smoke.mjs",
     "test:google-ui": "node scripts/google-login-ui-smoke.mjs",
-    "test:ui": "node scripts/settings-flow-smoke.mjs"
+    "test:ui": "node scripts/settings-flow-smoke.mjs",
+    "test:secondary-ui": "node scripts/secondary-review-ui.mjs"
   },
   "dependencies": {
     "@napi-rs/canvas": "^1.0.8",

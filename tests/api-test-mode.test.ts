@@ -19,6 +19,7 @@ test('signed-out API refresh exposes test mode without inventing a subscription 
   assert.deepEqual(api.state(),{profile:null,entitlement:null,testMode:false});
   assert.deepEqual(await api.refreshEntitlement(),{profile:null,entitlement:null,testMode:true});
   await assert.rejects(api.translate('hello','en-us','es'),/Sign in/);
+  await assert.rejects(api.reviewTranslation({word:'hello',native_language:'en-us',learning_language:'es',secondary_language:'fr'}),/Sign in/);
   await api.logout();assert.equal(api.state().testMode,true);
   const restarted=new Api(path,base);assert.equal(restarted.state().testMode,false);
   enabled=false;assert.deepEqual(await restarted.refreshEntitlement(),{profile:null,entitlement:null,testMode:false});

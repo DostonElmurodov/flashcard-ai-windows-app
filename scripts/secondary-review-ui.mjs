@@ -1,0 +1,57 @@
+import assert from 'node:assert/strict';
+import {mkdirSync,existsSync} from 'node:fs';
+import {chromium} from 'playwright';
+import {createServer} from 'vite';
+
+// Real React components and CSS with a deterministic IPC boundary. Store/cache tests run separately.
+const server=await createServer({server:{host:'127.0.0.1',port:0},logLevel:'error'});await server.listen();
+const executablePath=process.env.OWL_TEST_BROWSER??(existsSync('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')?'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome':undefined);
+let browser;
+try{
+ browser=await chromium.launch({executablePath,headless:true});
+ const page=await browser.newPage({viewport:{width:1120,height:900}});page.setDefaultTimeout(6000);
+ const errors=[];page.on('pageerror',error=>errors.push(String(error)));
+ await page.goto(server.resolvedUrls.local[0]+'tests/fixtures/secondary-review.html');
+ const toggle=page.getByRole('checkbox',{name:'Second language in review',exact:true});
+ assert.equal(await toggle.isChecked(),false);
+ await toggle.click();await page.getByRole('heading',{name:'Choose a second language',exact:true}).waitFor();
+ assert.equal(await page.getByRole('button',{name:'Russian',exact:true}).count(),0);
+ await page.waitForFunction(()=>Array.from(document.querySelectorAll('.secondary-language-list img')).every(image=>image.complete&&image.naturalWidth>0));
+ mkdirSync('test-results/secondary-review',{recursive:true});await page.screenshot({path:'test-results/secondary-review/picker.png',fullPage:true});
+ await page.keyboard.press('Escape');assert.equal(await toggle.isChecked(),false,'Cancelling must keep secondary language disabled');
+ await toggle.click();await page.getByRole('button',{name:'Spanish',exact:true}).click();assert.equal(await toggle.isChecked(),true);
+ await page.getByRole('button',{name:'Save preferences',exact:true}).click();
+ assert.equal(await page.evaluate(()=>window.secondaryFixture.snapshot().settings.secondaryReviewLanguage),'es');
+ mkdirSync('test-results/secondary-review',{recursive:true});
+ await page.screenshot({path:'test-results/secondary-review/settings.png',fullPage:true});
+ await page.getByRole('combobox',{name:/^I speak/}).selectOption('es');assert.equal(await toggle.isChecked(),false,'Choosing the native language clears secondary');
+ await page.getByRole('combobox',{name:/^I speak/}).selectOption('ru');
+ await toggle.click();await page.getByRole('button',{name:'Spanish',exact:true}).click();
+ await page.getByRole('button',{name:'Save preferences',exact:true}).click();
+ await page.getByRole('button',{name:'Open review',exact:true}).click();
+ const review=page.getByRole('dialog');await review.getByRole('heading',{name:'journey',exact:true}).waitFor();
+ assert.deepEqual(await page.evaluate(()=>window.secondaryFixture.calls()),[],'Hidden answer must not request secondary content');
+ await review.getByRole('button',{name:'Show answer'}).click();await review.getByText('Loading translation…',{exact:true}).waitFor();
+ assert.equal(await review.getByRole('button',{name:/^Good\b/}).isEnabled(),true);
+ await review.getByRole('button',{name:/^Good\b/}).click();await review.getByRole('heading',{name:'airport',exact:true}).waitFor();
+ await page.evaluate(()=>window.secondaryFixture.resolve(0,'viaje','Un desplazamiento.'));
+ assert.equal(await review.getByText('viaje',{exact:true}).count(),0,'Late previous-card result must stay hidden');
+ await review.getByRole('button',{name:'Show answer'}).click();await page.waitForFunction(()=>window.secondaryFixture.calls().length===2);
+ await page.evaluate(()=>window.secondaryFixture.reject(1));await review.getByText('Connection lost. Please try again.',{exact:true}).waitFor();
+ assert.equal(await review.getByRole('button',{name:/^Good\b/}).isEnabled(),true);
+ await review.getByRole('button',{name:'Retry translation',exact:true}).click();await page.waitForFunction(()=>window.secondaryFixture.calls().length===3);
+ await page.evaluate(()=>window.secondaryFixture.resolve(2,'aeropuerto','Lugar donde los aviones despegan y aterrizan.'));
+ await review.getByText('aeropuerto',{exact:true}).waitFor();
+ assert.equal(await review.locator('.secondary-review').getByRole('button').count(),0,'No secondary pronunciation control');
+ await page.screenshot({path:'test-results/secondary-review/revealed.png',fullPage:true});
+ await page.evaluate(()=>window.secondaryFixture.setSecondary('de'));await page.waitForFunction(()=>window.secondaryFixture.calls().length===4);
+ assert.equal(await review.getByText('aeropuerto',{exact:true}).count(),0,'Old language disappears immediately');
+ await page.evaluate(()=>window.secondaryFixture.setSecondary(null));
+ await page.evaluate(()=>window.secondaryFixture.resolve(3,'Flughafen','Ort, an dem Flugzeuge starten und landen.'));
+ assert.equal(await review.locator('.secondary-review').count(),0,'Disabled result stays hidden');
+ await review.getByRole('heading',{name:'аэропорт',exact:true}).waitFor();
+ assert.equal(await page.evaluate(()=>window.secondaryFixture.snapshot().reviewedToday),1,'Changing secondary language must not grade or reset a card');
+ assert.equal(await page.evaluate(()=>window.secondaryFixture.calls().length),4);
+ assert.deepEqual(errors,[]);
+ console.log('PASS: real Settings/Review UI — default off, cancel, selection, native equality reset, reveal-only requests, nonblocking grading, retry, stale card/language/off results, no secondary audio.');
+}finally{await browser?.close();await server.close();}

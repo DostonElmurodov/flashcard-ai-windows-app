@@ -9,6 +9,7 @@ import {SyncScheduler} from './sync-scheduler';
 import {systemTimeFormat} from './time-format';
 import {reminderSlot} from './reminders';
 import { Api } from './api';
+import {ReviewTranslations} from './review-translations';
 import { googleSignIn } from './google';
 declare const GOOGLE_OAUTH_CLIENT_ID:string;
 declare const GOOGLE_OAUTH_CLIENT_SECRET:string;
@@ -16,6 +17,7 @@ let googleAttempt:AbortController|null=null;
 import { parseImport } from './imports';
 import { importFile,exportDeck } from './files';
 import type { CatalogDeck } from '../shared/types';
+let reviewTranslations:ReviewTranslations;
 let window:BrowserWindow,store:Store,api:Api,tray:Tray|null=null,quitting=false;
 let workspaces:Workspaces,sync:AccountSync|null=null,transitioning=false,epoch=0,dialogs=0;
 let scheduler:SyncScheduler|null=null;
@@ -72,7 +74,7 @@ function register(){
  handle('parse',(text,m)=>parseImport(z.string().max(5_000_000).parse(text),mode.parse(m)));
  handle('importFile',m=>importFile(window,mode.parse(m),store.settings().learningLanguage));
  handle('exportDeck',value=>exportDeck(window,store,id.parse(value)));
- handle('saveSettings',async value=>{const patch=z.object({nativeLanguage:language,learningLanguage:language,theme:z.enum(['light','dark','system']),accent:z.enum(['indigo','teal','rose']),darkAccent:z.enum(['indigo','teal','rose']),dailyGoal:z.number().int().min(0).max(200),direction:z.enum(['forward','reverse']),dayStart:z.number().int().min(0).max(1439),retention:z.number().min(.7).max(.97),reminders:z.boolean(),reminderTime:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),reminderStart:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),reminderEnd:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),reminderCount:z.number().int().min(1).max(100),keepInTray:z.boolean(),launchAtLogin:z.boolean(),apiBase,onboardingComplete:z.boolean()}).partial().parse(value);if(patch.apiBase&&patch.apiBase!==workspaces.guest.settings().apiBase&&api.state().profile)throw new Error('Sign out before changing servers.');const settings=store.saveSettings(patch);if(patch.launchAtLogin!==undefined)configureLogin();configureTheme();configureTray();return settings;});
+ handle('saveSettings',async value=>{const patch=z.object({nativeLanguage:language,learningLanguage:language,secondaryReviewLanguage:z.string().max(24).nullable(),theme:z.enum(['light','dark','system']),accent:z.enum(['indigo','teal','rose']),darkAccent:z.enum(['indigo','teal','rose']),dailyGoal:z.number().int().min(0).max(200),direction:z.enum(['forward','reverse']),dayStart:z.number().int().min(0).max(1439),retention:z.number().min(.7).max(.97),reminders:z.boolean(),reminderTime:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),reminderStart:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),reminderEnd:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),reminderCount:z.number().int().min(1).max(100),keepInTray:z.boolean(),launchAtLogin:z.boolean(),apiBase,onboardingComplete:z.boolean()}).partial().parse(value);if(patch.apiBase&&patch.apiBase!==workspaces.guest.settings().apiBase&&api.state().profile)throw new Error('Sign out before changing servers.');const settings=store.saveSettings(patch);if(patch.launchAtLogin!==undefined)configureLogin();configureTheme();configureTray();return settings;});
  handle('backup',async()=>{const result=await dialog.showSaveDialog(window,{title:'Back up your cards and progress',defaultPath:'Owl-AI-backup.sqlite',filters:[{name:'Owl AI backup',extensions:['sqlite']}]});if(result.canceled||!result.filePath)return false;store.backup(result.filePath);return true;});
  handle('restore',async()=>{const result=await dialog.showOpenDialog(window,{title:'Restore Owl AI backup',properties:['openFile'],filters:[{name:'Owl AI backup',extensions:['sqlite']}]});if(result.canceled)return false;const confirm=await dialog.showMessageBox(window,{type:'warning',message:'Replace local cards and progress with this backup?',detail:'A copy of your current database will be kept. Only a backup from this same account or local workspace can be restored.',buttons:['Cancel','Restore backup'],defaultId:0,cancelId:0});if(confirm.response!==1)return false;await store.restore(result.filePaths[0]);configureTheme();configureTray();return true;});
  handle('account',()=>accountState());
@@ -89,6 +91,7 @@ function register(){
  handle('cancelGoogleLogin',()=>{googleAttempt?.abort();});
  handle('login',(email,password)=>changeAccount(()=>api.login(z.string().email().max(254).parse(email),z.string().min(1).max(1024).parse(password))));
  handle('logout',()=>changeAccount(()=>api.logout()));handle('deleteAccount',()=>changeAccount(()=>api.deleteAccount()));handle('refreshEntitlement',async()=>{try{await api.refreshEntitlement();return accountState();}finally{if(!api.state().profile&&store.owner()!=='guest'&&!transitioning&&!dialogs)await changeAccount(async()=>{});}});
+ handle('reviewTranslation',wordId=>reviewTranslations.get(id.parse(wordId)));
  handle('translate',(word,native,learning)=>api.translate(str.parse(word),language.parse(native),language.parse(learning)));
  handle('catalog',query=>api.catalog(z.string().max(200).parse(query)));
  handle('importCatalog',input=>{const item=z.object({id,title:str,description:z.string().max(4000).nullish(),cards:z.array(z.object({word:str,translations:z.array(z.string().max(5000)).min(1).max(30),pronunciation:z.string().max(500).nullish(),examples:z.array(z.string().max(3000)).max(20),notes:z.string().max(10000).nullish(),native_language:language,learning_language:language})).min(1).max(2000)}).parse(input);const deck=store.saveDeck({name:item.title,description:item.description??'',nativeLanguage:item.cards[0].native_language,learningLanguage:item.cards[0].learning_language});try{store.addWords(deck.id,item.cards.map(c=>({word:c.word,translation:c.translations.join('; '),pronunciation:c.pronunciation??undefined,examples:c.examples,notes:c.notes??undefined})));return deck;}catch(error){store.deleteDeck(deck.id);throw error;}});
@@ -105,6 +108,7 @@ if(!app.requestSingleInstanceLock())app.quit();else{
  app.on('second-instance',()=>{window?.show();window?.focus();});
  app.whenReady().then(async()=>{try{
   app.setAppUserModelId('com.mavrylo.owlai.windows');workspaces=await Workspaces.open(app.getPath('userData'));store=workspaces.current;api=new Api(join(app.getPath('userData'),'account.enc'),()=>workspaces.guest.settings().apiBase);await selectAccount();
+  reviewTranslations=new ReviewTranslations(()=>({store,scope:scope(),apiBase:workspaces.guest.settings().apiBase,account:api.state()}),input=>api.reviewTranslation(input));
   configureTheme();
   nativeTheme.on('updated',updateWindowTheme);
   window=new BrowserWindow({width:954,height:723,center:true,minWidth:940,minHeight:680,title:'Owl AI',titleBarStyle:'hidden',titleBarOverlay:{height:36,color:windowBackground(),symbolColor:nativeTheme.shouldUseDarkColors?'#eef0f4':'#101f39'},icon:join(__dirname,'../build/icon.png'),backgroundColor:windowBackground(),show:false,webPreferences:{preload:join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true}});
