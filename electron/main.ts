@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Store } from './store';
 import {Workspaces} from './workspace';
 import {AccountSync} from './sync';
+import {SyncScheduler} from './sync-scheduler';
 import {systemTimeFormat} from './time-format';
 import {reminderSlot} from './reminders';
 import { Api } from './api';
@@ -17,20 +18,22 @@ import { importFile,exportDeck } from './files';
 import type { CatalogDeck } from '../shared/types';
 let window:BrowserWindow,store:Store,api:Api,tray:Tray|null=null,quitting=false;
 let workspaces:Workspaces,sync:AccountSync|null=null,transitioning=false,epoch=0,dialogs=0;
+let scheduler:SyncScheduler|null=null;
+function scheduleSync(){scheduler?.stop();scheduler=sync?new SyncScheduler(runSync):null;scheduler?.setBackground(!!window&&(!window.isVisible()||window.isMinimized()));}
 const scope=()=>epoch+':'+store.owner();
 const accountState=()=>({...api.state(),sync:sync?.status});
 async function selectAccount(){
- await sync?.stop();sync=null;
+ scheduler?.stop();scheduler=null;await sync?.stop();sync=null;
  const profile=api.state().profile;
  try{await workspaces.select(workspaces.guest.settings().apiBase,profile?.id??null);}catch(error){api.clear();store=workspaces.guest;epoch++;throw error;}store=workspaces.current;epoch++;
- if(profile)sync=new AccountSync(store,profile.id,api);
+ if(profile)sync=new AccountSync(store,profile.id,api);scheduleSync();
  if(window&&!window.isDestroyed()){configureTheme();configureTray();}
 }
 async function changeAccount(action:()=>Promise<unknown>){
  if(transitioning||dialogs)throw new Error('Finish the current operation before changing accounts.');
  transitioning=true;epoch++;
- try{await sync?.stop();await action();await selectAccount();void runSync();return accountState();}
- catch(error){await selectAccount();throw error;}finally{transitioning=false;}
+ try{scheduler?.stop();await sync?.stop();await action();await selectAccount();return accountState();}
+ catch(error){await selectAccount();throw error;}finally{transitioning=false;void scheduler?.tick();}
 }
 async function runSync(){const active=sync;if(!active)return {state:'idle' as const};const result=await active.run();if(active===sync&&!api.state().profile&&!transitioning&&!dialogs){transitioning=true;try{await selectAccount();}finally{transitioning=false;}}return result;}
 
@@ -46,12 +49,13 @@ function handle(name:string,fn:(...args:any[])=>unknown){ipcMain.handle('owl:'+n
  try{
   if(transitioning&&name!=='cancelGoogleLogin')throw new Error('Account is changing. Please wait.');
   if(!unscoped&&envelope?.scope!==started)throw new Error('Your account changed. Refresh this page before continuing.');
-  if(dialogOperation){dialogs++;dialogStarted=true;if(name==='restore'){await sync?.stop();sync=null;}}
+  if(dialogOperation){dialogs++;dialogStarted=true;if(name==='restore'){scheduler?.stop();await sync?.stop();sync=null;}}
   const value=await fn(...args);
   if(!auth&&started!==scope())throw new Error('Your account changed. Please try again.');
+  if(['saveDeck','deleteDeck','addWords','editWord','deleteWord','review','importCatalog'].includes(name))scheduler?.changed();
   return {ok:true,value,scope:scope()};
  }catch(error){return {ok:false,error:error instanceof z.ZodError?'Please check the entered values.':error instanceof Error?error.message:'The operation could not be completed.'};}
- finally{if(dialogStarted){dialogs=Math.max(0,dialogs-1);if(name==='restore'&&api.state().profile)sync=new AccountSync(store,api.state().profile!.id,api);}if(store.owner()!=='guest'&&!api.state().profile&&!transitioning&&!dialogs){transitioning=true;try{await selectAccount();}finally{transitioning=false;}}}
+ finally{if(dialogStarted){dialogs=Math.max(0,dialogs-1);if(name==='restore'&&api.state().profile){sync=new AccountSync(store,api.state().profile!.id,api);scheduleSync();}}if(store.owner()!=='guest'&&!api.state().profile&&!transitioning&&!dialogs){transitioning=true;try{await selectAccount();}finally{transitioning=false;}}}
  });}
 function register(){
  handle('openAppMenu',(name,x,y)=>{const index=['Owl AI','Edit','View'].indexOf(z.enum(['Owl AI','Edit','View']).parse(name));const zoom=window.webContents.getZoomFactor();const left=Math.round(z.number().int().min(0).max(10000).parse(x)*zoom),top=Math.round(z.number().int().min(0).max(10000).parse(y)*zoom);const menu=Menu.getApplicationMenu()?.items[index]?.submenu;if(!menu)return;return new Promise<void>(resolve=>menu.popup({window,x:left,y:top,callback:resolve}));});
@@ -72,8 +76,9 @@ function register(){
  handle('backup',async()=>{const result=await dialog.showSaveDialog(window,{title:'Back up your cards and progress',defaultPath:'Owl-AI-backup.sqlite',filters:[{name:'Owl AI backup',extensions:['sqlite']}]});if(result.canceled||!result.filePath)return false;store.backup(result.filePath);return true;});
  handle('restore',async()=>{const result=await dialog.showOpenDialog(window,{title:'Restore Owl AI backup',properties:['openFile'],filters:[{name:'Owl AI backup',extensions:['sqlite']}]});if(result.canceled)return false;const confirm=await dialog.showMessageBox(window,{type:'warning',message:'Replace local cards and progress with this backup?',detail:'A copy of your current database will be kept. Only a backup from this same account or local workspace can be restored.',buttons:['Cancel','Restore backup'],defaultId:0,cancelId:0});if(confirm.response!==1)return false;await store.restore(result.filePaths[0]);configureTheme();configureTray();return true;});
  handle('account',()=>accountState());
- handle('sync',()=>runSync());
- handle('resolveSync',async()=>{if(!sync)throw new Error('Sign in to sync.');dialogs++;try{return await sync.useCloud();}finally{dialogs--;}});
+ handle('sync',()=>scheduler?.runNow()??Promise.resolve({state:'idle'}));
+ handle('reviewSession',active=>{scheduler?.setReviewing(z.boolean().parse(active));void scheduler?.tick();});
+ handle('resolveSync',async()=>{if(!sync)throw new Error('Sign in to sync.');dialogs++;scheduler?.stop();try{return await sync.useCloud();}finally{dialogs--;scheduleSync();}});
  handle('loginGoogle',async()=>{
   if(googleAttempt)throw new Error('Google sign-in is already open in your browser.');
   const controller=new AbortController();googleAttempt=controller;
@@ -107,9 +112,11 @@ if(!app.requestSingleInstanceLock())app.quit();else{
   window.setMenuBarVisibility(false);
   window.webContents.setWindowOpenHandler(()=>({action:'deny'}));window.webContents.on('will-navigate',event=>event.preventDefault());window.webContents.session.setPermissionRequestHandler((_web,permission,callback)=>callback(permission==='notifications'));
   register();configureLogin();configureTray();await window.loadFile(join(__dirname,'../dist/index.html'));window.webContents.setZoomLevel(-.5);window.setSize(954,723);window.center();window.show();
-  void runSync();setInterval(()=>{if(!transitioning)void runSync();},30000);
+  const syncVisibility=()=>{scheduler?.setBackground(!window.isVisible()||window.isMinimized());};
+  window.on('show',syncVisibility);window.on('hide',syncVisibility);window.on('minimize',syncVisibility);window.on('restore',syncVisibility);
+  syncVisibility();void scheduler?.tick();setInterval(()=>{if(!transitioning&&!dialogs&&!quitting)void scheduler?.tick();},1000);
   window.on('close',event=>{if(!quitting&&store.settings().keepInTray){event.preventDefault();window.hide();}});
   let lastReminder=store.settings().reminderLastSlot??'';setInterval(()=>{const settings=store.settings(),now=new Date(),key=reminderSlot(now,settings.reminderStart,settings.reminderEnd,settings.reminderCount);if(settings.reminders&&key&&lastReminder!==key&&Notification.isSupported()){const count=store.queue().length;if(count){lastReminder=key;const notification=new Notification({title:'A little practice goes a long way',body:`You have ${count} cards ready to review in Owl AI.`});notification.on('click',()=>window.show());notification.show();store.saveSettings({reminderLastSlot:key});}}},15000);
  }catch(error){dialog.showErrorBox('Owl AI could not start',error instanceof Error?error.message:String(error));app.quit();}});
- app.on('before-quit',()=>{quitting=true;googleAttempt?.abort();});app.on('will-quit',()=>{void sync?.stop();workspaces?.close();});app.on('window-all-closed',()=>{if(!tray)app.quit();});
+ app.on('before-quit',()=>{quitting=true;scheduler?.stop();googleAttempt?.abort();});app.on('will-quit',()=>{void sync?.stop();workspaces?.close();});app.on('window-all-closed',()=>{if(!tray)app.quit();});
 }

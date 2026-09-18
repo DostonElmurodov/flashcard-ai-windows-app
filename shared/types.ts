@@ -14,7 +14,7 @@ export interface Bridge { forWorkspace(scopeRevision:string):Bridge; activateWor
  loginGoogle():Promise<AccountState|null>; cancelGoogleLogin():Promise<void>;
  snapshot():Promise<Snapshot>; saveDeck(input:Partial<Deck>&{name:string}):Promise<Deck>; deleteDeck(id:string):Promise<void>;
  addWords(deckId:string,words:Draft[]):Promise<number>; editWord(id:string,word:Draft):Promise<void>; deleteWord(id:string):Promise<void>;
- saveSettings(settings:Partial<Settings>):Promise<Settings>; queue(deckId?:string):Promise<Word[]>; previews(wordId:string):Promise<Record<number,string>>; review(wordId:string,grade:number,attemptId:string):Promise<Word>;
+ saveSettings(settings:Partial<Settings>):Promise<Settings>; queue(deckId?:string):Promise<Word[]>; previews(wordId:string):Promise<Record<number,string>>; review(wordId:string,grade:number,attemptId:string):Promise<Word>; reviewSession(active:boolean):Promise<void>;
  importFile(mode:'auto'|'pairs'|'words'):Promise<{name:string;text:string;drafts:Draft[]}|null>; parse(text:string,mode:'auto'|'pairs'|'words'):Promise<Draft[]>; exportDeck(id:string):Promise<boolean>;
  backup():Promise<boolean>; restore():Promise<boolean>; account():Promise<AccountState>; sync():Promise<SyncStatus>; login(email:string,password:string):Promise<AccountState>; logout():Promise<void>; deleteAccount():Promise<void>; refreshEntitlement():Promise<AccountState>;
  translate(word:string,native:string,learning:string):Promise<Draft>; catalog(query:string):Promise<CatalogDeck[]>; importCatalog(deck:CatalogDeck):Promise<Deck>;

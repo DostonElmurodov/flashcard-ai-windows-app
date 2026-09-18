@@ -7,6 +7,8 @@ function interval(date:string){const minutes=Math.max(1,Math.round((new Date(dat
 export default function Review({snapshot,deckId,onClose,onChanged}:{snapshot:Snapshot;deckId?:string;onClose:()=>void;onChanged:()=>Promise<void>}){
  const owl=useOwl();
  const [queue,setQueue]=useState<Word[]>([]),[revealed,setRevealed]=useState(false),[previews,setPreviews]=useState<Record<number,string>>({}),[busy,setBusy]=useState(true),[error,setError]=useState(''),[completed,setCompleted]=useState(0),[loaded,setLoaded]=useState(false);const grading=useRef(false),attempt=useRef(crypto.randomUUID());const word=queue[0],reverse=snapshot.settings.direction==='reverse';
+ useEffect(()=>{void owl.reviewSession(true).catch(()=>{});return()=>{void owl.reviewSession(false).catch(()=>{});};},[owl]);
+ useEffect(()=>{if(loaded)void owl.reviewSession(queue.length>0).catch(()=>{});},[loaded,queue.length,owl]);
  const load=useCallback(async()=>{const rows=await owl.queue(deckId);setQueue(rows);setPreviews(rows[0]?await owl.previews(rows[0].id):{});setLoaded(true);},[deckId,owl]);
  useEffect(()=>{load().catch(e=>setError(errorMessage(e))).finally(()=>setBusy(false));},[load]);
  const grade=useCallback(async(rating:number)=>{if(!word||!revealed||grading.current)return;grading.current=true;setBusy(true);try{await owl.review(word.id,rating,attempt.current);attempt.current=crypto.randomUUID();setCompleted(x=>x+1);setRevealed(false);await load();await onChanged();}catch(e){setError(errorMessage(e));}finally{grading.current=false;setBusy(false);}},[word,revealed,load,onChanged,owl]);

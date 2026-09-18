@@ -51,7 +51,7 @@ const origin=`http://127.0.0.1:${server.address().port}`;
 const data=resolve('test-results/account-sync-'+Date.now());mkdirSync(data,{recursive:true});
 let app;
 try{
- app=await electron.launch({args:['.'],env:{...process.env,OWL_TEST_DATA_DIR:data},timeout:30000});
+ app=await electron.launch({executablePath:process.env.OWL_TEST_EXECUTABLE,args:process.env.OWL_TEST_EXECUTABLE?[]:['.'],env:{...process.env,OWL_TEST_DATA_DIR:data},timeout:30000});
  const page=await app.firstWindow();await page.waitForFunction(()=>!!window.owl);
  const activate=()=>page.evaluate(async()=>{const snapshot=await window.owl.snapshot();window.owl.activateWorkspace(snapshot.scopeRevision);return snapshot;});
  const login=async owner=>{await activate();await page.evaluate(owner=>window.owl.login(`${owner.toLowerCase()}@example.test`,'Fixture-Only-248!'),owner);return activate();};
@@ -72,6 +72,16 @@ try{
  assert.notEqual(scopeA,guestScope);assert.ok(!snapshot.decks.some(d=>d.id===guestDeck));
  const accountDeck=await page.evaluate(async()=>{const deck=await window.owl.saveDeck({name:'A local addition',nativeLanguage:'ru',learningLanguage:'en-us'});await window.owl.addWords(deck.id,[{word:'A added word',translation:'A added translation'}]);return deck.id;});
  assert.equal((await sync()).state,'synced');assert.ok(clouds.get('A').has(`deck:${accountDeck}`));
+ // Exercise the production IPC hooks and timer, not only the pure scheduler.
+ const beforeAuto=uploads.length;
+ await page.evaluate(()=>window.owl.saveDeck({name:'Automatic edit batch',nativeLanguage:'ru',learningLanguage:'en-us'}));
+ await new Promise(resolve=>setTimeout(resolve,17_000));
+ assert.equal(uploads.length,beforeAuto+1);assert.ok([...clouds.get('A').values()].some(r=>r.data?.name==='Automatic edit batch'));
+ await page.evaluate(async id=>{await window.owl.reviewSession(true);const s=await window.owl.snapshot();const word=s.words.find(w=>w.deckId===id);await window.owl.review(word.id,4,'auto-review-fixture');},accountDeck);
+ const beforeReview=uploads.length;await new Promise(resolve=>setTimeout(resolve,17_000));assert.equal(uploads.length,beforeReview);
+ await page.evaluate(()=>window.owl.reviewSession(false));
+ await new Promise(resolve=>setTimeout(resolve,1_500));assert.equal(uploads.length,beforeReview+1);
+ assert.ok([...clouds.get('A').values()].some(r=>r.kind==='word'&&r.data?.deck_id===accountDeck&&r.data.card.reps===1));
  snapshot=await logout();assert.equal(snapshot.workspaceId,guestScope);assert.equal(snapshot.words.length,1);assert.equal(snapshot.words[0].word,'guest secret');assert.ok(!snapshot.decks.some(d=>d.id===accountDeck));
  await login('B');assert.equal((await sync()).state,'synced');snapshot=await expectOwner('B');const scopeB=snapshot.workspaceId;
  await assert.rejects(page.evaluate(()=>window.staleAccountBridge.editWord('shared-word-id',{word:'A stale draft',translation:'Do not copy'})),/account changed/);await expectOwner('B',scopeB);
@@ -89,7 +99,7 @@ try{
  assert.ok(!requests.some(r=>/register|\/account\/email\/session$/.test(r.path)),'Desktop must only use existing-account endpoints.');
  assert.ok(uploads.every(upload=>upload.changes.every(change=>change.id!==guestDeck&&change.data?.deck_id!==guestDeck)),'Guest records must never upload.');
  assert.ok(uploads.filter(upload=>upload.owner==='B').every(upload=>upload.changes.every(change=>change.id!==accountDeck&&change.data?.deck_id!==accountDeck)),'A records must never upload into B.');
- console.log('PASS: Electron login-only routes; guest/A/B isolation with identical entity IDs; synced relogin; aborted late sync; wrong-owner rejection; empty translation hint.');
+ console.log('PASS: automatic edit/review batches; Electron login-only routes; guest/A/B isolation with identical entity IDs; synced relogin; aborted late sync; wrong-owner rejection; empty translation hint.');
 }finally{
  if(heldA)heldA();
  if(app)await app.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));
