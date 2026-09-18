@@ -19,7 +19,7 @@ export interface Bridge { forWorkspace(scopeRevision:string):Bridge; activateWor
  saveSettings(settings:Partial<Settings>):Promise<Settings>; queue(deckId?:string):Promise<Word[]>; previews(wordId:string):Promise<Record<number,string>>; review(wordId:string,grade:number,attemptId:string):Promise<Word>; reviewSession(active:boolean):Promise<void>;
  importFile(mode:'auto'|'pairs'|'words'):Promise<{name:string;text:string;drafts:Draft[]}|null>; parse(text:string,mode:'auto'|'pairs'|'words'):Promise<Draft[]>; exportDeck(id:string):Promise<boolean>;
  backup():Promise<boolean>; restore():Promise<boolean>; account():Promise<AccountState>; sync():Promise<SyncStatus>; login(email:string,password:string):Promise<AccountState>; logout():Promise<void>; deleteAccount():Promise<void>; refreshEntitlement():Promise<AccountState>;
- reviewTranslation(wordId:string):Promise<ReviewTranslation>; translate(word:string,native:string,learning:string):Promise<Draft>; catalog(query:string):Promise<CatalogDeck[]>; importCatalog(deck:CatalogDeck):Promise<Deck>;
+ previewTranslation(word:string,native:string,learning:string):Promise<ReviewTranslation>; reviewTranslation(wordId:string):Promise<ReviewTranslation>; translate(word:string,native:string,learning:string):Promise<Draft>; catalog(query:string):Promise<CatalogDeck[]>; importCatalog(deck:CatalogDeck):Promise<Deck>;
  publish(id:string):Promise<{status:string}>; unpublish(id:string):Promise<void>; openSubscriptionManagement():Promise<void>;
 }
 declare global { interface Window { owl:Bridge } }

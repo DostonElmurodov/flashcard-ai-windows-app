@@ -91,6 +91,7 @@ function register(){
  handle('cancelGoogleLogin',()=>{googleAttempt?.abort();});
  handle('login',(email,password)=>changeAccount(()=>api.login(z.string().email().max(254).parse(email),z.string().min(1).max(1024).parse(password))));
  handle('logout',()=>changeAccount(()=>api.logout()));handle('deleteAccount',()=>changeAccount(()=>api.deleteAccount()));handle('refreshEntitlement',async()=>{try{await api.refreshEntitlement();return accountState();}finally{if(!api.state().profile&&store.owner()!=='guest'&&!transitioning&&!dialogs)await changeAccount(async()=>{});}});
+ handle('previewTranslation',(word,native,learning)=>reviewTranslations.preview(str.max(120).parse(word),language.parse(native),language.parse(learning)));
  handle('reviewTranslation',wordId=>reviewTranslations.get(id.parse(wordId)));
  handle('translate',(word,native,learning)=>api.translate(str.parse(word),language.parse(native),language.parse(learning)));
  handle('catalog',query=>api.catalog(z.string().max(200).parse(query)));

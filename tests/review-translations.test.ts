@@ -83,3 +83,32 @@ test('concurrent requests deduplicate, but late responses cannot write after acc
   const final=service.get(f.id);assert.equal(calls,4);complete(spanish);assert.deepEqual(await final,spanish);
  }finally{f.cleanup();}
 });
+
+
+test('AI preview fetches the second language before saving and review reuses its cache',async()=>{
+ const f=await fixture();let calls=0;
+ try{
+  const before=f.store.snapshot();
+  const service=new ReviewTranslations(()=>f.context,async input=>{
+   calls++;assert.deepEqual(input,{word:'airport',native_language:'ru',learning_language:'en-us',secondary_language:'es'});
+   return {...spanish,translation:'aeropuerto'};
+  });
+  assert.equal((await service.preview('airport','ru','en-us')).translation,'aeropuerto');
+  assert.deepEqual(f.store.snapshot(),before,'Preview must not add a word or affect study progress');
+  f.store.addWords(f.deck.id,[{word:'airport',translation:'аэропорт'}]);
+  const word=f.store.snapshot().words.find(row=>row.word==='airport')!;
+  assert.equal((await service.get(word.id)).translation,'aeropuerto');assert.equal(calls,1);
+ }finally{f.cleanup();}
+});
+
+test('AI preview rejects a late result after the secondary language or account changes',async()=>{
+ const f=await fixture();let complete!:(value:unknown)=>void;
+ try{
+  const service=new ReviewTranslations(()=>f.context,()=>new Promise(resolve=>{complete=resolve;}));
+  const pending=service.preview('airport','ru','en-us'),rejected=assert.rejects(pending);
+  f.store.saveSettings({secondaryReviewLanguage:'de'});complete(spanish);await rejected;
+  f.store.saveSettings({secondaryReviewLanguage:'es'});
+  const next=service.preview('airport','ru','en-us'),accountRejected=assert.rejects(next);
+  f.context.scope='changed';complete(spanish);await accountRejected;
+ }finally{f.cleanup();}
+});

@@ -37,6 +37,8 @@ OCR downloads the selected learning language's recognition data on first use, th
 
 In Settings, turn on **Second language in review**, choose a language, and save preferences. Cancelling the picker keeps it off; switching it off clears the choice. Your native language is excluded, and changing the native language to the selected secondary language clears it. Native and learning languages, cards, and review schedules remain unchanged.
 
+After **Translate with AI**, the preview displays the second-language translation before you save the card. Loading or retrying it does not block saving. Editing the source word hides its old secondary translation.
+
 After **Show answer**, the card displays a compact flag, language name, translation, and explanation. The first uncached request uses the protected account API and requires sign-in plus an active shared subscription or server-enabled test mode. It uses the card's source languages. Loading, errors, and retries never block grading, and there is no secondary audio control.
 
 Successful results live in a separate SQLite cache scoped to the API origin, account workspace, source word, source languages, and secondary language. Cached content remains readable offline without another AI request. Failed or malformed responses are not cached, and results arriving after a card, setting, or account change cannot replace the current content. The cache is included in that workspace's local backup; it is not synced as a new word.

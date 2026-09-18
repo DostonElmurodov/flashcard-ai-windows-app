@@ -52,6 +52,32 @@ try{
  await review.getByRole('heading',{name:'аэропорт',exact:true}).waitFor();
  assert.equal(await page.evaluate(()=>window.secondaryFixture.snapshot().reviewedToday),1,'Changing secondary language must not grade or reset a card');
  assert.equal(await page.evaluate(()=>window.secondaryFixture.calls().length),4);
+ // A fresh page starts with no card or saved draft. Exercise the actual AI-add result UI.
+ await page.reload();
+ await page.evaluate(()=>window.secondaryFixture.setSecondary('es'));
+ await page.getByRole('button',{name:'Open AI preview',exact:true}).click();
+ await page.getByRole('button',{name:'AI translation',exact:true}).click();
+ await page.getByPlaceholder('Something worth remembering',{exact:true}).fill('airport');
+ await page.getByRole('button',{name:'Translate with AI',exact:true}).click();
+ await page.waitForFunction(()=>window.secondaryFixture.calls().length===1);
+ await page.getByText('Loading translation…',{exact:true}).waitFor();
+ assert.deepEqual(await page.evaluate(()=>window.secondaryFixture.savedDrafts()),[],'Second translation appears before saving');
+ assert.equal(await page.getByRole('button',{name:'Save selected cards',exact:true}).isEnabled(),true,'Loading must not block save');
+ await page.evaluate(()=>window.secondaryFixture.reject(0));
+ await page.getByRole('button',{name:'Retry translation',exact:true}).click();
+ await page.waitForFunction(()=>window.secondaryFixture.calls().length===2);
+ await page.evaluate(()=>window.secondaryFixture.resolve(1,'aeropuerto','Lugar donde los aviones despegan y aterrizan.'));
+ await page.getByText('aeropuerto',{exact:true}).waitFor();
+ await page.screenshot({path:'test-results/secondary-review/ai-preview.png',fullPage:true});
+ await page.getByRole('textbox',{name:'Word 1',exact:true}).fill('station');
+ assert.equal(await page.locator('.secondary-review').count(),0,'Editing a draft cannot show the old word translation or spend AI on each keystroke');
+ assert.equal(await page.evaluate(()=>window.secondaryFixture.calls().length),2);
+ await page.getByRole('textbox',{name:'Word 1',exact:true}).fill('airport');
+ await page.waitForFunction(()=>window.secondaryFixture.calls().length===3);
+ await page.getByRole('button',{name:'Save selected cards',exact:true}).click();
+ await page.evaluate(()=>window.secondaryFixture.resolve(2,'aeropuerto','Late response after save.'));
+ assert.equal(await page.locator('.secondary-review').count(),0,'Saved preview cannot reappear after a late result');
+ assert.equal(await page.evaluate(()=>window.secondaryFixture.savedDrafts().length),1);
  assert.deepEqual(errors,[]);
- console.log('PASS: real Settings/Review UI — default off, cancel, selection, native equality reset, reveal-only requests, nonblocking grading, retry, stale card/language/off results, no secondary audio.');
+ console.log('PASS: real Settings/Review UI — default off, cancel, selection, native equality reset, reveal-only requests, nonblocking grading, retry, stale card/language/off results, no secondary audio; AI preview translation before save, retry, edit and late-save isolation.');
 }finally{await browser?.close();await server.close();}
