@@ -46,3 +46,7 @@
 @media(max-width:1100px){.learn-page .stat-card{padding:12px 10px;column-gap:8px;grid-template-columns:26px 1fr}.learn-page .stat-icon{width:26px;height:26px}.learn-page .stat-card>span{font-size:10px}.practice-bar{padding:13px;gap:12px}.practice-summary h2{font-size:14px}.practice-bar .button{padding:10px 12px}}
 
 .review-card .review-verb-forms{font-size:17px;font-weight:500;color:var(--muted);margin:0 0 16px;overflow-wrap:anywhere}
+.draft-row-ai{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;row-gap:12px;margin-bottom:20px}
+.draft-row-ai>input:not([type=checkbox]){width:100%;min-width:0}
+.draft-row-ai>.field{grid-column:1/-1;margin:0}
+.draft-row-ai>.icon-button{grid-column:3;grid-row:1}
