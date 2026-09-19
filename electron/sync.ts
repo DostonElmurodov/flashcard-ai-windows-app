@@ -57,7 +57,7 @@ export class AccountSync {
     const submitted=changes.slice(0,500),pending=changes.slice(500);
     const raw=await this.transport.request('/owlai/account/sync',submitted.length?'POST':'GET',submitted.length?{changes:submitted}:undefined,this.controller.signal);
     this.controller.signal.throwIfAborted();const reply=parseReply(raw,this.owner);
-    if(reply.conflicts.length){this.status={state:'conflict',message:'These cards changed on both devices. Your local edits are safe. You can keep them here, or back them up and use the cloud version.'};return this.status;}
+    if(reply.conflicts.length){this.status={state:'conflict',message:'These cards changed on both devices. Sync is paused to preserve your local edits.'};return this.status;}
     const now=this.store.snapshot(),current=exportRecords(now.decks,now.words,base),localEdits=changesSince(current,sent);
     const merged=new Map(reply.records.map(r=>[key(r),r]));
     for(const c of [...pending,...localEdits])merged.set(key(c),{...c,version:0});
