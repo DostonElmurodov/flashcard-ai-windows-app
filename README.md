@@ -35,7 +35,7 @@ OCR downloads the selected learning language's recognition data on first use, th
 
 ### Spelling practice
 
-In Review, turn on **Spelling practice** to see the native translation and type the word you’re learning. The mode starts off and is remembered in the current workspace. **Check** or Enter shows green **Correct** or red **Try again** feedback; editing clears it. Matching ignores case and extra whitespace and accepts canonically equivalent Unicode, but accents and punctuation must match.
+In Review, use the small **keyboard icon** at the right above **Show answer** to see the native translation and type the word you’re learning. The mode starts off and is remembered in the current workspace. **Check** or Enter shows green **Correct** or red **Try again** feedback; editing clears it. Matching ignores case and extra whitespace and accepts canonically equivalent Unicode, but accents and punctuation must match.
 
 Checking never reveals, grades, or advances a card. Use **Show answer**, then **Again**, **Hard**, **Good**, or **Easy** as usual. Input resets on the next card or when toggling the mode. Your saved review direction and schedules stay unchanged. While typing, Space and 1–4 enter characters.
 

@@ -269,9 +269,10 @@ body{padding-top:36px}
 .secondary-language-list button>svg{margin-left:auto;color:var(--accent)}
 .secondary-review{margin:20px 0 0;padding:14px;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow-wrap:anywhere}
 .secondary-review-label{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;font-weight:600}
-.review-tools{display:flex;justify-content:flex-end;margin:14px 0 0}
-.spelling-toggle{font-size:12px;padding:8px 12px}
-.spelling-toggle[aria-pressed=true]{color:var(--accent);border-color:var(--accent);background:var(--soft)}
+.review-tools{display:flex;justify-content:flex-end;margin:0 0 4px}
+.spelling-toggle{position:relative;width:36px;height:36px;padding:8px;color:var(--muted);background:transparent;border:0;box-shadow:none}
+.spelling-toggle[aria-pressed=true],.spelling-toggle:hover{color:var(--accent);background:transparent}
+.spelling-toggle-check{position:absolute;right:3px;bottom:3px}
 .spelling-practice{max-width:440px;margin:22px auto 0;text-align:left}
 .spelling-practice label{display:block;font-size:12px;font-weight:600;margin-bottom:7px;color:var(--muted)}
 .spelling-entry{display:flex;gap:8px;align-items:center}
