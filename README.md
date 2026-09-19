@@ -33,6 +33,10 @@ The first launch asks for native and learning languages. No account is required 
 
 OCR downloads the selected learning language's recognition data on first use, then caches it under the app data directory. The selected file itself is processed locally. Windows speech voices are installed in Windows Settings, not downloaded by this app.
 
+### English verb forms in Review
+
+Review shows smaller V2 and V3 forms below the visible English word (for example, **Do** → **did · done**). Forms use the bundled irregular-verb list, work offline for existing cards, and are hidden until reveal when reviewing from a translation or practicing spelling. Words outside the list have no generated forms.
+
 ### Spelling practice
 
 In Review, use the small **keyboard icon** at the right above **Show answer** to see the native translation and type the word you’re learning. The mode starts off and is remembered in the current workspace. **Check** or Enter shows green **Correct** or red **Try again** feedback; editing clears it. Matching ignores case and extra whitespace and accepts canonically equivalent Unicode, but accents and punctuation must match.
