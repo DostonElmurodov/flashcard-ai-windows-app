@@ -1,6 +1,6 @@
 {
   "name": "owl-ai-windows",
-  "version": "0.1.30",
+  "version": "0.1.31",
   "description": "Owl AI desktop flashcards and spaced repetition",
   "author": "Owl AI",
   "private": true,
@@ -60,7 +60,12 @@
       "package.json",
       "build/icon.png"
     ],
-    "extraResources": [{ "from": "build/icon.ico", "to": "icon.ico" }],
+    "extraResources": [
+      {
+        "from": "build/icon.ico",
+        "to": "icon.ico"
+      }
+    ],
     "asarUnpack": [
       "node_modules/sql.js/dist/*.wasm",
       "node_modules/tesseract.js-core/**/*"
