@@ -16,8 +16,8 @@ export default function Review({snapshot,deckId,onClose,onChanged}:{snapshot:Sna
  const toggleSpelling=async()=>{setSavingMode(true);try{const settings=await owl.saveSettings({spellingPractice:!spelling});setSpelling(settings.spellingPractice===true);await onChanged();}catch(e){setError(errorMessage(e));}finally{setSavingMode(false);}};
  useEffect(()=>{void owl.reviewSession(true).catch(()=>{});return()=>{void owl.reviewSession(false).catch(()=>{});};},[owl]);
  useEffect(()=>{if(loaded)void owl.reviewSession(queue.length>0).catch(()=>{});},[loaded,queue.length,owl]);
- const load=useCallback(async()=>{const rows=await owl.queue(deckId);setQueue(rows);setPreviews(rows[0]?await owl.previews(rows[0].id):{});setLoaded(true);},[deckId,owl]);
- useEffect(()=>{load().catch(e=>setError(errorMessage(e))).finally(()=>setBusy(false));},[load]);
+ const load=useCallback(async()=>{const rows=await owl.queue(deckId);setQueue(rows);setPreviews(rows[0]?await owl.previews(rows[0].id):{});setLoaded(true);},[deckId,owl,snapshot.account?.testMode]);
+ useEffect(()=>{setRevealed(false);load().catch(e=>setError(errorMessage(e))).finally(()=>setBusy(false));},[load]);
  const grade=useCallback(async(rating:number)=>{if(!word||!revealed||grading.current)return;grading.current=true;setBusy(true);try{await owl.review(word.id,rating,attempt.current);attempt.current=crypto.randomUUID();setCompleted(x=>x+1);setRevealed(false);await load();await onChanged();}catch(e){setError(errorMessage(e));}finally{grading.current=false;setBusy(false);}},[word,revealed,load,onChanged,owl]);
  useEffect(()=>{const handler=(e:KeyboardEvent)=>{if((e.target as HTMLElement).matches('input,textarea,select'))return;if(e.code==='Space'){e.preventDefault();setRevealed(true);}else if(['1','2','3','4'].includes(e.key)){e.preventDefault();void grade(Number(e.key));}};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);},[grade]);
  const deck=snapshot.decks.find(x=>x.id===word?.deckId);

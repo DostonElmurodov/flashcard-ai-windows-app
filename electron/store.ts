@@ -71,10 +71,11 @@ export class Store {
  private word(id:string):Word {const data=this.rows<{data:string}>('SELECT data FROM words WHERE id=?',[id])[0]?.data;if(!data)throw new Error('This card no longer exists.');return JSON.parse(data);}
  editWord(id:string,draft:Draft){const word=this.word(id);if(!draft.word.trim()||!draft.translation.trim())throw new Error('Enter both a word and translation.');this.transaction(()=>this.db.run('UPDATE words SET data=? WHERE id=?',[JSON.stringify({...word,...draft,word:draft.word.trim(),translation:draft.translation.trim()}),id]));}
  deleteWord(id:string){this.transaction(()=>{this.db.run('DELETE FROM reviews WHERE word_id=?',[id]);this.db.run('DELETE FROM words WHERE id=?',[id]);});}
- queue(deckId?:string,now=new Date()):Word[]{
+ queue(deckId?:string,now=new Date(),testMode=false):Word[]{
   const {words,decks,settings}=this.snapshot(now);const start=studyDayStart(now,settings.dayStart);const end=new Date(start);end.setDate(end.getDate()+1);
   const introduced=new Set(this.rows<{word_id:string,result:string}>('SELECT word_id,result FROM reviews WHERE direction=? AND at>=?',[settings.direction,start.toISOString()]).filter(x=>JSON.parse(x.result).firstIntroduction).map(x=>x.word_id));
-  let remaining=Math.max(0,settings.dailyGoal-introduced.size);const active=new Set(decks.filter(x=>x.active&&(!deckId||x.id===deckId)).map(x=>x.id));
+  // Only the trusted main process supplies the live server flag; never persist this override.
+  let remaining=testMode?words.length:Math.max(0,settings.dailyGoal-introduced.size);const active=new Set(decks.filter(x=>x.active&&(!deckId||x.id===deckId)).map(x=>x.id));
   const card=(w:Word)=>settings.direction==='forward'?w.card:w.reverse;
   const candidates=words.filter(x=>{const d=decks.find(d=>d.id===x.deckId);return active.has(x.deckId)&&x.translation.trim().length>0&&(x.nativeLanguage??d?.nativeLanguage)===settings.nativeLanguage&&(x.learningLanguage??d?.learningLanguage)===settings.learningLanguage;}).sort((a,b)=>new Date(card(a).due).getTime()-new Date(card(b).due).getTime());
   const due=candidates.filter(w=>{const c=card(w);return c.state!==0&&new Date(c.due)<(c.state===2?end:now);});
@@ -82,10 +83,10 @@ export class Store {
   return [...due,...fresh];
  }
  previews(id:string):Record<number,string>{const word=this.word(id),settings=this.settings(),card=settings.direction==='forward'?word.card:word.reverse,now=new Date();return Object.fromEntries([1,2,3,4].map(g=>[g,scheduleCard(card,g,now,settings.retention).due]));}
- review(id:string,grade:number,attempt:string):Word {
+ review(id:string,grade:number,attempt:string,testMode=false):Word {
   const stored=this.rows<{result:string,word_id:string}>('SELECT result,word_id FROM reviews WHERE attempt=?',[attempt])[0];if(stored){if(stored.word_id!==id)throw new Error('Review attempt already belongs to another card.');return JSON.parse(stored.result).word;}
   const word=this.word(id),settings=this.settings(),key=settings.direction==='forward'?'card':'reverse',now=new Date();
-  if(!this.queue(undefined,now).some(x=>x.id===id))throw new Error('This card is not currently due for review.');
+  if(!this.queue(undefined,now,testMode).some(x=>x.id===id))throw new Error('This card is not currently due for review.');
   const previous=word[key];word[key]=scheduleCard(previous,grade,now,settings.retention);
   this.transaction(()=>{this.db.run('UPDATE words SET data=? WHERE id=?',[JSON.stringify(word),id]);this.db.run('INSERT INTO reviews VALUES(?,?,?,?,?)',[attempt,id,settings.direction,now.toISOString(),JSON.stringify({word,firstIntroduction:previous.reps===0})]);});return word;
  }

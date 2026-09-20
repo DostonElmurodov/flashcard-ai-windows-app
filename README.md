@@ -78,6 +78,8 @@ Subscription status refreshes automatically. The manual refresh and Apple manage
 
 ### Shared test mode
 
+Confirmed test mode also removes the daily **new-word Review allowance**, so newly added words in active sets can enter Review after the saved daily goal is used. Dashboard counts, Review, and reminder queues use the same rule. The saved goal is unchanged; server `false` or a failed confirmation restores it. Language/active-set filters and scheduled due dates remain in effect.
+
 The backend setting `TestMode__Enabled=true` enables test mode for updated desktop and iOS clients. The desktop app reads the public `GET /owlai/config/feature-flags` response (`{"test_mode":true}`) without signing in, on launch, foreground focus, and every minute. The request bypasses HTTP caching. Test mode removes purchase promotion and the backend's commercial word/AI quotas; online account operations still require authentication and retain ownership checks. Actual subscription records are unchanged.
 
 The server is the only authority for test access. Each launch starts in normal mode and ignores legacy cached values; only a successful response containing the boolean `true` enables test mode. An explicit `false` immediately restores normal Premium UI and access rules. Offline, malformed, or failed checks also disable test mode, without changing any real subscription. Periodic/focus refreshes apply server changes to the UI; server operations always enforce the current server setting. There is no local override.

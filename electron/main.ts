@@ -62,15 +62,15 @@ function handle(name:string,fn:(...args:any[])=>unknown){ipcMain.handle('owl:'+n
 function register(){
  handle('openAppMenu',(name,x,y)=>{const index=['Owl AI','Edit','View'].indexOf(z.enum(['Owl AI','Edit','View']).parse(name));const zoom=window.webContents.getZoomFactor();const left=Math.round(z.number().int().min(0).max(10000).parse(x)*zoom),top=Math.round(z.number().int().min(0).max(10000).parse(y)*zoom);const menu=Menu.getApplicationMenu()?.items[index]?.submenu;if(!menu)return;return new Promise<void>(resolve=>menu.popup({window,x:left,y:top,callback:resolve}));});
  handle('systemTimeFormat',()=>systemTimeFormat(app.getSystemLocale()));
- handle('snapshot',()=>({...store.snapshot(),scopeRevision:scope(),account:accountState(),queueCount:store.queue().length}));
+ handle('snapshot',()=>({...store.snapshot(),scopeRevision:scope(),account:accountState(),queueCount:store.queue(undefined,new Date(),api.state().testMode).length}));
  handle('saveDeck',input=>store.saveDeck(z.object({id:id.optional(),name:str,description:z.string().max(2000).optional(),nativeLanguage:language.optional(),learningLanguage:language.optional(),active:z.boolean().optional()}).parse(input)));
  handle('deleteDeck',value=>store.deleteDeck(id.parse(value)));
  handle('addWords',(deck,rows)=>store.addWords(id.parse(deck),z.array(draft).min(1).max(2000).parse(rows)));
  handle('editWord',(value,row)=>store.editWord(id.parse(value),draft.parse(row)));
  handle('deleteWord',value=>store.deleteWord(id.parse(value)));
- handle('queue',value=>store.queue(id.optional().parse(value)));
+ handle('queue',value=>store.queue(id.optional().parse(value),new Date(),api.state().testMode));
  handle('previews',value=>store.previews(id.parse(value)));
- handle('review',(value,grade,attempt)=>store.review(id.parse(value),z.number().int().min(1).max(4).parse(grade),id.parse(attempt)));
+ handle('review',(value,grade,attempt)=>store.review(id.parse(value),z.number().int().min(1).max(4).parse(grade),id.parse(attempt),api.state().testMode));
  handle('parse',(text,m)=>parseImport(z.string().max(5_000_000).parse(text),mode.parse(m)));
  handle('importFile',m=>importFile(window,mode.parse(m),store.settings().learningLanguage));
  handle('exportDeck',value=>exportDeck(window,store,id.parse(value)));
@@ -124,7 +124,7 @@ if(!app.requestSingleInstanceLock())app.quit();else{
   window.on('show',syncVisibility);window.on('hide',syncVisibility);window.on('minimize',syncVisibility);window.on('restore',syncVisibility);
   syncVisibility();void scheduler?.tick();setInterval(()=>{if(!transitioning&&!dialogs&&!quitting)void scheduler?.tick();},1000);
   window.on('close',event=>{if(!quitting&&store.settings().keepInTray){event.preventDefault();window.hide();}});
-  let lastReminder=store.settings().reminderLastSlot??'';setInterval(()=>{const settings=store.settings(),now=new Date(),key=reminderSlot(now,settings.reminderStart,settings.reminderEnd,settings.reminderCount);if(settings.reminders&&key&&lastReminder!==key&&Notification.isSupported()){const count=store.queue().length;if(count){lastReminder=key;const notification=new Notification({title:'A little practice goes a long way',body:`You have ${count} cards ready to review in Owl AI.`});notification.on('click',()=>window.show());notification.show();store.saveSettings({reminderLastSlot:key});}}},15000);
+  let lastReminder=store.settings().reminderLastSlot??'';setInterval(()=>{const settings=store.settings(),now=new Date(),key=reminderSlot(now,settings.reminderStart,settings.reminderEnd,settings.reminderCount);if(settings.reminders&&key&&lastReminder!==key&&Notification.isSupported()){const count=store.queue(undefined,new Date(),api.state().testMode).length;if(count){lastReminder=key;const notification=new Notification({title:'A little practice goes a long way',body:`You have ${count} cards ready to review in Owl AI.`});notification.on('click',()=>window.show());notification.show();store.saveSettings({reminderLastSlot:key});}}},15000);
  }catch(error){dialog.showErrorBox('Owl AI could not start',error instanceof Error?error.message:String(error));app.quit();}});
  app.on('before-quit',()=>{quitting=true;scheduler?.stop();googleAttempt?.abort();});app.on('will-quit',()=>{void sync?.stop();workspaces?.close();});app.on('window-all-closed',()=>{if(!tray)app.quit();});
 }
