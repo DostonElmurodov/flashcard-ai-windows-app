@@ -60,6 +60,7 @@
       "package.json",
       "build/icon.png"
     ],
+    "extraResources": [{ "from": "build/icon.ico", "to": "icon.ico" }],
     "asarUnpack": [
       "node_modules/sql.js/dist/*.wasm",
       "node_modules/tesseract.js-core/**/*"
