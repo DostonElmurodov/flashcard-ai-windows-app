@@ -13,6 +13,7 @@ export interface SyncChange extends Omit<SyncRecord,'version'> {base_version:num
 const record=z.object({kind:z.enum(['deck','word']),id:identifier,version:z.number().int().nonnegative(),deleted:z.boolean(),data:z.record(z.string(),z.unknown()).nullable()});
 export const key=(row:Pick<SyncRecord,'kind'|'id'>)=>row.kind+':'+row.id;
 export function canonical(value:unknown):string {if(Array.isArray(value))return '['+value.map(canonical).join(',')+']';if(value&&typeof value==='object')return '{'+Object.entries(value).filter(([,v])=>v!==undefined).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>JSON.stringify(k)+':'+canonical(v)).join(',')+'}';return JSON.stringify(value);}
+const recordContents=(rows:SyncRecord[])=>canonical([...rows].sort((a,b)=>key(a).localeCompare(key(b))));
 export function exportRecords(decks:Deck[],words:Word[],base:SyncRecord[]=[]):SyncRecord[]{const metadata=new Map(base.map(r=>[key(r),r.data?.metadata])),deckMap=new Map(decks.map(d=>[d.id,d]));return [
  ...decks.map(d=>({kind:'deck' as const,id:d.id,version:0,deleted:false,data:{name:d.name,description:d.description,active:d.active,native_language:d.nativeLanguage,learning_language:d.learningLanguage,created_at:d.createdAt,...(metadata.get('deck:'+d.id)?{metadata:metadata.get('deck:'+d.id)}:{})}})),
  ...words.map(w=>({kind:'word' as const,id:w.id,version:0,deleted:false,data:{native_language:w.nativeLanguage??deckMap.get(w.deckId)?.nativeLanguage,learning_language:w.learningLanguage??deckMap.get(w.deckId)?.learningLanguage,deck_id:w.deckId,word:w.word,translation:w.translation,pronunciation:w.pronunciation??null,examples:w.examples??[],notes:w.notes??null,created_at:w.createdAt,...(metadata.get('word:'+w.id)?{metadata:metadata.get('word:'+w.id)}:{}),card:{...w.card,last_review:w.card.last_review??null},reverse:{...w.reverse,last_review:w.reverse.last_review??null}}}))
@@ -28,9 +29,10 @@ export function changesSince(local:SyncRecord[],base:SyncRecord[]):SyncChange[]{
  for(const [k,row] of previous)if(!row.deleted&&!current.has(k))changes.push({kind:row.kind,id:row.id,base_version:row.version,deleted:true,data:null});
  return changes;
 }
-export function parseReply(raw:unknown,owner:string){const reply=z.object({owner_id:identifier,records:z.array(record).max(100000),conflicts:z.array(record).optional().default([])}).parse(raw);if(reply.owner_id!==owner)throw new Error('Account mismatch. Sync stopped without changing local data.');const ids=new Set<string>();for(const r of reply.records){if(ids.has(key(r)))throw new Error('Duplicate cloud record.');ids.add(key(r));if(!r.deleted)(r.kind==='deck'?deckData:wordData).parse(r.data);}return reply;}
+export function parseReply(raw:unknown,owner:string){const reply=z.object({owner_id:identifier,records:z.array(record).max(100000),conflicts:z.array(record).optional().default([]),cursor:z.number().int().nonnegative().safe().optional(),is_snapshot:z.boolean().optional()}).parse(raw);if(reply.owner_id!==owner)throw new Error('Account mismatch. Sync stopped without changing local data.');const ids=new Set<string>();for(const r of reply.records){if(ids.has(key(r)))throw new Error('Duplicate cloud record.');ids.add(key(r));if(!r.deleted)(r.kind==='deck'?deckData:wordData).parse(r.data);}return reply;}
 
 export interface SyncTransport {request<T>(path:string,method?:string,body?:unknown,signal?:AbortSignal):Promise<T>}
+const recoveryMessage='Cloud sync history was reset. Your local cards were preserved. Choose Use cloud version to save a backup and restore the server copy.';
 export class AccountSync {
  private controller=new AbortController();private running:Promise<SyncStatus>|null=null;
  status:SyncStatus={state:'idle'};
@@ -41,31 +43,47 @@ export class AccountSync {
   this.running=this.resetFromCloud().finally(()=>{this.running=null;});return this.running;
  }
  private async resetFromCloud(){
-  const raw=await this.transport.request('/owlai/account/sync','GET',undefined,this.controller.signal),reply=parseReply(raw,this.owner);this.controller.signal.throwIfAborted();const decoded=decodeRows(reply.records);this.store.preserveBeforeCloudReset();this.store.applySync(decoded.decks,decoded.words,reply.records);this.status={state:'synced',lastSyncedAt:new Date().toISOString(),message:'Cloud version restored. A local backup of your previous cards was saved.'} as SyncStatus;return this.status;
+  const raw=await this.transport.request('/owlai/account/sync','GET',undefined,this.controller.signal),reply=parseReply(raw,this.owner);this.controller.signal.throwIfAborted();const decoded=decodeRows(reply.records);this.store.preserveBeforeCloudReset();this.store.applySync(decoded.decks,decoded.words,reply.records,reply.cursor??null);this.status={state:'synced',lastSyncedAt:new Date().toISOString(),message:'Cloud version restored. A local backup of your previous cards was saved.'} as SyncStatus;return this.status;
  }
  async stop(){this.controller.abort();await this.running?.catch(()=>{});}
  run():Promise<SyncStatus>{if(this.running)return this.running;this.running=this.perform().finally(()=>{this.running=null;});return this.running;}
  private async perform():Promise<SyncStatus>{
   if(this.controller.signal.aborted)return this.status;
+  if(this.store.syncRecoveryRequired()){this.status={state:'conflict',message:recoveryMessage};return this.status;}
   this.status={...this.status,state:'syncing',message:undefined};
   try{
+   let negotiated=false;
    for(let batch=0;batch<25;batch++){
-    const base=this.store.syncBaseline(),snapshot=this.store.snapshot(),sent=exportRecords(snapshot.decks,snapshot.words,base),changes=changesSince(sent,base);
+    const cursor=this.store.syncCursor(),base=this.store.syncBaseline(),snapshot=this.store.snapshot(),sent=exportRecords(snapshot.decks,snapshot.words,base),changes=changesSince(sent,base);
     // Parents before cards; deleted parents only after their card tombstones.
     const priority=(c:SyncChange)=>c.kind==='deck'?(c.deleted?2:0):1;
     changes.sort((a,b)=>priority(a)-priority(b));
-    const submitted=changes.slice(0,500),pending=changes.slice(500);
-    const raw=await this.transport.request('/owlai/account/sync',submitted.length?'POST':'GET',submitted.length?{changes:submitted}:undefined,this.controller.signal);
+    // Negotiate once before the first upload, including offline edits on upgrade.
+    const negotiate=cursor===null&&!negotiated;negotiated=true;
+    const submitted=negotiate?[]:changes.slice(0,500),pending=negotiate?changes:changes.slice(500);
+    const path='/owlai/account/sync'+(!submitted.length&&cursor!==null?'?since='+cursor:'');
+    const raw=await this.transport.request(path,submitted.length?'POST':'GET',submitted.length?{changes:submitted,...(cursor!==null?{since:cursor}:{})}:undefined,this.controller.signal);
     this.controller.signal.throwIfAborted();const reply=parseReply(raw,this.owner);
+    if(cursor!==null&&reply.is_snapshot===true&&reply.cursor!==undefined){this.store.requireSyncRecovery();this.status={state:'conflict',message:recoveryMessage};return this.status;}
     if(reply.conflicts.length){this.status={state:'conflict',message:'These cards changed on both devices. Sync is paused to preserve your local edits.'};return this.status;}
+    const incremental=reply.cursor!==undefined&&reply.is_snapshot!==undefined;
+    const returned=new Map(reply.records.map(r=>[key(r),r]));
+    // Only an exact acknowledgement may advance the base of an uploaded change.
+    for(const c of submitted){const ack=returned.get(key(c));if(!ack||ack.version!==c.base_version+1||ack.deleted!==c.deleted||canonical(ack.data)!==canonical(c.data))throw new Error('Cloud acknowledgement did not match the submitted changes. Your local edits were preserved.');}
     const now=this.store.snapshot(),current=exportRecords(now.decks,now.words,base),localEdits=changesSince(current,sent);
-    const merged=new Map(reply.records.map(r=>[key(r),r]));
+    const cloud=new Map((incremental&&!reply.is_snapshot?base:[]).map(r=>[key(r),r]));
+    for(const r of reply.records)cloud.set(key(r),r);
+    const merged=new Map(cloud);
     for(const c of [...pending,...localEdits])merged.set(key(c),{...c,version:0});
-    // Keep the old versions of unsent edits: a later batch must still detect conflicts.
-    const baseline=new Map(reply.records.map(r=>[key(r),r])),old=new Map(base.map(r=>[key(r),r]));
-    for(const c of pending){const k=key(c),previous=old.get(k);if(previous)baseline.set(k,previous);else baseline.delete(k);}
+    const baseline=new Map(cloud),old=new Map(base.map(r=>[key(r),r])),accepted=new Set(submitted.map(key));
+    const deferred=[...pending,...localEdits.filter(c=>!accepted.has(key(c)))];
+    // Unsubmitted edits must keep their original conflict version, including edits
+    // made to previously clean rows while the request was in flight.
+    for(const c of deferred){const k=key(c),previous=old.get(k);if(previous)baseline.set(k,previous);else baseline.delete(k);}
+    const nextCursor=incremental?(deferred.length?(cursor??0):reply.cursor!):null;
     const decoded=decodeRows([...merged.values()]);this.controller.signal.throwIfAborted();
-    this.store.applySync(decoded.decks,decoded.words,[...baseline.values()]);
+    const nextBaseline=[...baseline.values()];
+    if(nextCursor!==cursor||recordContents(nextBaseline)!==recordContents(base)||recordContents(exportRecords(decoded.decks,decoded.words,nextBaseline))!==recordContents(current))this.store.applySync(decoded.decks,decoded.words,nextBaseline,nextCursor);
     if(!pending.length)break;
     if(batch===24)throw new Error('More changes remain. Sync again to continue.');
    }

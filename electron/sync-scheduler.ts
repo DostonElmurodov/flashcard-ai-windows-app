@@ -14,16 +14,19 @@ export class SyncScheduler {
  private failures=0;
  private retryAt:number|null=null;
  private running:Promise<SyncStatus>|null=null;
- constructor(private run:()=>Promise<SyncStatus>,private now=Date.now){}
- setBackground(value:boolean){this.background=value;}
+ constructor(private run:()=>Promise<SyncStatus>,private now=Date.now,private random=Math.random){}
+ private foregroundDue=false;
+ setBackground(value:boolean){if(this.background&&!value&&this.now()-this.lastCompleted>=5*minute)this.foregroundDue=true;this.background=value;}
+ foreground(){if(this.now()-this.lastCompleted>=5*minute)this.foregroundDue=true;}
  setReviewing(value:boolean){if(this.reviewing&&!value&&this.dirtyAt!==null)this.dirtyAt=this.now();this.reviewing=value;}
  changed(){this.revision++;this.dirtyAt=this.now()+15_000;}
  stop(){this.stopped=true;}
  tick():Promise<SyncStatus|undefined>{
-  if(this.stopped||(this.reviewing&&!this.background)||this.conflict)return Promise.resolve(undefined);
+  if(this.stopped||(this.background&&this.dirtyAt===null)||(this.reviewing&&!this.background)||this.conflict)return Promise.resolve(undefined);
   const now=this.now();
   // Edits and focus changes must not defeat an offline/server-error backoff.
-  const due=this.retryAt??Math.min(this.dirtyAt??Infinity,this.lastCompleted+(this.background?30:5)*minute);
+  const cleanDue=this.background?Infinity:(this.foregroundDue?now:this.lastCompleted+60*minute);
+  const due=this.retryAt??Math.min(this.dirtyAt??Infinity,cleanDue);
   return now>=due?this.runNow():Promise.resolve(undefined);
  }
  runNow():Promise<SyncStatus>{
@@ -37,9 +40,9 @@ export class SyncScheduler {
   let result:SyncStatus;
   try{result=await this.run();}catch(error){result={state:'error',message:error instanceof Error?error.message:'Sync failed.'};}
   if(this.stopped)return result;
-  this.lastCompleted=this.now();this.conflict=result.state==='conflict';
+  this.lastCompleted=this.now();this.foregroundDue=false;this.conflict=result.state==='conflict';
   if(result.state==='error'){
-   this.retryAt=this.now()+retries[Math.min(this.failures++,retries.length-1)];
+   this.retryAt=this.now()+retries[Math.min(this.failures++,retries.length-1)]*(1+0.2*this.random());
   }else{
    this.failures=0;this.retryAt=null;
    if(result.state==='synced'&&revision===this.revision)this.dirtyAt=null;

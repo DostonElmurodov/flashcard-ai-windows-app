@@ -121,6 +121,7 @@ if(!app.requestSingleInstanceLock())app.quit();else{
   window.webContents.setWindowOpenHandler(()=>({action:'deny'}));window.webContents.on('will-navigate',event=>event.preventDefault());window.webContents.session.setPermissionRequestHandler((_web,permission,callback)=>callback(permission==='notifications'));
   register();configureLogin();configureTray();await window.loadFile(join(__dirname,'../dist/index.html'));window.webContents.setZoomLevel(-.5);window.setSize(954,723);window.center();window.show();
   const syncVisibility=()=>{scheduler?.setBackground(!window.isVisible()||window.isMinimized());};
+  window.on('focus',()=>{scheduler?.foreground();});
   window.on('show',syncVisibility);window.on('hide',syncVisibility);window.on('minimize',syncVisibility);window.on('restore',syncVisibility);
   syncVisibility();void scheduler?.tick();setInterval(()=>{if(!transitioning&&!dialogs&&!quitting)void scheduler?.tick();},1000);
   window.on('close',event=>{if(!quitting&&store.settings().keepInTray){event.preventDefault();window.hide();}});

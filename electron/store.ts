@@ -8,7 +8,7 @@ import type {SyncRecord} from './sync';
 import {secondaryReviewLanguage} from '../shared/secondary-review';
 const defaults:Settings={spellingPractice:false,secondaryReviewLanguage:null,nativeLanguage:'ru',learningLanguage:'en-us',theme:'light',accent:'indigo',darkAccent:'teal',dailyGoal:5,direction:'forward',dayStart:0,retention:.9,reminders:true,reminderTime:'19:00',reminderStart:'08:00',reminderEnd:'20:00',reminderCount:10,keepInTray:true,launchAtLogin:true,apiBase:'https://api.mavrylo.com',onboardingComplete:false};
 export class Store {
- private constructor(private db:Database,private path:string){db.run('CREATE TABLE IF NOT EXISTS review_translations(cache_key TEXT PRIMARY KEY,data TEXT NOT NULL)');}
+ private constructor(private db:Database,private path:string){if(!db.exec('PRAGMA table_info(sync_state)')[0]?.values.some(row=>row[1]==='cursor'))db.run('ALTER TABLE sync_state ADD COLUMN cursor INTEGER');if(!db.exec('PRAGMA table_info(sync_state)')[0]?.values.some(row=>row[1]==='recovery_required'))db.run('ALTER TABLE sync_state ADD COLUMN recovery_required INTEGER NOT NULL DEFAULT 0');db.run('CREATE TABLE IF NOT EXISTS review_translations(cache_key TEXT PRIMARY KEY,data TEXT NOT NULL)');}
  static async open(path:string,owner='guest'):Promise<Store>{
   mkdirSync(dirname(path),{recursive:true});
   const SQL=await initSqlJs({locateFile:()=>require.resolve('sql.js/dist/sql-wasm.wasm')});
@@ -21,7 +21,7 @@ export class Store {
   db.run('CREATE TABLE IF NOT EXISTS sync_state(id INTEGER PRIMARY KEY CHECK(id=1),owner TEXT NOT NULL,baseline TEXT NOT NULL)');
   const store=new Store(db,path),saved=store.rows<{owner:string}>('SELECT owner FROM sync_state WHERE id=1')[0];
   if(saved&&saved.owner!==owner){db.close();throw new Error('This database belongs to a different account.');}
-  if(!saved)db.run('INSERT INTO sync_state VALUES(1,?,?)',[owner,'[]']);
+  if(!saved)db.run('INSERT INTO sync_state(id,owner,baseline) VALUES(1,?,?)',[owner,'[]']);
   store.activateOnlyDeck();store.migrateReminderDefaults();store.persist();return store;
  }
  private rows<T>(sql:string,params:SqlValue[]=[]):T[]{const stmt=this.db.prepare(sql);try{stmt.bind(params);const result:T[]=[];while(stmt.step())result.push(stmt.getAsObject() as T);return result;}finally{stmt.free();}}
@@ -94,20 +94,23 @@ export class Store {
  preserveBeforeCloudReset(){this.backup(this.path+'.before-cloud-'+Date.now()+'.sqlite');}
  owner():string {return this.rows<{owner:string}>('SELECT owner FROM sync_state WHERE id=1')[0]?.owner??'guest';}
  syncBaseline():SyncRecord[]{return JSON.parse(this.rows<{baseline:string}>('SELECT baseline FROM sync_state WHERE id=1')[0]?.baseline??'[]');}
- applySync(decks:Deck[],words:Word[],baseline:SyncRecord[]){
+ syncCursor():number|null{return this.rows<{cursor:number|null}>('SELECT cursor FROM sync_state WHERE id=1')[0]?.cursor??null;}
+ syncRecoveryRequired():boolean{return this.rows<{recovery_required:number}>('SELECT recovery_required FROM sync_state WHERE id=1')[0]?.recovery_required===1;}
+ requireSyncRecovery(){this.transaction(()=>this.db.run('UPDATE sync_state SET recovery_required=1 WHERE id=1'));}
+ applySync(decks:Deck[],words:Word[],baseline:SyncRecord[],cursor:number|null=null){
   this.transaction(()=>{
    const deckIds=new Set(decks.map(d=>d.id)),wordIds=new Set(words.map(w=>w.id));
    for(const d of decks)this.db.run('INSERT INTO decks VALUES(?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data',[d.id,JSON.stringify(d)]);
    for(const w of words)this.db.run('INSERT INTO words VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET deck_id=excluded.deck_id,data=excluded.data',[w.id,w.deckId,JSON.stringify(w)]);
    for(const w of this.rows<{id:string}>('SELECT id FROM words'))if(!wordIds.has(w.id)){this.db.run('DELETE FROM reviews WHERE word_id=?',[w.id]);this.db.run('DELETE FROM words WHERE id=?',[w.id]);}
    for(const d of this.rows<{id:string}>('SELECT id FROM decks'))if(!deckIds.has(d.id))this.db.run('DELETE FROM decks WHERE id=?',[d.id]);
-   this.db.run('UPDATE sync_state SET baseline=? WHERE id=1',[JSON.stringify(baseline)]);this.activateOnlyDeck();
+   this.db.run('UPDATE sync_state SET baseline=?,cursor=?,recovery_required=0 WHERE id=1',[JSON.stringify(baseline),cursor]);this.activateOnlyDeck();
   });
  }
  async restore(source:string){
 
   const SQL=await initSqlJs({locateFile:()=>require.resolve('sql.js/dist/sql-wasm.wasm')});const candidate=new SQL.Database(readFileSync(source));
-  try{if(candidate.exec('PRAGMA integrity_check')[0]?.values[0]?.[0]!=='ok'||candidate.exec('PRAGMA user_version')[0]?.values[0]?.[0]!==1)throw new Error('Choose a valid Owl AI backup from this app version.');for(const table of ['decks','words','reviews','settings'])candidate.exec(`SELECT * FROM ${table} LIMIT 1`);const tables=candidate.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='sync_state'");const backupOwner=tables.length?candidate.exec('SELECT owner FROM sync_state WHERE id=1')[0]?.values[0]?.[0]:'guest';if(backupOwner!==this.owner())throw new Error('This backup belongs to a different account or local workspace. Switch to its original workspace before restoring.');candidate.run("CREATE TABLE IF NOT EXISTS sync_state(id INTEGER PRIMARY KEY CHECK(id=1),owner TEXT NOT NULL,baseline TEXT NOT NULL)");candidate.run("INSERT OR IGNORE INTO sync_state VALUES(1,'guest','[]')");const check=new Store(candidate,source);check.snapshot();check.activateOnlyDeck();const current=this.settings();const restored={...check.settings(),apiBase:current.apiBase,launchAtLogin:current.launchAtLogin,startupDefaultsVersion:1};candidate.run('INSERT OR REPLACE INTO settings VALUES(1,?)',[JSON.stringify(restored)]);copyFileSync(this.path,this.path+'.before-restore.bak');const tmp=this.path+'.restore.tmp';writeFileSync(tmp,Buffer.from(candidate.export()));renameSync(tmp,this.path);this.db.close();this.db=new SQL.Database(candidate.export());this.db.run('PRAGMA foreign_keys=ON');}finally{candidate.close();}
+  try{if(candidate.exec('PRAGMA integrity_check')[0]?.values[0]?.[0]!=='ok'||candidate.exec('PRAGMA user_version')[0]?.values[0]?.[0]!==1)throw new Error('Choose a valid Owl AI backup from this app version.');for(const table of ['decks','words','reviews','settings'])candidate.exec(`SELECT * FROM ${table} LIMIT 1`);const tables=candidate.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='sync_state'");const backupOwner=tables.length?candidate.exec('SELECT owner FROM sync_state WHERE id=1')[0]?.values[0]?.[0]:'guest';if(backupOwner!==this.owner())throw new Error('This backup belongs to a different account or local workspace. Switch to its original workspace before restoring.');candidate.run("CREATE TABLE IF NOT EXISTS sync_state(id INTEGER PRIMARY KEY CHECK(id=1),owner TEXT NOT NULL,baseline TEXT NOT NULL)");candidate.run("INSERT OR IGNORE INTO sync_state(id,owner,baseline) VALUES(1,'guest','[]')");const check=new Store(candidate,source);check.snapshot();check.activateOnlyDeck();const current=this.settings();const restored={...check.settings(),apiBase:current.apiBase,launchAtLogin:current.launchAtLogin,startupDefaultsVersion:1};candidate.run('INSERT OR REPLACE INTO settings VALUES(1,?)',[JSON.stringify(restored)]);copyFileSync(this.path,this.path+'.before-restore.bak');const tmp=this.path+'.restore.tmp';writeFileSync(tmp,Buffer.from(candidate.export()));renameSync(tmp,this.path);this.db.close();this.db=new SQL.Database(candidate.export());this.db.run('PRAGMA foreign_keys=ON');}finally{candidate.close();}
  }
  close(){this.persist();this.db.close();}
 }
