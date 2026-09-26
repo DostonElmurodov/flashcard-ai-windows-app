@@ -21,3 +21,6 @@ The main process validates account scope on every data IPC call and rejects resu
 3. Build Windows with `npm run build`, then package only after the real-device checks. Existing 0.1.27 installers are from the previous build and do not contain this feature.
 
 No production deployment or iOS distribution was performed by this change. A Windows build alone cannot enable the new server routes. Automated tests cover account isolation, versions, null/empty cross-platform values, late responses and UI behavior; they do not replace real App Attest or an iPhone/Windows end-to-end test.
+
+### Deleted collection recovery (Windows 0.1.33)
+When a cloud-deleted collection still has pending local cards during reconciliation, Windows preserves those cards under fresh IDs in a separate `<name> (Recovered)` collection. The original server tombstones remain intact. Notes, scheduling, local review history, and opaque iOS metadata are retained. Recovery is persisted before upload, so an offline retry or restart reuses the same recovered IDs. Malformed cloud references without a known deleted local parent still fail safely.

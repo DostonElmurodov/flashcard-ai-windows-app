@@ -97,11 +97,13 @@ export class Store {
  syncCursor():number|null{return this.rows<{cursor:number|null}>('SELECT cursor FROM sync_state WHERE id=1')[0]?.cursor??null;}
  syncRecoveryRequired():boolean{return this.rows<{recovery_required:number}>('SELECT recovery_required FROM sync_state WHERE id=1')[0]?.recovery_required===1;}
  requireSyncRecovery(){this.transaction(()=>this.db.run('UPDATE sync_state SET recovery_required=1 WHERE id=1'));}
- applySync(decks:Deck[],words:Word[],baseline:SyncRecord[],cursor:number|null=null){
+ applySync(decks:Deck[],words:Word[],baseline:SyncRecord[],cursor:number|null=null,recoveredIds:ReadonlyMap<string,string>=new Map()){
   this.transaction(()=>{
    const deckIds=new Set(decks.map(d=>d.id)),wordIds=new Set(words.map(w=>w.id));
    for(const d of decks)this.db.run('INSERT INTO decks VALUES(?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data',[d.id,JSON.stringify(d)]);
    for(const w of words)this.db.run('INSERT INTO words VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET deck_id=excluded.deck_id,data=excluded.data',[w.id,w.deckId,JSON.stringify(w)]);
+   // Recovery changes identity, not learning history; move reviews atomically.
+   for(const [oldId,newId] of recoveredIds)if(wordIds.has(newId)&&!wordIds.has(oldId))this.db.run('UPDATE reviews SET word_id=? WHERE word_id=?',[newId,oldId]);
    for(const w of this.rows<{id:string}>('SELECT id FROM words'))if(!wordIds.has(w.id)){this.db.run('DELETE FROM reviews WHERE word_id=?',[w.id]);this.db.run('DELETE FROM words WHERE id=?',[w.id]);}
    for(const d of this.rows<{id:string}>('SELECT id FROM decks'))if(!deckIds.has(d.id))this.db.run('DELETE FROM decks WHERE id=?',[d.id]);
    this.db.run('UPDATE sync_state SET baseline=?,cursor=?,recovery_required=0 WHERE id=1',[JSON.stringify(baseline),cursor]);this.activateOnlyDeck();

@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {randomUUID} from 'node:crypto';
 import type {Deck,Word,SyncStatus} from '../shared/types';
 import type {Store} from './store';
 
@@ -75,16 +76,40 @@ export class AccountSync {
     for(const r of reply.records)cloud.set(key(r),r);
     const merged=new Map(cloud);
     for(const c of [...pending,...localEdits])merged.set(key(c),{...c,version:0});
+    // Pending cards can outlive their cloud collection. Preserve them under fresh
+    // IDs, leaving the server's deletion tombstones intact instead of reviving them.
+    const recovered=new Set<string>(),recoveryDecks=new Map<string,string>(),recoveredIds=new Map<string,string>();
+    for(const c of [...pending,...localEdits]){
+     if(c.kind!=='word'||c.deleted||recovered.has(key(c)))continue;
+     const row=merged.get(key(c));if(!row||row.deleted||!row.data)continue;
+     const parentId=String(row.data.deck_id),parent=merged.get('deck:'+parentId);
+     if(parent&&!parent.deleted)continue;
+     const deletedParent=cloud.get('deck:'+parentId),localParent=current.find(r=>r.kind==='deck'&&r.id===parentId);
+     if(!deletedParent?.deleted||!localParent?.data)continue;
+     let recoveryId=recoveryDecks.get(parentId);
+     if(!recoveryId){recoveryId=randomUUID();recoveryDecks.set(parentId,recoveryId);merged.set('deck:'+recoveryId,{...localParent,id:recoveryId,version:0,data:{...localParent.data,name:String(localParent.data.name).slice(0,500)+' (Recovered)'}});}
+     const id=randomUUID();recoveredIds.set(c.id,id);merged.set('word:'+id,{...row,id,data:{...row.data,deck_id:recoveryId}});
+     const original=cloud.get(key(c));if(original)merged.set(key(c),original);else merged.delete(key(c));
+     recovered.add(key(c));
+    }
     const baseline=new Map(cloud),old=new Map(base.map(r=>[key(r),r])),accepted=new Set(submitted.map(key));
-    const deferred=[...pending,...localEdits.filter(c=>!accepted.has(key(c)))];
+    // Unsent recovered IDs have no server version. A version-zero, absent
+    // baseline entry retains opaque iPhone metadata for export/restart without
+    // treating the recovered record as already uploaded.
+    for(const id of recoveryDecks.values()){
+     const row=merged.get('deck:'+id)!;
+     baseline.set(key(row),{...row,version:0,deleted:true});
+    }
+    for(const id of recoveredIds.values()){const row=merged.get('word:'+id)!;baseline.set(key(row),{...row,version:0,deleted:true});}
+    const deferred=[...pending,...localEdits.filter(c=>!accepted.has(key(c)))].filter(c=>!recovered.has(key(c)));
     // Unsubmitted edits must keep their original conflict version, including edits
     // made to previously clean rows while the request was in flight.
     for(const c of deferred){const k=key(c),previous=old.get(k);if(previous)baseline.set(k,previous);else baseline.delete(k);}
     const nextCursor=incremental?(deferred.length?(cursor??0):reply.cursor!):null;
     const decoded=decodeRows([...merged.values()]);this.controller.signal.throwIfAborted();
     const nextBaseline=[...baseline.values()];
-    if(nextCursor!==cursor||recordContents(nextBaseline)!==recordContents(base)||recordContents(exportRecords(decoded.decks,decoded.words,nextBaseline))!==recordContents(current))this.store.applySync(decoded.decks,decoded.words,nextBaseline,nextCursor);
-    if(!pending.length)break;
+    if(nextCursor!==cursor||recordContents(nextBaseline)!==recordContents(base)||recordContents(exportRecords(decoded.decks,decoded.words,nextBaseline))!==recordContents(current))this.store.applySync(decoded.decks,decoded.words,nextBaseline,nextCursor,recoveredIds);
+    if(!pending.length&&!recovered.size)break;
     if(batch===24)throw new Error('More changes remain. Sync again to continue.');
    }
    this.status={state:'synced',lastSyncedAt:new Date().toISOString()};

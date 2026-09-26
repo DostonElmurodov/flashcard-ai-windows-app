@@ -201,3 +201,35 @@ test('reset recovery stays required across retries and restart until cloud repla
   const ordinary=new AccountSync(store,'A',{request:async<T>()=>{requests++;return {owner_id:'A',records:[],cursor:1,is_snapshot:false} as T;}});assert.equal((await ordinary.run()).state,'synced');assert.equal(requests,recoveredRequests+1);
  }finally{store.close();rmSync(root,{recursive:true,force:true});}
 });
+
+test('deleted cloud collection does not block download and pending cards recover without resurrecting tombstones',async()=>{
+ const root=mkdtempSync(join(tmpdir(),'owl-recover-'));let store=await Store.open(join(root,'db'),'A');
+ try{
+  const oldDeck=store.saveDeck({name:'General'});store.addWords(oldDeck.id,[{word:'Vehicle',translation:'vehicle',notes:'private note'}]);
+  store.review(store.snapshot().words[0].id,3,'recovered-review');
+  const original=store.snapshot(),oldWord=original.words[0];
+  const base=exportRecords(original.decks,original.words).map(r=>({...r,version:1,data:{...r.data,metadata:{example_translations:['saved example']}}}));store.applySync(original.decks,original.words,base,null);
+  store.editWord(oldWord.id,{word:'Vehicle',translation:'updated',notes:'private note'});
+  store.addWords(oldDeck.id,[{word:'Whip',translation:'whip'},{word:'abnormally',translation:'abnormally'}]);
+  const newDeck={...oldDeck,id:'new-general'};
+  const cloudWord={...oldWord,id:'phone-word',deckId:newDeck.id,word:'Phone word'};
+  const remote=new Map<string,any>([...base.map(r=>({...r,version:4,deleted:true,data:null})),...exportRecords([newDeck],[cloudWord]).map(r=>({...r,version:1}))].map(r=>[r.kind+':'+r.id,r]));
+  let failUpload=true,posts=0;
+  const transport={request:async<T>(_path:string,method?:string,body?:any)=>{
+   if(method==='GET')return {owner_id:'A',records:[...remote.values()],cursor:8,is_snapshot:true} as T;
+   posts++;if(failUpload)throw Error('offline');
+   for(const c of body.changes){assert.notEqual(c.id,oldDeck.id);assert.notEqual(c.id,oldWord.id);const key=c.kind+':'+c.id;assert.equal(c.base_version,remote.get(key)?.version??0);remote.set(key,{...c,version:c.base_version+1});}
+   return {owner_id:'A',records:[...remote.values()],cursor:9,is_snapshot:false} as T;
+  }};let sync=new AccountSync(store,'A',transport);
+  assert.equal((await sync.run()).state,'error');assert.equal(posts,1);
+  const recovered=store.snapshot();assert.equal(recovered.words.length,4);
+  const rescuedDeck=recovered.decks.find(d=>d.id!==newDeck.id)!;assert.equal(rescuedDeck.name,'General (Recovered)');assert.notEqual(rescuedDeck.id,oldDeck.id);
+  assert.equal(recovered.words.find(w=>w.word==='Vehicle')?.notes,'private note');
+  assert.equal(recovered.reviewedToday,1);
+  const ids=recovered.words.map(w=>w.id).sort();store.close();store=await Store.open(join(root,'db'),'A');sync=new AccountSync(store,'A',transport);failUpload=false;
+  assert.equal((await sync.run()).state,'synced');assert.deepEqual(store.snapshot().words.map(w=>w.id).sort(),ids);
+  const vehicle=store.snapshot().words.find(w=>w.word==='Vehicle')!;assert.deepEqual(remote.get('word:'+vehicle.id).data.metadata,{example_translations:['saved example']});assert.deepEqual(remote.get('deck:'+rescuedDeck.id).data.metadata,{example_translations:['saved example']});assert.equal(store.snapshot().reviewedToday,1);
+  assert.equal(remote.get('deck:'+oldDeck.id).deleted,true);assert.equal(remote.get('word:'+oldWord.id).deleted,true);
+  assert.equal(store.snapshot().words.filter(w=>w.deckId===rescuedDeck.id).length,3);
+ }finally{store.close();rmSync(root,{recursive:true,force:true});}
+});
