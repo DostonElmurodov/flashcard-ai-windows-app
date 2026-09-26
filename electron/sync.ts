@@ -1,3 +1,4 @@
+import {partOfSpeech} from '../shared/part-of-speech';
 import {z} from 'zod';
 import {randomUUID} from 'node:crypto';
 import type {Deck,Word,SyncStatus} from '../shared/types';
@@ -15,13 +16,21 @@ const record=z.object({kind:z.enum(['deck','word']),id:identifier,version:z.numb
 export const key=(row:Pick<SyncRecord,'kind'|'id'>)=>row.kind+':'+row.id;
 export function canonical(value:unknown):string {if(Array.isArray(value))return '['+value.map(canonical).join(',')+']';if(value&&typeof value==='object')return '{'+Object.entries(value).filter(([,v])=>v!==undefined).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>JSON.stringify(k)+':'+canonical(v)).join(',')+'}';return JSON.stringify(value);}
 const recordContents=(rows:SyncRecord[])=>canonical([...rows].sort((a,b)=>key(a).localeCompare(key(b))));
-export function exportRecords(decks:Deck[],words:Word[],base:SyncRecord[]=[]):SyncRecord[]{const metadata=new Map(base.map(r=>[key(r),r.data?.metadata])),deckMap=new Map(decks.map(d=>[d.id,d]));return [
+function wordMetadata(word:Word,previous:SyncRecord|undefined){
+ const data=previous?.data,metadata={...(data?.metadata as Record<string,unknown>|undefined)};
+ const sameWord=typeof data?.word==='string'&&data.word.trim().toLowerCase()===word.word.trim().toLowerCase();
+ const sameLanguages=(!word.nativeLanguage||word.nativeLanguage===data?.native_language)&&(!word.learningLanguage||word.learningLanguage===data?.learning_language);
+ const label=partOfSpeech(word.partOfSpeech)??(sameWord&&sameLanguages?partOfSpeech(metadata.part_of_speech):undefined);
+ if(label)metadata.part_of_speech=label;else delete metadata.part_of_speech;
+ return Object.keys(metadata).length?{metadata}:{};
+}
+export function exportRecords(decks:Deck[],words:Word[],base:SyncRecord[]=[]):SyncRecord[]{const previous=new Map(base.map(r=>[key(r),r])),metadata=new Map(base.map(r=>[key(r),r.data?.metadata])),deckMap=new Map(decks.map(d=>[d.id,d]));return [
  ...decks.map(d=>({kind:'deck' as const,id:d.id,version:0,deleted:false,data:{name:d.name,description:d.description,active:d.active,native_language:d.nativeLanguage,learning_language:d.learningLanguage,created_at:d.createdAt,...(metadata.get('deck:'+d.id)?{metadata:metadata.get('deck:'+d.id)}:{})}})),
- ...words.map(w=>({kind:'word' as const,id:w.id,version:0,deleted:false,data:{native_language:w.nativeLanguage??deckMap.get(w.deckId)?.nativeLanguage,learning_language:w.learningLanguage??deckMap.get(w.deckId)?.learningLanguage,deck_id:w.deckId,word:w.word,translation:w.translation,pronunciation:w.pronunciation??null,examples:w.examples??[],notes:w.notes??null,created_at:w.createdAt,...(metadata.get('word:'+w.id)?{metadata:metadata.get('word:'+w.id)}:{}),card:{...w.card,last_review:w.card.last_review??null},reverse:{...w.reverse,last_review:w.reverse.last_review??null}}}))
+ ...words.map(w=>({kind:'word' as const,id:w.id,version:0,deleted:false,data:{native_language:w.nativeLanguage??deckMap.get(w.deckId)?.nativeLanguage,learning_language:w.learningLanguage??deckMap.get(w.deckId)?.learningLanguage,deck_id:w.deckId,word:w.word,translation:w.translation,pronunciation:w.pronunciation??null,examples:w.examples??[],notes:w.notes??null,created_at:w.createdAt,...wordMetadata({...w,nativeLanguage:w.nativeLanguage??deckMap.get(w.deckId)?.nativeLanguage,learningLanguage:w.learningLanguage??deckMap.get(w.deckId)?.learningLanguage},previous.get('word:'+w.id)),card:{...w.card,last_review:w.card.last_review??null},reverse:{...w.reverse,last_review:w.reverse.last_review??null}}}))
  ];}
 export function decodeRows(rows:SyncRecord[]):{decks:Deck[];words:Word[]}{
  const decks:Deck[]=[],words:Word[]=[];
- for(const r of rows){if(r.deleted)continue;if(r.kind==='deck'){const d=deckData.parse(r.data);decks.push({id:r.id,name:d.name,description:d.description,active:d.active,nativeLanguage:d.native_language,learningLanguage:d.learning_language,createdAt:d.created_at});}else{const w=wordData.parse(r.data);words.push({id:r.id,deckId:w.deck_id,nativeLanguage:w.native_language,learningLanguage:w.learning_language,word:w.word,translation:w.translation,pronunciation:w.pronunciation??undefined,examples:w.examples??[],notes:w.notes??undefined,createdAt:w.created_at,card:{...w.card,last_review:w.card.last_review??undefined},reverse:{...w.reverse,last_review:w.reverse.last_review??undefined}});}}
+ for(const r of rows){if(r.deleted)continue;if(r.kind==='deck'){const d=deckData.parse(r.data);decks.push({id:r.id,name:d.name,description:d.description,active:d.active,nativeLanguage:d.native_language,learningLanguage:d.learning_language,createdAt:d.created_at});}else{const w=wordData.parse(r.data);words.push({id:r.id,deckId:w.deck_id,nativeLanguage:w.native_language,learningLanguage:w.learning_language,word:w.word,translation:w.translation,partOfSpeech:partOfSpeech(w.metadata?.part_of_speech),pronunciation:w.pronunciation??undefined,examples:w.examples??[],notes:w.notes??undefined,createdAt:w.created_at,card:{...w.card,last_review:w.card.last_review??undefined},reverse:{...w.reverse,last_review:w.reverse.last_review??undefined}});}}
  const ids=new Set(decks.map(d=>d.id));if(words.some(w=>!ids.has(w.deckId)))throw new Error('Cloud cards reference a missing collection. Your local data was preserved.');return {decks,words};
 }
 export function changesSince(local:SyncRecord[],base:SyncRecord[]):SyncChange[]{

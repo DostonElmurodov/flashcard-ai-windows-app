@@ -1,3 +1,4 @@
+import {partOfSpeech} from '../shared/part-of-speech';
 import { safeStorage } from 'electron';
 import { existsSync,readFileSync,writeFileSync,renameSync,unlinkSync } from 'node:fs';
 import type { AccountState,Profile,Entitlement,Draft,CatalogDeck,ReviewTranslation,ReviewTranslationRequest } from '../shared/types';
@@ -38,7 +39,7 @@ export class Api {
  async refreshEntitlement(){await this.featureFlags.refresh();if(!this.session)return this.state();const generation=this.generation;try{const ent=await this.request<Entitlement>('/owlai/account/entitlement','GET');if(generation===this.generation)this.entitlement=ent;return this.state();}catch(error){if(generation===this.generation)this.entitlement=null;throw error;}}
  async logout(){const refresh=this.session?.refresh_token;this.clear();if(refresh)try{await this.send('/owlai/account/session/logout','POST',{refresh_token:refresh});}catch{/* Local logout succeeds offline; server session expires normally. */}}
  async deleteAccount(){await this.request('/owlai/account','DELETE');this.clear();}
- async translate(word:string,native:string,learning:string):Promise<Draft>{const result=await this.request<any>('/owlai/account/ai/word-detail','POST',{word,native_language:native,learning_language:learning});const translation=result.translations?.join('; ')??result.translation;if(typeof translation!=='string'||!translation.trim())throw new Error('No translation returned. Try a different word.');return {word:result.corrected_word??word,translation,pronunciation:result.pronunciation,examples:result.examples};}
+ async translate(word:string,native:string,learning:string):Promise<Draft>{const result=await this.request<any>('/owlai/account/ai/word-detail','POST',{word,native_language:native,learning_language:learning});const translation=result.translations?.join('; ')??result.translation;if(typeof translation!=='string'||!translation.trim())throw new Error('No translation returned. Try a different word.');return {word:result.corrected_word??word,translation,partOfSpeech:partOfSpeech(result.part_of_speech),pronunciation:result.pronunciation,examples:result.examples};}
  reviewTranslation(input:ReviewTranslationRequest){return this.request<ReviewTranslation>('/owlai/account/ai/review-translation','POST',input);}
  catalog(query:string){return this.request<CatalogDeck[]>('/owlai/account/public-flashcard-sets/catalog','POST',{query,limit:40});}
 }

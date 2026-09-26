@@ -1,3 +1,4 @@
+import {partOfSpeech} from '../shared/part-of-speech';
 import initSqlJs, { type Database, type SqlValue } from 'sql.js';
 import { existsSync, readFileSync, writeFileSync, renameSync, copyFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -60,7 +61,12 @@ export class Store {
   const settings=this.settings();const deck:Deck={id:randomUUID(),description:'',active:true,nativeLanguage:settings.nativeLanguage,learningLanguage:settings.learningLanguage,createdAt:new Date().toISOString(),...existing,...input,name:input.name.trim()};
   if(!deck.name)throw new Error('Give your set a name.');
   if(decks.length===0||(existing&&decks.length===1))deck.active=true;
-  this.transaction(()=>this.db.run('INSERT INTO decks VALUES(?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data',[deck.id,JSON.stringify(deck)]));return deck;
+  this.transaction(()=>{
+   if(existing)for(const word of this.snapshot().words.filter(w=>w.deckId===deck.id)){
+    if((word.nativeLanguage??existing.nativeLanguage)!==(word.nativeLanguage??deck.nativeLanguage)||(word.learningLanguage??existing.learningLanguage)!==(word.learningLanguage??deck.learningLanguage))this.db.run('UPDATE words SET data=? WHERE id=?',[JSON.stringify({...word,partOfSpeech:undefined}),word.id]);
+   }
+   this.db.run('INSERT INTO decks VALUES(?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data',[deck.id,JSON.stringify(deck)]);
+  });return deck;
  }
  deleteDeck(id:string){this.transaction(()=>{this.db.run('DELETE FROM reviews WHERE word_id IN (SELECT id FROM words WHERE deck_id=?)',[id]);this.db.run('DELETE FROM words WHERE deck_id=?',[id]);this.db.run('DELETE FROM decks WHERE id=?',[id]);this.activateOnlyDeck();});}
  addWords(deckId:string,drafts:Draft[]):number {
@@ -69,7 +75,7 @@ export class Store {
   let added=0;this.transaction(()=>{for(const draft of drafts){const word=draft.word.trim(),translation=draft.translation.trim(),key=word.normalize('NFKC').toLowerCase();if(!word||!translation)throw new Error('Every selected card needs a word and translation.');if(existing.has(key))continue;const record:Word={...draft,word,translation,id:randomUUID(),deckId,createdAt:new Date().toISOString(),card:newCard(),reverse:newCard()};this.db.run('INSERT INTO words VALUES(?,?,?)',[record.id,deckId,JSON.stringify(record)]);existing.add(key);added++;}});return added;
  }
  private word(id:string):Word {const data=this.rows<{data:string}>('SELECT data FROM words WHERE id=?',[id])[0]?.data;if(!data)throw new Error('This card no longer exists.');return JSON.parse(data);}
- editWord(id:string,draft:Draft){const word=this.word(id);if(!draft.word.trim()||!draft.translation.trim())throw new Error('Enter both a word and translation.');this.transaction(()=>this.db.run('UPDATE words SET data=? WHERE id=?',[JSON.stringify({...word,...draft,word:draft.word.trim(),translation:draft.translation.trim()}),id]));}
+ editWord(id:string,draft:Draft){const word=this.word(id);if(!draft.word.trim()||!draft.translation.trim())throw new Error('Enter both a word and translation.');this.transaction(()=>this.db.run('UPDATE words SET data=? WHERE id=?',[JSON.stringify({...word,...draft,partOfSpeech:word.word.trim().toLowerCase()===draft.word.trim().toLowerCase()?(draft.partOfSpeech??word.partOfSpeech):undefined,word:draft.word.trim(),translation:draft.translation.trim()}),id]));}
  deleteWord(id:string){this.transaction(()=>{this.db.run('DELETE FROM reviews WHERE word_id=?',[id]);this.db.run('DELETE FROM words WHERE id=?',[id]);});}
  queue(deckId?:string,now=new Date(),testMode=false):Word[]{
   const {words,decks,settings}=this.snapshot(now);const start=studyDayStart(now,settings.dayStart);const end=new Date(start);end.setDate(end.getDate()+1);
@@ -100,8 +106,9 @@ export class Store {
  applySync(decks:Deck[],words:Word[],baseline:SyncRecord[],cursor:number|null=null,recoveredIds:ReadonlyMap<string,string>=new Map()){
   this.transaction(()=>{
    const deckIds=new Set(decks.map(d=>d.id)),wordIds=new Set(words.map(w=>w.id));
+   const previousSnapshot=this.snapshot(),previousWords=new Map(previousSnapshot.words.map(w=>[w.id,w])),previousDecks=new Map(previousSnapshot.decks.map(d=>[d.id,d])),incomingDecks=new Map(decks.map(d=>[d.id,d]));
    for(const d of decks)this.db.run('INSERT INTO decks VALUES(?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data',[d.id,JSON.stringify(d)]);
-   for(const w of words)this.db.run('INSERT INTO words VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET deck_id=excluded.deck_id,data=excluded.data',[w.id,w.deckId,JSON.stringify(w)]);
+   for(let w of words){const previous=previousWords.get(w.id);if(!partOfSpeech(w.partOfSpeech)&&previous&&previous.word.trim().toLowerCase()===w.word.trim().toLowerCase()&&(previous.nativeLanguage??previousDecks.get(previous.deckId)?.nativeLanguage)===(w.nativeLanguage??incomingDecks.get(w.deckId)?.nativeLanguage)&&(previous.learningLanguage??previousDecks.get(previous.deckId)?.learningLanguage)===(w.learningLanguage??incomingDecks.get(w.deckId)?.learningLanguage))w={...w,partOfSpeech:previous.partOfSpeech};this.db.run('INSERT INTO words VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET deck_id=excluded.deck_id,data=excluded.data',[w.id,w.deckId,JSON.stringify(w)]);}
    // Recovery changes identity, not learning history; move reviews atomically.
    for(const [oldId,newId] of recoveredIds)if(wordIds.has(newId)&&!wordIds.has(oldId))this.db.run('UPDATE reviews SET word_id=? WHERE word_id=?',[newId,oldId]);
    for(const w of this.rows<{id:string}>('SELECT id FROM words'))if(!wordIds.has(w.id)){this.db.run('DELETE FROM reviews WHERE word_id=?',[w.id]);this.db.run('DELETE FROM words WHERE id=?',[w.id]);}

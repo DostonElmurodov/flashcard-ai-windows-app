@@ -24,3 +24,8 @@ No production deployment or iOS distribution was performed by this change. A Win
 
 ### Deleted collection recovery (Windows 0.1.33)
 When a cloud-deleted collection still has pending local cards during reconciliation, Windows preserves those cards under fresh IDs in a separate `<name> (Recovered)` collection. The original server tombstones remain intact. Notes, scheduling, local review history, and opaque iOS metadata are retained. Recovery is persisted before upload, so an offline retry or restart reuses the same recovered IDs. Malformed cloud references without a known deleted local parent still fail safely.
+
+### Part of speech (Windows 0.1.34)
+AI `part_of_speech` is stored as optional `Word.partOfSpeech` and shared with iOS through `data.metadata.part_of_speech`. Values are trimmed and must fit 100 UTF-16 code units; invalid/missing values do not invent a label. Other metadata remains intact. Legacy clients that omit the field do not erase a known local label for the same word and language pair. Word or effective language changes clear stale labels. Public catalog import/export uses the existing optional `part_of_speech` field.
+
+The current backend already stores sync metadata and returns AI part of speech; no server migration is required. Previously saved cards and some cached AI replies may lack the field. Labels appear when data is available, with no automatic paid AI backfill. iPhone export requires an updated iOS build.

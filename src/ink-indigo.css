@@ -286,3 +286,5 @@ body{padding-top:36px}
 .answer .secondary-review p{margin:6px 0 0;line-height:1.55}.answer .secondary-review .secondary-translation{font-size:14px;font-weight:600;color:var(--ink)}
 .answer .secondary-review .secondary-explanation,.answer .secondary-review .secondary-loading,.answer .secondary-review .secondary-error{font-size:13px;color:var(--muted)}
 .secondary-review .text-button{margin-top:9px;font-size:12px}
+
+.part-of-speech,.word-card-grid .word-expand .part-of-speech{display:inline-block;font-size:11px;line-height:1.4;font-weight:500;color:var(--muted);background:var(--soft);border-radius:5px;padding:2px 7px;margin:4px 0;letter-spacing:0;max-width:100%;overflow-wrap:anywhere}

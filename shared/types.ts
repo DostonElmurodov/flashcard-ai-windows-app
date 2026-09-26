@@ -1,6 +1,6 @@
 export interface ReviewTranslation {language_code:string;translation:string;explanation:string}
 export interface ReviewTranslationRequest {word:string;native_language:string;learning_language:string;secondary_language:string}
-export interface Draft { word:string; translation:string; pronunciation?:string; examples?:string[]; notes?:string }
+export interface Draft { word:string; translation:string; partOfSpeech?:string; pronunciation?:string; examples?:string[]; notes?:string }
 export interface Deck { id:string; name:string; description:string; nativeLanguage:string; learningLanguage:string; active:boolean; createdAt:string }
 export interface ReviewCard { due:string; stability:number; difficulty:number; elapsed_days:number; scheduled_days:number; reps:number; lapses:number; state:number; last_review?:string; learning_steps:number }
 export interface Word extends Draft { nativeLanguage?:string; learningLanguage?:string; id:string; deckId:string; createdAt:string; card:ReviewCard; reverse:ReviewCard }
@@ -10,7 +10,7 @@ export interface Profile { id:string; email:string|null; display_name?:string; p
 export interface Entitlement { status:string; product_id?:string|null; expires_at?:string|null; is_trial:boolean; auto_renew:boolean; was_ever_paid:boolean; source?:string|null; checked_at?:string }
 export interface SyncStatus { state:'idle'|'syncing'|'synced'|'conflict'|'error'; lastSyncedAt?:string; message?:string }
 export interface AccountState { profile:Profile|null; entitlement:Entitlement|null; testMode:boolean; sync?:SyncStatus }
-export interface CatalogCard { client_card_id:string; word:string; translations:string[]; pronunciation?:string; examples:string[]; notes?:string; native_language:string; learning_language:string }
+export interface CatalogCard { client_card_id:string; word:string; translations:string[]; part_of_speech?:string; pronunciation?:string; examples:string[]; notes?:string; native_language:string; learning_language:string }
 export interface CatalogDeck { id:string; title:string; description?:string; word_count:number; cards:CatalogCard[] }
 export interface Bridge { forWorkspace(scopeRevision:string):Bridge; activateWorkspace(scopeRevision:string):void; resolveSync():Promise<SyncStatus>; openAppMenu(name:'Owl AI'|'Edit'|'View',x:number,y:number):Promise<void>; systemTimeFormat():Promise<{hour12:boolean}>;
  loginGoogle():Promise<AccountState|null>; cancelGoogleLogin():Promise<void>;
