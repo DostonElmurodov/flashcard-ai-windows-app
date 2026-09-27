@@ -57,8 +57,11 @@ export class Api {
   }catch(error){
    // The response body may complete after an account/origin transition.
    if(generation===this.generation&&(authorityRevision===null||authorityRevision===this.entitlementRevision)&&error instanceof ApiError){
-    if(error.code==='subscription_reconciliation_required')this.entitlement={status:'invalid_subscription',is_trial:false,auto_renew:false,was_ever_paid:false,checked_at:new Date().toISOString()};
-    else if([402,503].includes(error.status))this.entitlement=null;
+    if(error.code==='subscription_reconciliation_required'||[402,503].includes(error.status)){
+     // A direct refusal supersedes all entitlement confirmations already in flight.
+     if(authorityRevision===null)this.entitlementRevision++;
+     this.entitlement=error.code==='subscription_reconciliation_required'?{status:'invalid_subscription',is_trial:false,auto_renew:false,was_ever_paid:false,checked_at:new Date().toISOString()}:null;
+    }
    }
    throw error;
   }

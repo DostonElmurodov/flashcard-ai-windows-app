@@ -81,3 +81,22 @@ for(const olderResult of ['premium','temporary','reconciliation'] as const)test(
    assert.deepEqual(api.state().entitlement,before,olderResult+' must not overwrite the newer accepted response');assert.equal(evaluateAccess(api.state(),'add',101).allow,newest==='premium');
  }finally{globalThis.fetch=original;rmSync(root,{recursive:true,force:true});}
 });
+
+for(const denial of ['payment','reconciliation','temporary'] as const)test('accepted direct '+denial+' denial invalidates an earlier premium body',async()=>{
+ const root=mkdtempSync(join(tmpdir(),'owl-direct-order-')),original=globalThis.fetch;let finishBody!:(text:string)=>void,refreshCount=0;
+ try{
+  const premium={status:'premium',expires_at:new Date(Date.now()+86400000).toISOString(),checked_at:new Date().toISOString(),was_ever_paid:true,is_trial:false,auto_renew:false};
+  globalThis.fetch=async input=>{
+   const path=new URL(String(input)).pathname;
+   if(path==='/owlai/config/feature-flags')return Response.json({test_mode:false});
+   if(path==='/owlai/account/entitlement'){refreshCount++;return refreshCount>1?Response.json(premium):new Response(new ReadableStream({start(controller){finishBody=text=>{controller.enqueue(new TextEncoder().encode(text));controller.close();};}}));}
+   if(path==='/owlai/account/ai/word-detail')return Response.json({code:denial==='reconciliation'?'subscription_reconciliation_required':denial==='payment'?'subscription_required':'temporary'},{status:denial==='payment'?402:503});
+   throw new Error('Unexpected fake request: '+path);
+  };
+  const api=new Api(join(root,'account.enc'),()=> 'http://127.0.0.1:9');(api as any).session={access_token:'fake',access_token_expires_at:new Date(Date.now()+3600000).toISOString(),profile:{id:'a',email:null}};(api as any).entitlement=premium;
+  const older=api.refreshEntitlement();while(!finishBody)await new Promise(resolve=>setTimeout(resolve,0));
+  await assert.rejects(api.request('/owlai/account/ai/word-detail','POST',{}));const denied=api.state().entitlement;assert.equal(evaluateAccess(api.state(),'add',101).allow,false);
+  finishBody(JSON.stringify(premium));await older;assert.deepEqual(api.state().entitlement,denied);assert.equal(evaluateAccess(api.state(),'add',101).allow,false);
+  await api.refreshEntitlement();assert.equal(api.state().entitlement?.status,'premium');assert.equal(evaluateAccess(api.state(),'add',101).allow,true,'A genuinely later refresh can confirm lawful Premium');
+ }finally{globalThis.fetch=original;rmSync(root,{recursive:true,force:true});}
+});
