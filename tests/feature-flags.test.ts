@@ -87,3 +87,12 @@ test('false stays authoritative after a later failed refresh',async()=>{
   value=null;await flags.refresh();assert.equal(flags.testMode,false);
  }finally{rmSync(root,{recursive:true,force:true});}
 });
+
+test('live true expires and origin round trips cannot revive an earlier generation',async()=>{
+ let base='https://first.example.com',now=0,resolve!:(response:Response)=>void;
+ const flags=new FeatureFlags('unused',()=>base,()=>new Promise<Response>(r=>resolve=r),()=>now);
+ const pending=flags.refresh();base='https://second.example.com';assert.equal(flags.testMode,false);
+ base='https://first.example.com';assert.equal(flags.testMode,false);resolve(Response.json({test_mode:true}));await pending;assert.equal(flags.testMode,false);
+ const fresh=flags.refresh();resolve(Response.json({test_mode:true}));await fresh;assert.equal(flags.testMode,true);
+ now=300001;assert.equal(flags.testMode,false);
+});

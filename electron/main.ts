@@ -9,7 +9,7 @@ import {AccountSync} from './sync';
 import {SyncScheduler} from './sync-scheduler';
 import {systemTimeFormat} from './time-format';
 import {reminderSlot} from './reminders';
-import { Api } from './api';
+import { Api,ApiError } from './api';
 import {ReviewTranslations} from './review-translations';
 import { googleSignIn } from './google';
 declare const GOOGLE_OAUTH_CLIENT_ID:string;
@@ -24,11 +24,11 @@ let workspaces:Workspaces,sync:AccountSync|null=null,transitioning=false,epoch=0
 let scheduler:SyncScheduler|null=null;
 function scheduleSync(){scheduler?.stop();scheduler=sync?new SyncScheduler(runSync):null;scheduler?.setBackground(!!window&&(!window.isVisible()||window.isMinimized()));}
 const scope=()=>epoch+':'+store.owner();
-const accountState=()=>({...api.state(),sync:sync?.status});
+const accountState=()=>({...store.accessState()??api.state(),sync:sync?.status});
 async function selectAccount(){
  scheduler?.stop();scheduler=null;await sync?.stop();sync=null;
  const profile=api.state().profile;
- try{await workspaces.select(workspaces.guest.settings().apiBase,profile?.id??null);}catch(error){api.clear();store=workspaces.guest;epoch++;throw error;}store=workspaces.current;epoch++;
+ try{await workspaces.select(workspaces.guest.settings().apiBase,profile?.id??null);}catch(error){api.clear();store=workspaces.guest;epoch++;throw error;}store=workspaces.current;store.bindAccess(()=>api.state());epoch++;
  if(profile)sync=new AccountSync(store,profile.id,api);scheduleSync();
  if(window&&!window.isDestroyed()){configureTheme();configureTray();}
 }
@@ -54,16 +54,16 @@ function handle(name:string,fn:(...args:any[])=>unknown){ipcMain.handle('owl:'+n
   if(!unscoped&&envelope?.scope!==started)throw new Error('Your account changed. Refresh this page before continuing.');
   if(dialogOperation){dialogs++;dialogStarted=true;if(name==='restore'){scheduler?.stop();await sync?.stop();sync=null;}}
   const value=await fn(...args);
-  if(!auth&&started!==scope())throw new Error('Your account changed. Please try again.');
+  if(!auth&&name!=='saveSettings'&&started!==scope())throw new Error('Your account changed. Please try again.');
   if(['saveDeck','deleteDeck','addWords','editWord','deleteWord','review','importCatalog'].includes(name))scheduler?.changed();
   return {ok:true,value,scope:scope()};
- }catch(error){return {ok:false,error:error instanceof z.ZodError?'Please check the entered values.':error instanceof Error?error.message:'The operation could not be completed.'};}
+ }catch(error){if(error instanceof ApiError&&error.code==='subscription_reconciliation_required')store.rememberAccess(api.state());return {ok:false,error:error instanceof z.ZodError?'Please check the entered values.':error instanceof Error?error.message:'The operation could not be completed.'};}
  finally{if(dialogStarted){dialogs=Math.max(0,dialogs-1);if(name==='restore'&&api.state().profile){sync=new AccountSync(store,api.state().profile!.id,api);scheduleSync();}}if(store.owner()!=='guest'&&!api.state().profile&&!transitioning&&!dialogs){transitioning=true;try{await selectAccount();}finally{transitioning=false;}}}
  });}
 function register(){
  handle('openAppMenu',(name,x,y)=>{const index=['Owl AI','Edit','View'].indexOf(z.enum(['Owl AI','Edit','View']).parse(name));const zoom=window.webContents.getZoomFactor();const left=Math.round(z.number().int().min(0).max(10000).parse(x)*zoom),top=Math.round(z.number().int().min(0).max(10000).parse(y)*zoom);const menu=Menu.getApplicationMenu()?.items[index]?.submenu;if(!menu)return;return new Promise<void>(resolve=>menu.popup({window,x:left,y:top,callback:resolve}));});
  handle('systemTimeFormat',()=>systemTimeFormat(app.getSystemLocale()));
- handle('snapshot',()=>({...store.snapshot(),scopeRevision:scope(),account:accountState(),queueCount:store.queue(undefined,new Date(),api.state().testMode).length}));
+ handle('snapshot',()=>({...store.snapshot(),scopeRevision:scope(),account:accountState(),accessibleWordIds:[...store.eligibleIds()],queueCount:store.queue(undefined,new Date(),api.state().testMode).length}));
  handle('saveDeck',input=>store.saveDeck(z.object({id:id.optional(),name:str,description:z.string().max(2000).optional(),nativeLanguage:language.optional(),learningLanguage:language.optional(),active:z.boolean().optional()}).parse(input)));
  handle('deleteDeck',value=>store.deleteDeck(id.parse(value)));
  handle('addWords',(deck,rows)=>store.addWords(id.parse(deck),z.array(draft).min(1).max(2000).parse(rows)));
@@ -75,7 +75,7 @@ function register(){
  handle('parse',(text,m)=>parseImport(z.string().max(5_000_000).parse(text),mode.parse(m)));
  handle('importFile',m=>importFile(window,mode.parse(m),store.settings().learningLanguage));
  handle('exportDeck',value=>exportDeck(window,store,id.parse(value)));
- handle('saveSettings',async value=>{const patch=z.object({spellingPractice:z.boolean(),nativeLanguage:language,learningLanguage:language,secondaryReviewLanguage:z.string().max(24).nullable(),theme:z.enum(['light','dark','system']),accent:z.enum(['indigo','teal','rose']),darkAccent:z.enum(['indigo','teal','rose']),dailyGoal:z.number().int().min(0).max(200),direction:z.enum(['forward','reverse']),dayStart:z.number().int().min(0).max(1439),retention:z.number().min(.7).max(.97),reminders:z.boolean(),reminderTime:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),reminderStart:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),reminderEnd:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),reminderCount:z.number().int().min(1).max(100),keepInTray:z.boolean(),launchAtLogin:z.boolean(),apiBase,onboardingComplete:z.boolean()}).partial().parse(value);if(patch.apiBase&&patch.apiBase!==workspaces.guest.settings().apiBase&&api.state().profile)throw new Error('Sign out before changing servers.');const settings=store.saveSettings(patch);if(patch.launchAtLogin!==undefined)configureLogin();configureTheme();configureTray();return settings;});
+ handle('saveSettings',async value=>{const patch=z.object({spellingPractice:z.boolean(),nativeLanguage:language,learningLanguage:language,secondaryReviewLanguage:z.string().max(24).nullable(),theme:z.enum(['light','dark','system']),accent:z.enum(['indigo','teal','rose']),darkAccent:z.enum(['indigo','teal','rose']),dailyGoal:z.number().int().min(0).max(200),direction:z.enum(['forward','reverse']),dayStart:z.number().int().min(0).max(1439),retention:z.number().min(.7).max(.97),reminders:z.boolean(),reminderTime:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),reminderStart:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),reminderEnd:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),reminderCount:z.number().int().min(1).max(100),keepInTray:z.boolean(),launchAtLogin:z.boolean(),apiBase,onboardingComplete:z.boolean()}).partial().parse(value);if(patch.apiBase&&patch.apiBase!==workspaces.guest.settings().apiBase&&api.state().profile)throw new Error('Sign out before changing servers.');const originChanged=!!patch.apiBase&&new URL(patch.apiBase).origin!==new URL(workspaces.guest.settings().apiBase).origin;const settings=store.saveSettings(patch);if(originChanged){api.invalidateOrigin();epoch++;}if(patch.launchAtLogin!==undefined)configureLogin();configureTheme();configureTray();return settings;});
  handle('backup',async()=>{const result=await dialog.showSaveDialog(window,{title:'Back up your cards and progress',defaultPath:'Owl-AI-backup.sqlite',filters:[{name:'Owl AI backup',extensions:['sqlite']}]});if(result.canceled||!result.filePath)return false;store.backup(result.filePath);return true;});
  handle('restore',async()=>{const result=await dialog.showOpenDialog(window,{title:'Restore Owl AI backup',properties:['openFile'],filters:[{name:'Owl AI backup',extensions:['sqlite']}]});if(result.canceled)return false;const confirm=await dialog.showMessageBox(window,{type:'warning',message:'Replace local cards and progress with this backup?',detail:'A copy of your current database will be kept. Only a backup from this same account or local workspace can be restored.',buttons:['Cancel','Restore backup'],defaultId:0,cancelId:0});if(confirm.response!==1)return false;await store.restore(result.filePaths[0]);configureTheme();configureTray();return true;});
  handle('account',()=>accountState());
@@ -91,13 +91,13 @@ function register(){
  });
  handle('cancelGoogleLogin',()=>{googleAttempt?.abort();});
  handle('login',(email,password)=>changeAccount(()=>api.login(z.string().email().max(254).parse(email),z.string().min(1).max(1024).parse(password))));
- handle('logout',()=>changeAccount(()=>api.logout()));handle('deleteAccount',()=>changeAccount(()=>api.deleteAccount()));handle('refreshEntitlement',async()=>{try{await api.refreshEntitlement();return accountState();}finally{if(!api.state().profile&&store.owner()!=='guest'&&!transitioning&&!dialogs)await changeAccount(async()=>{});}});
+ handle('logout',()=>changeAccount(()=>api.logout()));handle('deleteAccount',()=>changeAccount(()=>api.deleteAccount()));handle('refreshEntitlement',async()=>{try{await api.refreshEntitlement();return accountState();}finally{store.rememberAccess(api.state());if(!api.state().profile&&store.owner()!=='guest'&&!transitioning&&!dialogs)await changeAccount(async()=>{});}});
  handle('previewTranslation',(word,native,learning)=>reviewTranslations.preview(str.max(120).parse(word),language.parse(native),language.parse(learning)));
  handle('reviewTranslation',wordId=>reviewTranslations.get(id.parse(wordId)));
- handle('translate',(word,native,learning)=>api.translate(str.parse(word),language.parse(native),language.parse(learning)));
+ handle('translate',(word,native,learning)=>{store.assertAccess('ai');return api.translate(str.parse(word),language.parse(native),language.parse(learning));});
  handle('catalog',query=>api.catalog(z.string().max(200).parse(query)));
- handle('importCatalog',input=>{const item=z.object({id,title:str,description:z.string().max(4000).nullish(),cards:z.array(z.object({part_of_speech:z.string().max(100).nullish(),word:str,translations:z.array(z.string().max(5000)).min(1).max(30),pronunciation:z.string().max(500).nullish(),examples:z.array(z.string().max(3000)).max(20),notes:z.string().max(10000).nullish(),native_language:language,learning_language:language})).min(1).max(2000)}).parse(input);const deck=store.saveDeck({name:item.title,description:item.description??'',nativeLanguage:item.cards[0].native_language,learningLanguage:item.cards[0].learning_language});try{store.addWords(deck.id,item.cards.map(c=>({word:c.word,translation:c.translations.join('; '),partOfSpeech:partOfSpeech(c.part_of_speech),pronunciation:c.pronunciation??undefined,examples:c.examples,notes:c.notes??undefined})));return deck;}catch(error){store.deleteDeck(deck.id);throw error;}});
- handle('publish',value=>{const key=id.parse(value),snap=store.snapshot(),deck=snap.decks.find(x=>x.id===key);if(!deck)throw new Error('Set not found.');const cards=snap.words.filter(x=>x.deckId===key);if(!cards.length)throw new Error('Add some cards before publishing.');return api.request('/owlai/account/public-flashcard-sets/publish','POST',{client_set_id:deck.id,title:deck.name,description:deck.description,cards:cards.map(w=>({client_card_id:w.id,word:w.word,translations:[w.translation],part_of_speech:w.partOfSpeech,pronunciation:w.pronunciation,examples:w.examples??[],example_translations:(w.examples??[]).map(()=>null),notes:w.notes,native_language:deck.nativeLanguage,learning_language:deck.learningLanguage}))});});
+ handle('importCatalog',input=>{const item=z.object({id,title:str,description:z.string().max(4000).nullish(),cards:z.array(z.object({part_of_speech:z.string().max(100).nullish(),word:str,translations:z.array(z.string().max(5000)).min(1).max(30),pronunciation:z.string().max(500).nullish(),examples:z.array(z.string().max(3000)).max(20),notes:z.string().max(10000).nullish(),native_language:language,learning_language:language})).min(1).max(2000)}).parse(input);return store.importDeck({name:item.title,description:item.description??'',nativeLanguage:item.cards[0].native_language,learningLanguage:item.cards[0].learning_language},item.cards.map(c=>({word:c.word,translation:c.translations.join('; '),partOfSpeech:partOfSpeech(c.part_of_speech),pronunciation:c.pronunciation??undefined,examples:c.examples,notes:c.notes??undefined})));});
+ handle('publish',value=>{store.assertAccess('edit');const key=id.parse(value),snap=store.snapshot(),deck=snap.decks.find(x=>x.id===key);if(!deck)throw new Error('Set not found.');const cards=snap.words.filter(x=>x.deckId===key);if(!cards.length)throw new Error('Add some cards before publishing.');return api.request('/owlai/account/public-flashcard-sets/publish','POST',{client_set_id:deck.id,title:deck.name,description:deck.description,cards:cards.map(w=>({client_card_id:w.id,word:w.word,translations:[w.translation],part_of_speech:w.partOfSpeech,pronunciation:w.pronunciation,examples:w.examples??[],example_translations:(w.examples??[]).map(()=>null),notes:w.notes,native_language:deck.nativeLanguage,learning_language:deck.learningLanguage}))});});
  handle('unpublish',value=>api.request('/owlai/account/public-flashcard-sets/unpublish','POST',{client_set_id:id.parse(value)}));
  handle('openSubscriptionManagement',()=>shell.openExternal('https://apps.apple.com/account/subscriptions'));
 }
@@ -112,7 +112,7 @@ if(!app.requestSingleInstanceLock())app.quit();else{
  app.on('second-instance',()=>{window?.show();window?.focus();});
  app.whenReady().then(async()=>{try{
   app.setAppUserModelId('com.mavrylo.owlai.windows');workspaces=await Workspaces.open(app.getPath('userData'));store=workspaces.current;api=new Api(join(app.getPath('userData'),'account.enc'),()=>workspaces.guest.settings().apiBase);await selectAccount();
-  reviewTranslations=new ReviewTranslations(()=>({store,scope:scope(),apiBase:workspaces.guest.settings().apiBase,account:api.state()}),input=>api.reviewTranslation(input));
+  reviewTranslations=new ReviewTranslations(()=>({store,scope:scope(),apiBase:workspaces.guest.settings().apiBase,account:accountState()}),input=>api.reviewTranslation(input));
   configureTheme();
   nativeTheme.on('updated',updateWindowTheme);
   window=new BrowserWindow({width:954,height:723,center:true,minWidth:940,minHeight:680,title:'Owl AI',titleBarStyle:'hidden',titleBarOverlay:{height:36,color:windowBackground(),symbolColor:nativeTheme.shouldUseDarkColors?'#eef0f4':'#101f39'},icon:process.platform==='win32'?windowsIconPath():join(__dirname,'../build/icon.png'),backgroundColor:windowBackground(),show:false,webPreferences:{preload:join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true}});

@@ -22,3 +22,7 @@ test('signed-in sync conflicts expose cloud recovery while normal sync hides it'
  const render=(state:'conflict'|'synced')=>renderToStaticMarkup(createElement(WorkspaceBridgeProvider,{bridge:{} as Bridge,children:createElement(Profile,{account:{profile:{id:'A',email:'a@example.test',provider:'email'},entitlement:null,testMode:false,sync:{state}},onChanged:async()=>{},notify:()=>{}})}));
  assert.match(render('conflict'),/Use cloud version/);assert.doesNotMatch(render('synced'),/Use cloud version/);
 });
+
+test('profile does not label elapsed premium expiry as active',()=>{
+ const html=renderToStaticMarkup(createElement(WorkspaceBridgeProvider,{bridge:{} as Bridge,children:createElement(Profile,{account:{profile:{id:'a',email:null},testMode:false,entitlement:{status:'premium',expires_at:new Date(Date.now()-1000).toISOString(),checked_at:new Date().toISOString(),is_trial:false,auto_renew:false,was_ever_paid:true}},onChanged:async()=>{},notify:()=>{}})}));assert.doesNotMatch(html,/Premium is active/);
+});

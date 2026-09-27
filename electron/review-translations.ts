@@ -4,6 +4,7 @@ import type {Store} from './store';
 export interface TranslationWorkspace {store:Store;scope:string;apiBase:string;account:AccountState}
 
 function context(workspace:TranslationWorkspace,wordId:string){
+ workspace.store.assertEligible(wordId);
  const {words,decks}=workspace.store.snapshot();
  const word=words.find(row=>row.id===wordId),deck=decks.find(row=>row.id===word?.deckId);
  if(!word||!deck)throw new Error('This card no longer exists.');
@@ -48,6 +49,7 @@ export class ReviewTranslations {
    // Check identity before reading the store: account switching can close the old database.
    if(current.store!==workspace.store||current.scope!==workspace.scope||resolve(current).key!==key)
     throw new Error('The card or account changed. Please try again.');
+   const access=reviewTranslationAccess(current.account);if(access)throw new Error(access);
    workspace.store.saveReviewTranslation(key,result);
    return result;
   })().finally(()=>{this.pending.delete(pendingKey);});

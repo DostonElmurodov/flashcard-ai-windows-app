@@ -1,3 +1,4 @@
+import {evaluateAccess} from './access-policy';
 import {languages,type AccountState} from './types';
 
 export function canonicalLanguage(value:unknown):string|null {
@@ -15,6 +16,6 @@ export function secondaryReviewLanguage(value:unknown,nativeLanguage:string):str
 
 export function reviewTranslationAccess(account:AccountState|undefined):string|null {
  if(!account?.profile)return 'Sign in to see a second-language translation.';
- if(!account.testMode&&!['premium','trial','grace'].includes(account.entitlement?.status??''))return 'An active shared Premium subscription is needed for AI translations.';
+ const access=evaluateAccess(account,'ai',0);if(!access.allow)return access.reason;
  return null;
 }
