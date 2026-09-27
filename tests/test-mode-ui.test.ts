@@ -26,3 +26,7 @@ test('signed-in sync conflicts expose cloud recovery while normal sync hides it'
 test('profile does not label elapsed premium expiry as active',()=>{
  const html=renderToStaticMarkup(createElement(WorkspaceBridgeProvider,{bridge:{} as Bridge,children:createElement(Profile,{account:{profile:{id:'a',email:null},testMode:false,entitlement:{status:'premium',expires_at:new Date(Date.now()-1000).toISOString(),checked_at:new Date().toISOString(),is_trial:false,auto_renew:false,was_ever_paid:true}},onChanged:async()=>{},notify:()=>{}})}));assert.doesNotMatch(html,/Premium is active/);
 });
+
+test('signed-out desktop profile requires sign-in to create and keeps eligible saved reviews',()=>{
+ const html=renderToStaticMarkup(createElement(WorkspaceBridgeProvider,{bridge:{} as Bridge,children:createElement(Profile,{account:{profile:null,entitlement:null,testMode:false},onChanged:async()=>{},notify:()=>{}})}));assert.match(html,/Sign in to create or add cards on desktop/);assert.match(html,/review eligible saved local cards/);assert.doesNotMatch(html,/create and review local cards without signing in/);
+});

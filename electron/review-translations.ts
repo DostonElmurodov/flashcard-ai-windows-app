@@ -35,7 +35,10 @@ export class ReviewTranslations {
   return this.load(workspace=>context(workspace,wordId));
  }
  async preview(word:string,native:string,learning:string):Promise<ReviewTranslation>{
-  return this.load(workspace=>previewContext(workspace,word,native,learning));
+  return this.load(workspace=>{
+   const access=reviewTranslationAccess(workspace.account);if(access)throw new Error(access);
+   return previewContext(workspace,word,native,learning);
+  });
  }
  private async load(resolve:(workspace:TranslationWorkspace)=>ReturnType<typeof context>):Promise<ReviewTranslation>{
   const workspace={...this.current()},{input,key}=resolve(workspace);

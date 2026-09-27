@@ -131,3 +131,16 @@ test('late AI response cannot populate cache after authority expires',async()=>{
  try{const service=new ReviewTranslations(()=>f.context,()=>new Promise(resolve=>complete=resolve));const pending=service.get(f.id),rejected=assert.rejects(pending);f.context.account.entitlement!.status='revoked';complete(spanish);await rejected;
  }finally{f.cleanup();}
 });
+
+test('draft preview cannot bypass saved-card cache restrictions after paid access ends',async()=>{
+ const f=await fixture();let calls=0;
+ try{
+  f.store.addWords(f.deck.id,Array.from({length:10},(_,i)=>({word:'earlier'+i,translation:'value'})));const snap=f.store.snapshot();f.store.applySync(snap.decks,snap.words.map(w=>({...w,createdAt:w.id===f.id?'2026-01-02':'2026-01-01'})),[]);f.store.bindAccess(()=>f.context.account);
+  const service=new ReviewTranslations(()=>f.context,async()=>{calls++;return spanish;});await service.get(f.id);
+  f.context.account.entitlement!.status='expired_paid';assert.deepEqual(await service.get(f.id),spanish,'Eligible saved paid cache remains readable');
+  await assert.rejects(service.preview('journey','ru','en-us'));
+  f.context.account.entitlement!.status='revoked';await assert.rejects(service.get(f.id));await assert.rejects(service.preview('journey','ru','en-us'));
+  f.context.account.entitlement!.status='premium';f.context.account.entitlement!.expires_at=new Date(Date.now()-1000).toISOString();await assert.rejects(service.preview('journey','ru','en-us'));
+  f.context.account.profile=null;await assert.rejects(service.preview('journey','ru','en-us'));assert.equal(calls,1);
+ }finally{f.cleanup();}
+});
