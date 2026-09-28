@@ -10,7 +10,7 @@ import type {Bridge} from '../shared/types';
 test('test mode profile suppresses purchase promotion while preserving account sign-in',()=>{
  const render=(testMode:boolean)=>renderToStaticMarkup(createElement(WorkspaceBridgeProvider,{bridge:{} as Bridge,children:createElement(Profile,{account:{profile:null,entitlement:null,testMode},onChanged:async()=>{},notify:()=>{}})}));
  const enabled=render(true);assert.match(enabled,/Test mode/);assert.match(enabled,/Sign in/);assert.doesNotMatch(enabled,/Link your verified Apple purchase|Connect your subscription|One subscription/);
- const disabled=render(false);assert.match(disabled,/Link your verified Apple purchase/);assert.doesNotMatch(disabled,/Test mode/);
+ const disabled=render(false);assert.match(disabled,/link your verified Apple purchase/i);assert.doesNotMatch(disabled,/Test mode/);
 });
 
 test('test mode help describes account requirements without purchase instructions',()=>{

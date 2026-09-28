@@ -17,7 +17,7 @@ export default function Help({testMode=false,onCreate,onProfile,onSettings}:{tes
    <section className="panel">
     <div className="panel-title"><BookOpen size={20}/><h2>What you can do</h2></div>
     <ul className="help-features">
-     <li><strong>Create and study for free.</strong> Write cards, organize sets, and review saved cards offline. No account is needed for local study.</li>
+     <li><strong>Study for free.</strong> Free access includes up to 10 active words across all languages. Eligible saved cards can be reviewed offline. Sign in on Windows to create or add cards; iPhone local study does not require an Owl AI account.</li>
      <li><strong>Bring in existing words.</strong> Paste text or import TXT, CSV, TSV, PDF, and image files. Check the preview, complete missing translations, then select Save selected cards.</li>
      <li><strong>Make cards useful to you.</strong> Edit words, translations, pronunciation, examples, and personal notes. Listen using the speaker button when a voice is available.</li>
      <li><strong>See your progress.</strong> Learn shows words collected, cards ready to review, cards practiced today, and your day streak.</li>
@@ -26,13 +26,12 @@ export default function Help({testMode=false,onCreate,onProfile,onSettings}:{tes
      <li><strong>Make it comfortable.</strong> Set your languages, daily new-card goal, review direction, theme, and reminders in Preferences.</li>
     </ul>
    </section>
-   {testMode?<section className="panel help-payment"><div className="panel-title"><GraduationCap size={20}/><h2>Test mode</h2></div><p>All learning features are available without a subscription while test mode is active. Word limits and AI quotas are lifted. Sign in to use online features and sync your cards.</p><button className="button secondary" onClick={onProfile}>Open Account <ArrowRight size={16}/></button></section>:<section className="panel help-payment">
+   {testMode?<section className="panel help-payment"><div className="panel-title"><GraduationCap size={20}/><h2>Test mode</h2></div><p>Learning features are available without a subscription in test mode. Sign in to use online features and sync your cards. AI use is still subject to service availability and limits.</p><button className="button secondary" onClick={onProfile}>Open Account <ArrowRight size={16}/></button></section>:<section className="panel help-payment">
     <div className="panel-title"><Crown size={20}/><h2>Premium & payment</h2></div>
-    <p>You can keep creating and reviewing local cards for free. Premium adds online AI translation and can be shared between iPhone and Windows through your Owl AI account.</p>
+    <p>Free access includes up to 10 active words across all languages. Saved cards remain available to view and review after a paid period ends; adding or editing content and requesting new AI work need current access. Premium can be shared between iPhone and Windows through your Owl AI account.</p>
     <ol className="help-steps">
-     <li>Create or open your account in Owl AI on iPhone first. Windows supports signing in to that existing account.</li>
-     <li>Open the Premium purchase screen. Review the available plan, price, and renewal terms, then confirm your purchase through Apple.</li>
-     <li>In the iPhone app’s Profile, link your Apple purchase to your Owl AI account. If you already paid, restore your purchase when needed.</li>
+     <li>On iPhone, open the Premium purchase screen. Review the available plan, price, and renewal terms, then confirm your purchase through Apple. An Owl AI account is not required to buy or use it on iPhone.</li>
+     <li>To share Premium with Windows, create or open your Owl AI account on iPhone and link your verified Apple purchase in Profile. If you already paid, restore your purchase when needed.</li>
      <li>Sign in to the same account on Windows. Open <b>Account & Premium</b> to see your status; it updates automatically while you are online.</li>
     </ol>
     <p className="help-tip">There is no separate Windows checkout yet. You do not need a second purchase for a linked, active iPhone subscription. Current prices are shown on the iPhone purchase screen.</p>
