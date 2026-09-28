@@ -1,0 +1,21 @@
+# Gitleaks configuration: keep ALL default rules, allowlist known false positives.
+# https://github.com/gitleaks/gitleaks#configuration
+title = "mavrylo gitleaks config"
+
+[extend]
+# Inherit every built-in rule so real secrets are still detected.
+useDefault = true
+
+[allowlist]
+description = "Known false positives"
+regexTarget = "line"
+regexes = [
+  # XML doc comment in src/**/Models/TranslationCacheEntity.cs documenting how the translation
+  # cache key is composed ("Cache key: NFC+trim+InvariantLower ..."). The literal word "key" plus
+  # the adjacent token trips the generic-api-key rule on full-history scans. Documentation, not a
+  # secret.
+  '''Cache key: NFC''',
+  # Dummy HS256 signing key used only by the test config (tests/TestSupport/TestConfig.cs). It is a
+  # throwaway "0123456789abcdef"-repeated value (HS256 needs >=32 bytes), never a real secret.
+  '''0123456789abcdef0123456789abcdef''',
+]

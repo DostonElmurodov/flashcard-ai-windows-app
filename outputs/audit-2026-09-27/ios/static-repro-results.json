@@ -1,0 +1,96 @@
+{
+  "baseline": "547dcb32b07c07291811c4a7e386ccb05344e4c2",
+  "latest_delta": "9096c1e3b20fb920726bd471ed4a092783ee3cc7",
+  "kind": "source/SQL characterization, NOT Swift/StoreKit runtime tests",
+  "passed": 15,
+  "checks": [
+    {
+      "check": "flag launches false and removes legacy persisted grant",
+      "passed": true,
+      "evidence": "ServerFeatureFlags.swift:27-38"
+    },
+    {
+      "check": "flag strict bool, origin, status and latest-generation checks",
+      "passed": true,
+      "evidence": "ServerFeatureFlags.swift:41-77"
+    },
+    {
+      "check": "flag changes refresh dashboard and review queues",
+      "passed": true,
+      "evidence": "ServerFeatureFlags.swift:87-96"
+    },
+    {
+      "check": "guest entitlement loaded without date validation",
+      "passed": true,
+      "evidence": "EntitlementStore.swift:31-47; FreeLimitPolicy.swift:12-34"
+    },
+    {
+      "check": "14-day offline grace has no caller",
+      "passed": true,
+      "evidence": [
+        [
+          "Infrastructure\\Purchases\\EntitlementStore.swift",
+          1
+        ]
+      ]
+    },
+    {
+      "check": "failed device entitlement refresh preserves guest status",
+      "passed": true,
+      "evidence": "StoreKitService.swift:155-164"
+    },
+    {
+      "check": "shared account expiry and logout safeguards are present",
+      "passed": true,
+      "evidence": "AccountSessionClient.swift:28-32; AccountProfileModel.swift:23-45,64-68; EntitlementStore.swift:31-47,106-115"
+    },
+    {
+      "check": "actual count SQL is per language pair: 20 global cards, 10 each",
+      "passed": true,
+      "evidence": {
+        "sql": "SELECT COUNT(*)\n            FROM words\n            WHERE native_language = ? AND learning_language = ?;",
+        "per_pair": [
+          10,
+          10
+        ],
+        "global": 20,
+        "source": "WordRepository.swift:4165-4185"
+      }
+    },
+    {
+      "check": "test mode false does not lock free or expired_paid existing cards",
+      "passed": true,
+      "evidence": "FreeLimitPolicy.swift:46-54; 20 free fixture cards skip lock query"
+    },
+    {
+      "check": "expired_trial/revoked lock SQL selects global excess",
+      "passed": true,
+      "evidence": "WordRepository.swift:3531-3575; in-memory excess=10"
+    },
+    {
+      "check": "staged AI save inserts without entitlement/count recheck",
+      "passed": true,
+      "evidence": "WordRepository.swift:871-1018"
+    },
+    {
+      "check": "manual and imported production creation paths do have local gates",
+      "passed": true,
+      "evidence": "WordRepository.swift:2679-2843; gates use per-pair count"
+    },
+    {
+      "check": "server accepted false is handled without local rollback",
+      "passed": true,
+      "evidence": "WordRepository.swift:3672-3745; local inserts committed before async upsert"
+    },
+    {
+      "check": "dormant textual Anki repository creator lacks entitlement gate",
+      "passed": true,
+      "evidence": "WordRepository.swift:381-490; production caller inventory reviewed separately"
+    },
+    {
+      "check": "latest focused review uses current snapshot and lock eligibility",
+      "passed": true,
+      "evidence": "latest9096c1e ReviewQueueService.swift:108-141,206-214"
+    }
+  ]
+}

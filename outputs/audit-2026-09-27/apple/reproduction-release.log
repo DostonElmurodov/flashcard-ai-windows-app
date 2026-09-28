@@ -1,0 +1,12 @@
+D:\07 Hobby\FlashcardAI\backend\src\Mavrylo.Services\Mavrylo.Services.csproj : warning NU1510: PackageReference System.Formats.Cbor will not be pruned. This package is automatically available and does not need to be referenced explicitly. Remove the PackageReference item.
+D:\07 Hobby\FlashcardAI\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+D:\07 Hobby\FlashcardAI\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-mggc-4xg6-vcxf
+D:\07 Hobby\FlashcardAI\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-q939-rpr3-3284
+PASS: real status selector chooses active B over refunded A across subscription groups
+PASS: validated payload missing expiry becomes perpetual premium; projection-only, signature not bypassed
+PASS: cached Sandbox row grants premium in Production-configured device resolver
+PASS: device verify accepts canonical identity mismatch and relinks purchase to caller; valid-proof/API trust modeled by fake
+PASS: same-original verified purchase can also be relinked to another device; restore policy requires explicit ownership proof
+PASS: first account claim accepts verified unclaimed proof with a different purchase device token; existing owner protection is separate
+PASS: REFUND acknowledged but original victim stays premium when canonical response selects different active purchase
+7/7 audit assertions passed; no HTTP requests, no external database

@@ -1,0 +1,49 @@
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-mggc-4xg6-vcxf
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-q939-rpr3-3284
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Mavrylo.Services.csproj : warning NU1510: PackageReference System.Formats.Cbor will not be pruned. This package is automatically available and does not need to be referenced explicitly. Remove the PackageReference item.
+  Mavrylo.Entities -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Entities\bin\Release\net10.0\Mavrylo.Entities.dll
+  Mavrylo.Data -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Data\bin\Release\net10.0\Mavrylo.Data.dll
+  Mavrylo.Services -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\bin\Release\net10.0\Mavrylo.Services.dll
+  Mavrylo -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\bin\Release\net10.0\Mavrylo.dll
+  Mavrylo.Tests -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll
+Test run for D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:00.50]   Discovering: Mavrylo.Tests
+[xUnit.net 00:00:00.60]   Discovered:  Mavrylo.Tests
+[xUnit.net 00:00:00.63]   Starting:    Mavrylo.Tests
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.MissingCacheWriteUsageCannotBecomeZeroCost [6 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "missing") [1 s]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "model") [75 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "total") [43 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "negative") [75 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "reasoning") [34 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "input") [45 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "output") [28 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "overflow") [36 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "cache") [38 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "tier") [36 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "inconsistent_total") [100 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "malformed_cache") [36 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "negative_thoughts") [34 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "unknown_tier") [43 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "missing_usage") [73 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "overflow_output") [77 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "missing_candidates") [75 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "oversized_output") [73 ms]
+[xUnit.net 00:00:04.99]   Finished:    Mavrylo.Tests
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "negative_cache") [72 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "missing_tier") [38 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "missing_model") [28 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "unknown_model") [39 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "malformed_thoughts") [43 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "missing_prompt") [36 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "missing_total") [29 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiProtocolZeroComponentsSettleRepeatedSuccessesAndReleaseSlots(explicitZeros: False) [64 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiProtocolZeroComponentsSettleRepeatedSuccessesAndReleaseSlots(explicitZeros: True) [38 ms]
+
+Test Run Successful.
+Total tests: 28
+     Passed: 28
+ Total time: 5.4515 Seconds

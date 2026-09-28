@@ -1,0 +1,34 @@
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-mggc-4xg6-vcxf
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-q939-rpr3-3284
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Mavrylo.Services.csproj : warning NU1510: PackageReference System.Formats.Cbor will not be pruned. This package is automatically available and does not need to be referenced explicitly. Remove the PackageReference item.
+  Mavrylo.Entities -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Entities\bin\Release\net10.0\Mavrylo.Entities.dll
+  Mavrylo.Data -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Data\bin\Release\net10.0\Mavrylo.Data.dll
+  Mavrylo.Services -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\bin\Release\net10.0\Mavrylo.Services.dll
+  Mavrylo -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\bin\Release\net10.0\Mavrylo.dll
+  Mavrylo.Tests -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll
+Test run for D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:00.35]   Discovering: Mavrylo.Tests
+[xUnit.net 00:00:00.47]   Discovered:  Mavrylo.Tests
+[xUnit.net 00:00:00.49]   Starting:    Mavrylo.Tests
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.ReservationDeadlineIsTerminalBeforeHttp [134 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.SlowBodyHonorsFullDeadlineAsTerminalUnavailable(gemini: True) [109 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.SlowBodyHonorsFullDeadlineAsTerminalUnavailable(gemini: False) [89 ms]
+  Passed Mavrylo.Tests.AiProviderTransportTests.CallerCancellationDuringConnectionStaysCancellation [40 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.CallerCancellationAfterDispatchPropagatesAndRetainsMoneyAfterRestart(gemini: False) [2 s]
+  Passed Mavrylo.Tests.AiSpendGuardTests.CallerCancellationAfterDispatchPropagatesAndRetainsMoneyAfterRestart(gemini: True) [98 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "OpenAI", operation: "review-translation") [3 s]
+  Passed Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "OpenAI", operation: "batch") [653 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "Gemini", operation: "word-detail") [650 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "OpenAI", operation: "analyze-word") [586 ms]
+[xUnit.net 00:00:08.94]   Finished:    Mavrylo.Tests
+  Passed Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "Gemini", operation: "extract-words") [664 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.HandlerConnectDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "Gemini") [208 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.HandlerConnectDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "OpenAI") [202 ms]
+
+Test Run Successful.
+Total tests: 13
+     Passed: 13
+ Total time: 9.4508 Seconds

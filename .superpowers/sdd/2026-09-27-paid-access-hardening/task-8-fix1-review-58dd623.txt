@@ -1,0 +1,1251 @@
+Fix base: 4bb69cb20a82a14a4c0510bbefbadf5308f4bfae
+Fix head: 58dd623c4d63921e8cdd720741c59a0b86526646
+58dd623 fix(ios): preserve guest denial and authorized saved-word enrichment
+f2caf76 test(ios): preserve guest denial after optional account transport error
+07f6d0f test(ios): keep guest AI denial current across no-op account refresh
+917951d fix(ios): order paid authority across account IAP and AI responses
+6c54ed4 test(ios): exercise account-bound AI denial in refresh ordering
+1f4ea7e test(ios): observe every retained single-detail access state
+b7d2dbc test(ios): cover cross-source paid authority and saved single-detail reads
+ .../EntitlementMutationBoundaryTests.swift         |  57 ++++
+ FlashCardAITests/SharedAccountSyncTests.swift      | 362 ++++++++++++++++++++-
+ Infrastructure/Networking/APIClient.swift          |  12 +-
+ Infrastructure/Purchases/EntitlementStore.swift    |  89 ++++-
+ Infrastructure/Purchases/StoreKitService.swift     |  44 ++-
+ Infrastructure/Repositories/WordRepository.swift   |  28 +-
+ .../Home/Components/DashboardWordCard.swift        |  34 +-
+ .../Settings/ViewModels/AccountProfileModel.swift  |  40 ++-
+ 8 files changed, 602 insertions(+), 64 deletions(-)
+diff --git a/FlashCardAITests/EntitlementMutationBoundaryTests.swift b/FlashCardAITests/EntitlementMutationBoundaryTests.swift
+index 7912f39..b7a9e5b 100644
+--- a/FlashCardAITests/EntitlementMutationBoundaryTests.swift
++++ b/FlashCardAITests/EntitlementMutationBoundaryTests.swift
+@@ -352,20 +352,45 @@ final class EntitlementMutationBoundaryTests: XCTestCase {
+             guard sqlite3_exec(handle, sql, nil, nil, nil) == SQLITE_OK else {
+                 throw LocalDatabaseError.execFailed(String(cString: sqlite3_errmsg(handle)))
+             }
+         }
+         EntitlementStore.shared.update(entitlement("premium", expiry: "2099-01-01T00:00:00Z"))
+         let cached = try await fixture.repository.wordDetail(word: "saved-1", nativeLanguage: "ru", learningLanguage: "en-us")
+         XCTAssertEqual(cached.detail.translation, "Saved translation")
+         XCTAssertEqual(MutationNoNetworkProtocol.requestCount, 0, "Saved detail must not be regenerated")
+     }
+ 
++    @MainActor
++    func testEligibleSavedSingleTranslationReadsWithoutNewAIUnderExpiredStaleAndCappedAccess() async throws {
++        for access in ["expired_paid", "stale_premium", "capped_free"] {
++            let fixture = try MutationFixture(wordCount: access == "capped_free" ? 10 : 1,
++                detailResponse: Self.detailJSON,
++                checkTime: access == "stale_premium" ? Date().addingTimeInterval(301) : nil)
++            addTeardownBlock { await fixture.cleanup() }
++            if access == "expired_paid" {
++                EntitlementStore.shared.update(entitlement("expired_paid", expiry: "2000-01-01T00:00:00Z"))
++            } else if access == "stale_premium" {
++                EntitlementStore.shared.update(entitlement("premium", expiry: "2099-01-01T00:00:00Z"))
++            }
++            // MutationFixture seeds a saved card containing only {"translation":"Saved translation"}.
++            do {
++                let saved = try await fixture.repository.wordDetail(word: "saved-1", nativeLanguage: "ru", learningLanguage: "en-us")
++                XCTAssertEqual(saved.detail.translation, "Saved translation", access)
++            } catch {
++                XCTFail("Eligible saved translation must remain readable under \(access): \(error)")
++            }
++            XCTAssertEqual(MutationNoNetworkProtocol.requestCount, 0, "Reading an existing saved translation is not AI enrichment: \(access)")
++            XCTAssertEqual(try fixture.repository.wordCount(), access == "capped_free" ? 10 : 1)
++            await fixture.cleanup()
++        }
++    }
++
+     @MainActor
+     func testStalePersistedPremiumCannotOverrideLatestInactiveProcessAuthority() async throws {
+         for status in ["revoked", "invalid_subscription"] {
+             let fixture = try MutationFixture(wordCount: 0)
+             addTeardownBlock { await fixture.cleanup() }
+             EntitlementStore.shared.update(entitlement("premium", expiry: "2099-01-01T00:00:00Z"))
+             try await fixture.repository.addManualWord(displayWord: "Current live positive", translation: "Saved text",
+                 flashcardSetID: nil, nativeLanguage: "es", learningLanguage: "en-us")
+             await fixture.waitForSyncCount(1)
+             let olderSnapshot = try XCTUnwrap(UserDefaults.standard.data(forKey: EntitlementStore.snapshotDefaultsKey))
+@@ -470,20 +495,52 @@ final class EntitlementMutationBoundaryTests: XCTestCase {
+         for secondary in secondaryLanguages {
+             do {
+                 _ = try await fixture.repository.wordDetail(word: "Blocked saved", nativeLanguage: "es", learningLanguage: "en-us", secondaryLanguage: secondary)
+                 XCTFail("Rejected saved text cannot become an authorized cache preview")
+             } catch APIError.httpStatus(let code, _) { XCTAssertEqual(code, 402) }
+         }
+         XCTAssertEqual(MutationNoNetworkProtocol.requestCount, 0)
+         XCTAssertEqual(try fixture.repository.wordCount(), 1)
+     }
+ 
++    @MainActor
++    func testLockedFreeEleventhAndServerRejectedRowsCanStillBeDeleted() async throws {
++        let free = try MutationFixture(wordCount: 11)
++        addTeardownBlock { await free.cleanup() }
++        let eleventh = try XCTUnwrap(free.repository.fetchDashboardWords(flashcardSetID: nil).first { $0.id == "word-11" })
++        XCTAssertTrue(eleventh.isLocked)
++        XCTAssertFalse(eleventh.allowsContentEditing)
++        try free.repository.deleteWord(id: eleventh.id)
++        XCTAssertEqual(try free.repository.wordCount(), 10)
++        XCTAssertNil(try free.text("SELECT id FROM words WHERE id = 'word-11';"))
++        await free.cleanup()
++
++        let rejected = try MutationFixture(wordCount: 0, upsertResult: { _ in false })
++        addTeardownBlock { await rejected.cleanup() }
++        try await rejected.repository.addManualWord(displayWord: "Rejected retained", translation: "Keep text",
++            flashcardSetID: nil, nativeLanguage: "es", learningLanguage: "en-us")
++        let id = try XCTUnwrap(rejected.text("SELECT id FROM words WHERE display_word = 'Rejected retained';"))
++        for _ in 0..<50 {
++            if try WordRepository.lockedWordIDs(in: rejected.database).contains(id) { break }
++            try await Task.sleep(nanoseconds: 100_000_000)
++        }
++        let row = try XCTUnwrap(rejected.repository.fetchDashboardWords(flashcardSetID: nil).first)
++        XCTAssertTrue(row.isLocked)
++        XCTAssertFalse(row.allowsContentEditing)
++        XCTAssertNotNil(row.accessDenialReason)
++        XCTAssertEqual(try rejected.text("SELECT translation FROM words WHERE id = '\(id)';"), "Keep text")
++        try rejected.repository.deleteWord(id: id)
++        XCTAssertEqual(try rejected.repository.wordCount(), 0)
++        XCTAssertNil(try rejected.text("SELECT id FROM words WHERE id = '\(id)';"))
++        await rejected.cleanup()
++    }
++
+     @MainActor
+     func testEligibleFreeSavedWordCanReadCacheAndRequestServerAuthorizedSecondary() async throws {
+         let response = Data(#"{"translation":"Saved translation","secondary_translation":{"language_code":"fr","translation":"French saved","explanation":"Explanation"}}"#.utf8)
+         let fixture = try MutationFixture(wordCount: 1, detailResponse: response)
+         addTeardownBlock { await fixture.cleanup() }
+         try fixture.populatePrimaryCache()
+         let cached = try await fixture.repository.wordDetail(word: "saved-1", nativeLanguage: "ru", learningLanguage: "en-us")
+         XCTAssertEqual(cached.detail.translation, "Saved translation")
+         XCTAssertEqual(MutationNoNetworkProtocol.requestCount, 0)
+         let extended = try await fixture.repository.wordDetail(word: "saved-1", nativeLanguage: "ru", learningLanguage: "en-us", secondaryLanguage: "fr")
+diff --git a/FlashCardAITests/SharedAccountSyncTests.swift b/FlashCardAITests/SharedAccountSyncTests.swift
+index 7f08fd4..b96a35d 100644
+--- a/FlashCardAITests/SharedAccountSyncTests.swift
++++ b/FlashCardAITests/SharedAccountSyncTests.swift
+@@ -356,20 +356,377 @@ final class SharedAccountSessionTests: XCTestCase {
+             XCTAssertEqual(store.allowsAddingWords, preservesAuthority, code)
+             XCTAssertTrue(FreeLimitPolicy.isWordActive(entitlement: store.entitlement, zeroBasedIndex: 100), "Accepted direct denial preserves saved paid history")
+             delayed.release(status: 200, data: tokenResponse())
+             await older.value
+             XCTAssertEqual(store.canUseAI, preservesAuthority, "Old IAP response cannot reverse \(code)")
+             XCTAssertTrue(FreeLimitPolicy.isWordActive(entitlement: store.entitlement, zeroBasedIndex: 100))
+             AccountURLProtocol.respondLater = nil
+         }
+     }
+ 
++    @MainActor
++    func testOlderAccountPremiumCannotReopenAfterNewerRealAIDenialAndLaterRefreshCanRecover() async throws {
++        for (status, code) in [(402, "subscription_required"), (503, "subscription_reconciliation_required")] {
++            let suite = "AccountCrossSourceDenial.\(UUID().uuidString)"
++            let defaults = UserDefaults(suiteName: suite)!
++            defer { defaults.removePersistentDomain(forName: suite) }
++            let store = EntitlementStore(defaults: defaults)
++            let storage = MemorySharedAccountCredentials()
++            storage.value = try AccountWire.decoder().decode(AccountSessionDTO.self, from: Data(sessionJSON.utf8))
++            let model = AccountProfileModel(client: client(storage: storage), entitlements: store)
++            let api = deviceClient(state: AccountRequestState(), entitlementStore: store)
++            AccountURLProtocol.respond = { request in
++                XCTAssertEqual(request.url?.path, "/owlai/account/entitlement")
++                return (200, Data(self.entitlementJSON.utf8))
++            }
++            await model.refresh()
++            XCTAssertTrue(store.canUseAI)
++            let delayed = DeferredAccountResponse()
++            let started = expectation(description: "Older account premium is pending \(code)")
++            AccountURLProtocol.respondLater = { request, send in
++                switch request.url?.path {
++                case "/owlai/account/entitlement":
++                    if delayed.capture(send) { started.fulfill() }
++                case "/owlai/ai/word-detail":
++                    XCTAssertEqual(request.value(forHTTPHeaderField: "X-Account-Authorization"), "Bearer first-token")
++                    send(status, Data("{\"code\":\"\(code)\"}".utf8))
++                default:
++                    XCTFail("Unexpected fake request \(request.url?.path ?? "nil")")
++                    send(500, Data())
++                }
++            }
++            let older = Task { await model.refresh() }
++            await fulfillment(of: [started], timeout: 2)
++            do { _ = try await api.wordDetail(word: "Draft"); XCTFail("Expected direct AI denial") }
++            catch APIError.httpStatus(let actual, _) { XCTAssertEqual(actual, status) }
++            XCTAssertFalse(store.canUseAI)
++            delayed.release(status: 200, data: Data(entitlementJSON.replacingOccurrences(of: "\"product_id\":\"monthly\"", with: "\"product_id\":\"stale-monthly\"").utf8))
++            await older.value
++            XCTAssertFalse(store.canUseAI, "Old account premium must not renew a denied receipt")
++            XCTAssertTrue(FreeLimitPolicy.isWordActive(entitlement: store.entitlement, zeroBasedIndex: 100))
++            XCTAssertEqual(model.entitlement?.productId, "monthly", "An old response must not replace the current model")
++            let relaunched = EntitlementStore(defaults: defaults)
++            relaunched.selectAccountIdentity("owner")
++            XCTAssertEqual(relaunched.entitlement.productId, "monthly", "An old response must not replace retained account history")
++            AccountURLProtocol.respondLater = nil
++            await model.refresh()
++            XCTAssertTrue(store.canUseAI, "A genuinely later lawful account check can recover")
++        }
++    }
++
++    @MainActor
++    func testOldAccountTransportErrorCannotClearNewerIndependentGuestConfirmation() async throws {
++        let suite = "AccountCrossSourceError.\(UUID().uuidString)"
++        let defaults = UserDefaults(suiteName: suite)!
++        defer { defaults.removePersistentDomain(forName: suite) }
++        let store = EntitlementStore(defaults: defaults)
++        let storage = MemorySharedAccountCredentials()
++        storage.value = try AccountWire.decoder().decode(AccountSessionDTO.self, from: Data(sessionJSON.utf8))
++        let model = AccountProfileModel(client: client(storage: storage), entitlements: store)
++        AccountURLProtocol.respond = { _ in (200, Data(self.entitlementJSON.utf8)) }
++        await model.refresh()
++        let delayed = DeferredAccountResponse()
++        let started = expectation(description: "Old account failure is pending")
++        AccountURLProtocol.respondLater = { _, send in
++            if delayed.capture(send) { started.fulfill() }
++        }
++        let older = Task { await model.refresh() }
++        await fulfillment(of: [started], timeout: 2)
++        store.update(EntitlementDTO(status: "premium", productId: "guest-yearly", expiresAt: "2099-01-01T00:00:00Z",
++            isTrial: false, autoRenew: true, wasEverPaid: true, resolutionSource: "device", purchaseIsLinked: false))
++        XCTAssertTrue(store.canUseAI)
++        delayed.release(status: 503, data: Data(#"{"code":"temporary_unavailable"}"#.utf8))
++        await older.value
++        XCTAssertTrue(store.canUseAI)
++        XCTAssertEqual(model.entitlement?.status, "premium", "An obsolete account error cannot erase the accepted account model")
++        XCTAssertNil(model.errorText)
++    }
++
++    @MainActor
++    func testSignedOutAccountRefreshCannotObsoleteInFlightGuestAIDenial() async throws {
++        let suite = "GuestNoopAccountRefresh.\(UUID().uuidString)"
++        let defaults = UserDefaults(suiteName: suite)!
++        defer { defaults.removePersistentDomain(forName: suite) }
++        let store = EntitlementStore(defaults: defaults)
++        store.update(EntitlementDTO(status: "premium", productId: "guest-yearly", expiresAt: "2099-01-01T00:00:00Z",
++            isTrial: false, autoRenew: true, wasEverPaid: true, resolutionSource: "device", purchaseIsLinked: false))
++        let model = AccountProfileModel(client: client(storage: MemorySharedAccountCredentials()), entitlements: store)
++        let api = deviceClient(state: AccountRequestState(), guest: true, entitlementStore: store)
++        let delayed = DeferredAccountResponse()
++        let started = expectation(description: "Guest AI request starts before signed-out account refresh")
++        AccountURLProtocol.respondLater = { request, send in
++            XCTAssertEqual(request.url?.path, "/owlai/ai/word-detail")
++            XCTAssertNil(request.value(forHTTPHeaderField: "X-Account-Authorization"))
++            if delayed.capture(send) { started.fulfill() }
++        }
++        let ai = Task { try await api.wordDetail(word: "Guest draft") }
++        await fulfillment(of: [started], timeout: 2)
++        await model.refresh()
++        XCTAssertNil(model.profile)
++        XCTAssertTrue(store.canUseAI, "A signed-out account refresh has no new guest purchase decision")
++        delayed.release(status: 402, data: Data(#"{"code":"subscription_required"}"#.utf8))
++        do { _ = try await ai.value; XCTFail("Expected fake guest AI denial") }
++        catch APIError.httpStatus(let code, _) { XCTAssertEqual(code, 402) }
++        XCTAssertFalse(store.canUseAI, "A no-op account refresh cannot discard the genuine guest denial")
++        XCTAssertTrue(FreeLimitPolicy.isWordActive(entitlement: store.entitlement, zeroBasedIndex: 100))
++    }
++
++    @MainActor
++    func testOrdinaryOptionalAccountErrorCannotObsoleteGuestAIDenial() async throws {
++        let suite = "GuestAfterAccountTransportError.\(UUID().uuidString)"
++        let defaults = UserDefaults(suiteName: suite)!
++        defer { defaults.removePersistentDomain(forName: suite) }
++        let store = EntitlementStore(defaults: defaults)
++        store.update(EntitlementDTO(status: "premium", productId: "guest-yearly", expiresAt: "2099-01-01T00:00:00Z",
++            isTrial: false, autoRenew: true, wasEverPaid: true, resolutionSource: "device", purchaseIsLinked: false))
++        let storage = MemorySharedAccountCredentials()
++        storage.value = try AccountWire.decoder().decode(AccountSessionDTO.self, from: Data(sessionJSON.utf8))
++        let model = AccountProfileModel(client: client(storage: storage), entitlements: store)
++        AccountURLProtocol.respond = { request in
++            XCTAssertEqual(request.url?.path, "/owlai/account/entitlement")
++            return (200, Data(self.entitlementJSON.replacingOccurrences(of: "premium", with: "revoked").utf8))
++        }
++        await model.refresh()
++        XCTAssertEqual(store.entitlement.productId, "guest-yearly", "Inactive optional account cannot displace the guest purchase")
++        XCTAssertTrue(store.canUseAI)
++
++        let api = deviceClient(state: AccountRequestState(), entitlementStore: store)
++        let aiResponse = DeferredAccountResponse()
++        let accountResponse = DeferredAccountResponse()
++        let aiStarted = expectation(description: "Guest-owned AI request starts first")
++        let accountStarted = expectation(description: "Optional account refresh starts second")
++        AccountURLProtocol.respondLater = { request, send in
++            switch request.url?.path {
++            case "/owlai/ai/word-detail":
++                XCTAssertEqual(request.value(forHTTPHeaderField: "X-Account-Authorization"), "Bearer first-token")
++                if aiResponse.capture(send) { aiStarted.fulfill() }
++            case "/owlai/account/entitlement":
++                if accountResponse.capture(send) { accountStarted.fulfill() }
++            default:
++                XCTFail("Unexpected fake guest/account request \(request.url?.path ?? "nil")")
++                send(500, Data())
++            }
++        }
++        let olderAI = Task { try await api.wordDetail(word: "Guest draft") }
++        await fulfillment(of: [aiStarted], timeout: 2)
++        let newerAccount = Task { await model.refresh() }
++        await fulfillment(of: [accountStarted], timeout: 2)
++        accountResponse.release(status: 503, data: Data(#"{"code":"temporary_unavailable"}"#.utf8))
++        await newerAccount.value
++        XCTAssertNotNil(model.errorText, "The current optional account error remains visible")
++        XCTAssertTrue(store.canUseAI, "Ordinary account transport failure does not revoke independent guest access")
++        aiResponse.release(status: 402, data: Data(#"{"code":"subscription_required"}"#.utf8))
++        do { _ = try await olderAI.value; XCTFail("Expected fake guest AI denial") }
++        catch APIError.httpStatus(let code, _) { XCTAssertEqual(code, 402) }
++        XCTAssertFalse(store.canUseAI, "Account transport error cannot outrank a real guest paid denial")
++        XCTAssertTrue(FreeLimitPolicy.isWordActive(entitlement: store.entitlement, zeroBasedIndex: 100))
++    }
++
++    @MainActor
++    func testOlderAccountClaimCannotReopenAfterNewerAIDenialButLaterClaimCanRecover() async throws {
++        let suite = "AccountClaimCrossSource.\(UUID().uuidString)"
++        let defaults = UserDefaults(suiteName: suite)!
++        defer { defaults.removePersistentDomain(forName: suite) }
++        let store = EntitlementStore(defaults: defaults)
++        let storage = MemorySharedAccountCredentials()
++        storage.value = try AccountWire.decoder().decode(AccountSessionDTO.self, from: Data(sessionJSON.utf8))
++        let accountClient = client(storage: storage, proof: { _, _, _ in
++            ["X-App-Attest-Key-Id": "fake-key", "X-App-Attest-Assertion": "fake-proof", "X-App-Attest-Challenge-Id": "fake-challenge"]
++        })
++        let model = AccountProfileModel(client: accountClient, entitlements: store)
++        let api = deviceClient(state: AccountRequestState(), entitlementStore: store)
++        AccountURLProtocol.respond = { request in
++            XCTAssertEqual(request.url?.path, "/owlai/account/entitlement")
++            return (200, Data(self.entitlementJSON.utf8))
++        }
++        await model.refresh()
++        XCTAssertTrue(store.canUseAI)
++        let delayed = DeferredAccountResponse()
++        let started = expectation(description: "Older fake account claim is pending")
++        AccountURLProtocol.respondLater = { request, send in
++            switch request.url?.path {
++            case "/owlai/account/subscription/apple/claim":
++                XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer account-access")
++                XCTAssertEqual(request.value(forHTTPHeaderField: "X-Device-Authorization"), "Bearer device-access")
++                if delayed.capture(send) { started.fulfill() }
++            case "/owlai/ai/word-detail":
++                XCTAssertEqual(request.value(forHTTPHeaderField: "X-Account-Authorization"), "Bearer first-token")
++                send(402, Data(#"{"code":"subscription_required"}"#.utf8))
++            default:
++                XCTFail("Unexpected fake claim/AI request \(request.url?.path ?? "nil")")
++                send(500, Data())
++            }
++        }
++        let older = Task { await model.claim(accountID: "owner", verifiedPurchase: { "fake-verified-jws" }) }
++        await fulfillment(of: [started], timeout: 2)
++        do { _ = try await api.wordDetail(word: "Claim draft"); XCTFail("Expected fake AI denial") }
++        catch APIError.httpStatus(let code, _) { XCTAssertEqual(code, 402) }
++        XCTAssertFalse(store.canUseAI)
++        let oldClaim = entitlementJSON.replacingOccurrences(of: "\"product_id\":\"monthly\"", with: "\"product_id\":\"stale-claim\"")
++        delayed.release(status: 200, data: Data(oldClaim.utf8))
++        await older.value
++        XCTAssertFalse(store.canUseAI, "An old claim cannot restore a denied mutation receipt")
++        XCTAssertFalse(defaults.bool(forKey: "FlashCardAI.entitlement.linkedPurchase"), "A stale claim cannot attach the purchase")
++        XCTAssertEqual(model.entitlement?.productId, "monthly")
++        let relaunched = EntitlementStore(defaults: defaults)
++        relaunched.selectAccountIdentity("owner")
++        XCTAssertEqual(relaunched.entitlement.productId, "monthly", "Old claim cannot overwrite retained account history")
++
++        AccountURLProtocol.respondLater = nil
++        let newClaim = entitlementJSON.replacingOccurrences(of: "\"product_id\":\"monthly\"", with: "\"product_id\":\"fresh-claim\"")
++        AccountURLProtocol.respond = { request in
++            XCTAssertEqual(request.url?.path, "/owlai/account/subscription/apple/claim")
++            return (200, Data(newClaim.utf8))
++        }
++        await model.claim(accountID: "owner", verifiedPurchase: { "later-fake-verified-jws" })
++        XCTAssertEqual(model.entitlement?.productId, "fresh-claim")
++        XCTAssertTrue(defaults.bool(forKey: "FlashCardAI.entitlement.linkedPurchase"))
++        XCTAssertTrue(store.canUseAI, "A genuinely later authorized claim can recover")
++    }
++
++    @MainActor
++    func testNewerAIDenialClosesPremiumEvenWhenOlderIapCompletesFirst() async throws {
++        for (path, status, code) in [
++            ("/owlai/ai/word-detail", 402, "subscription_required"),
++            ("/owlai/ai/extract-words", 503, "subscription_reconciliation_required")
++        ] {
++            let suite = "IapThenAIDenial.\(UUID().uuidString)"
++            let defaults = UserDefaults(suiteName: suite)!
++            defer { defaults.removePersistentDomain(forName: suite) }
++            let store = EntitlementStore(defaults: defaults)
++            let api = deviceClient(state: AccountRequestState(), guest: true, entitlementStore: store)
++            let service = storeKit(store: store, api: api)
++            let iap = DeferredAccountResponse()
++            let ai = DeferredAccountResponse()
++            let iapStarted = expectation(description: "Older IAP started")
++            let aiStarted = expectation(description: "Newer AI started")
++            AccountURLProtocol.respondLater = { request, send in
++                XCTAssertNil(request.value(forHTTPHeaderField: "X-Account-Authorization"))
++                switch request.url?.path {
++                case "/owlai/iap/token": if iap.capture(send) { iapStarted.fulfill() }
++                case _ where request.url?.path == path: if ai.capture(send) { aiStarted.fulfill() }
++                default:
++                    XCTFail("Unexpected fake request \(request.url?.path ?? "nil")")
++                    send(500, Data())
++                }
++            }
++            let older = Task { await service.refreshTokenAndEntitlement() }
++            await fulfillment(of: [iapStarted], timeout: 2)
++            let newer = Task {
++                if path.hasSuffix("word-detail") { _ = try await api.wordDetail(word: "Draft") }
++                else { _ = try await api.extractWordsFromImage(imageData: Data([0xff, 0xd8, 0xff]),
++                    mimeType: "image/jpeg", targetLanguage: "en", nativeLanguage: "es") }
++            }
++            await fulfillment(of: [aiStarted], timeout: 2)
++            iap.release(status: 200, data: tokenResponse())
++            await older.value
++            XCTAssertTrue(store.canUseAI, "Older accepted purchase is initially live")
++            ai.release(status: status, data: Data("{\"code\":\"\(code)\"}".utf8))
++            do { try await newer.value; XCTFail("Expected fake AI denial") }
++            catch APIError.httpStatus(let actual, _) { XCTAssertEqual(actual, status) }
++            XCTAssertFalse(store.canUseAI, "Newer \(code) must close the older grant for \(path)")
++            XCTAssertTrue(FreeLimitPolicy.isWordActive(entitlement: store.entitlement, zeroBasedIndex: 100))
++            AccountURLProtocol.respondLater = nil
++        }
++    }
++
++    @MainActor
++    func testOlderAIDenialCannotCloseNewerLawfulIapSuccess() async throws {
++        let suite = "AIDenialBeforeIapSuccess.\(UUID().uuidString)"
++        let defaults = UserDefaults(suiteName: suite)!
++        defer { defaults.removePersistentDomain(forName: suite) }
++        let store = EntitlementStore(defaults: defaults)
++        let api = deviceClient(state: AccountRequestState(), guest: true, entitlementStore: store)
++        let service = storeKit(store: store, api: api)
++        let delayed = DeferredAccountResponse()
++        let started = expectation(description: "Older AI request begins")
++        AccountURLProtocol.respondLater = { request, send in
++            switch request.url?.path {
++            case "/owlai/ai/word-detail": if delayed.capture(send) { started.fulfill() }
++            case "/owlai/iap/token": send(200, self.tokenResponse())
++            default:
++                XCTFail("Unexpected fake request \(request.url?.path ?? "nil")")
++                send(500, Data())
++            }
++        }
++        let older = Task { try await api.wordDetail(word: "Old draft") }
++        await fulfillment(of: [started], timeout: 2)
++        await service.refreshTokenAndEntitlement()
++        XCTAssertTrue(store.canUseAI)
++        delayed.release(status: 402, data: Data(#"{"code":"subscription_required"}"#.utf8))
++        do { _ = try await older.value; XCTFail("Old request should still report its denial") }
++        catch APIError.httpStatus(let code, _) { XCTAssertEqual(code, 402) }
++        XCTAssertTrue(store.canUseAI, "An older denial cannot erase a newer verified premium response")
++    }
++
++    @MainActor
++    func testCurrentIapVerificationAndTokenReconciliationDenialsCloseOnlyPaidMutationAuthority() async throws {
++        let cases: [(String, Int, String, Bool)] = [
++            ("/owlai/iap/verify", 402, "subscription_required", true),
++            ("/owlai/iap/verify", 403, "account_required", true),
++            ("/owlai/iap/verify", 503, "subscription_reconciliation_required", true),
++            ("/owlai/iap/token", 503, "subscription_reconciliation_required", true),
++            ("/owlai/iap/verify", 429, "quota_exceeded", false),
++            ("/owlai/iap/verify", 503, "temporary_unavailable", false)
++        ]
++        for (path, status, code, closes) in cases {
++            let suite = "CurrentIapDenial.\(UUID().uuidString)"
++            let defaults = UserDefaults(suiteName: suite)!
++            defer { defaults.removePersistentDomain(forName: suite) }
++            let store = EntitlementStore(defaults: defaults)
++            store.update(EntitlementDTO(status: "premium", productId: "monthly", expiresAt: "2099-01-01T00:00:00Z",
++                isTrial: false, autoRenew: true, wasEverPaid: true, resolutionSource: "device", purchaseIsLinked: false))
++            var persistedTokens = 0
++            let service = storeKit(store: store, persist: { _, _ in persistedTokens += 1 })
++            AccountURLProtocol.respond = { request in
++                XCTAssertEqual(request.url?.path, path)
++                return (status, Data("{\"code\":\"\(code)\"}".utf8))
++            }
++            if path.hasSuffix("verify") {
++                do { _ = try await service.verifyWithBackend(jwsTransaction: "fake-verified-jws"); XCTFail("Expected fake IAP refusal") }
++                catch APIError.httpStatus(let actual, _) { XCTAssertEqual(actual, status) }
++            } else {
++                await service.refreshTokenAndEntitlement()
++            }
++            XCTAssertEqual(store.canUseAI, !closes, "\(path) \(code)")
++            XCTAssertEqual(store.allowsAddingWords, !closes)
++            XCTAssertTrue(FreeLimitPolicy.isWordActive(entitlement: store.entitlement, zeroBasedIndex: 100))
++            XCTAssertEqual(persistedTokens, 0)
++            AccountURLProtocol.respond = nil
++        }
++    }
++
++    @MainActor
++    func testOldVerifyDenialCannotCloseNewerSuccessfulVerification() async throws {
++        let suite = "VerifyErrorAfterSuccess.\(UUID().uuidString)"
++        let defaults = UserDefaults(suiteName: suite)!
++        defer { defaults.removePersistentDomain(forName: suite) }
++        let store = EntitlementStore(defaults: defaults)
++        var persistedTokens = 0
++        let service = storeKit(store: store, persist: { _, _ in persistedTokens += 1 })
++        let delayed = DeferredAccountResponse()
++        let started = expectation(description: "Old verification begins")
++        AccountURLProtocol.respondLater = { _, send in
++            if delayed.capture(send) { started.fulfill() }
++            else { send(200, self.tokenResponse()) }
++        }
++        let older = Task { try await service.verifyWithBackend(jwsTransaction: "older-jws") }
++        await fulfillment(of: [started], timeout: 2)
++        let newerAccepted = try await service.verifyWithBackend(jwsTransaction: "newer-jws")
++        XCTAssertTrue(newerAccepted)
++        delayed.release(status: 503, data: Data(#"{"code":"subscription_reconciliation_required"}"#.utf8))
++        do { _ = try await older.value; XCTFail("Old backend error remains an error") }
++        catch APIError.httpStatus(let code, _) { XCTAssertEqual(code, 503) }
++        XCTAssertTrue(store.canUseAI)
++        XCTAssertEqual(persistedTokens, 1)
++    }
++
+     @MainActor
+     func testVerifiedJwsBoundaryPreservesGuestPositiveAndRejectsOlderDeniedAuthority() async throws {
+         let suite = "VerifiedJwsAuthority.\(UUID().uuidString)"
+         let defaults = UserDefaults(suiteName: suite)!
+         defer { defaults.removePersistentDomain(forName: suite) }
+         let store = EntitlementStore(defaults: defaults)
+         var persistedTokens = 0
+         let service = storeKit(store: store, persist: { _, _ in persistedTokens += 1 })
+         AccountURLProtocol.respond = { request in
+             XCTAssertEqual(request.url?.path, "/owlai/iap/verify")
+@@ -382,21 +739,22 @@ final class SharedAccountSessionTests: XCTestCase {
+         let delayed = DeferredAccountResponse()
+         let started = expectation(description: "Older JWS validation waits for fake backend")
+         AccountURLProtocol.respondLater = { request, send in
+             XCTAssertEqual(request.url?.path, "/owlai/iap/verify")
+             if delayed.capture(send) { started.fulfill() }
+         }
+         let older = Task { try await service.verifyWithBackend(jwsTransaction: "fake-verified-jws") }
+         await fulfillment(of: [started], timeout: 2)
+         store.closePaidMutationConfirmation()
+         delayed.release(status: 200, data: tokenResponse())
+-        try await older.value
++        let olderAccepted = try await older.value
++        XCTAssertFalse(olderAccepted)
+         XCTAssertFalse(store.canUseAI, "Purchase/restore verification cannot overwrite accepted newer denial")
+         XCTAssertEqual(persistedTokens, 1, "A stale IAP verification cannot overwrite the current token")
+         XCTAssertTrue(FreeLimitPolicy.isWordActive(entitlement: store.entitlement, zeroBasedIndex: 100))
+     }
+ 
+     @MainActor
+     func testVerifiedJwsBoundaryCannotPersistAcrossAccountSessionChange() async throws {
+         let suite = "VerifiedJwsSession.\(UUID().uuidString)"
+         let defaults = UserDefaults(suiteName: suite)!
+         defer { defaults.removePersistentDomain(forName: suite) }
+@@ -407,21 +765,21 @@ final class SharedAccountSessionTests: XCTestCase {
+         let delayed = DeferredAccountResponse()
+         let started = expectation(description: "JWS validation starts in original session")
+         AccountURLProtocol.respondLater = { request, send in
+             XCTAssertEqual(request.url?.path, "/owlai/iap/verify")
+             if delayed.capture(send) { started.fulfill() }
+         }
+         let older = Task { try await service.verifyWithBackend(jwsTransaction: "fake-verified-jws") }
+         await fulfillment(of: [started], timeout: 2)
+         state.changeSession()
+         delayed.release(status: 200, data: tokenResponse())
+-        do { try await older.value; XCTFail("A changed session rejects the old verification response") }
++        do { _ = try await older.value; XCTFail("A changed session rejects the old verification response") }
+         catch AccountSessionError.signedOut {}
+         XCTAssertEqual(persistedTokens, 0)
+         XCTAssertEqual(store.entitlement.status, "free")
+     }
+ 
+     @MainActor
+     func testNewerJwsVerificationWinsEvenWhenOlderPremiumCompletesFirst() async throws {
+         let suite = "VerifiedJwsOverlap.\(UUID().uuidString)"
+         let defaults = UserDefaults(suiteName: suite)!
+         defer { defaults.removePersistentDomain(forName: suite) }
+diff --git a/Infrastructure/Networking/APIClient.swift b/Infrastructure/Networking/APIClient.swift
+index aaad5fc..2c0be1d 100644
+--- a/Infrastructure/Networking/APIClient.swift
++++ b/Infrastructure/Networking/APIClient.swift
+@@ -121,21 +121,21 @@ actor APIClient {
+         appendField(name: "nativeLanguage", value: nativeLanguage)
+         appendLine("--\(boundary)--\r\n")
+ 
+         let path = "/owlai/ai/extract-words"
+ 
+         // Re-resolves the token + integrity headers on each attempt, so a 401 retry uses a fresh
+         // device session. The multipart `body` is built once above and reused on retry.
+         return try await withUnauthorizedRecovery { [self] in
+             let requestGeneration = await accountSessionGenerationProvider()
+             let authorityStore = await MainActor.run { entitlementStore ?? .shared }
+-            let authorityRevision = await authorityStore.authorityRevision
++            let authorityRequest = await authorityStore.beginAuthorityRequest()
+             let token = await resolvedBearerToken(requiringDeviceIntegrity: true)
+             #if !DEBUG
+             guard token != nil else { throw APIError.noBearerToken }
+             #endif
+ 
+             guard let url = URL(string: path, relativeTo: baseURL) else { throw APIError.invalidURL }
+             var req = URLRequest(url: url)
+             req.httpMethod = "POST"
+             req.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+             if let token {
+@@ -167,21 +167,21 @@ actor APIClient {
+             } catch {
+                 throw APIError.transport(error)
+             }
+             guard let http = response as? HTTPURLResponse else {
+                 throw APIError.transport(URLError(.badServerResponse))
+             }
+             guard await accountSessionGenerationProvider() == requestGeneration else { throw AccountSessionError.signedOut }
+             guard (200 ... 299).contains(http.statusCode) else {
+                 let text = String(data: data, encoding: .utf8)
+                 let failure = await accessFailure(code: http.statusCode, body: text, path: path,
+-                    store: authorityStore, revision: authorityRevision)
++                    store: authorityStore, request: authorityRequest)
+                 throw failure
+             }
+             if data.isEmpty { throw APIError.emptyResponse }
+             do {
+                 return try decoder.decode(ExtractWordsResponse.self, from: data)
+             } catch {
+                 throw APIError.decodingFailed(error.localizedDescription)
+             }
+         }
+     }
+@@ -399,41 +399,41 @@ actor APIClient {
+         }
+ 
+         return Self.resolvedBearerToken()
+     }
+ 
+     private func post<Response: Decodable>(path: String, bodyData: Data, bearerToken: String?, attachDeviceIntegrity: Bool, extraHeaders: [String: String] = [:]) async throws -> Response {
+         try await request(path: path, method: "POST", bodyData: bodyData, bearerToken: bearerToken, attachDeviceIntegrity: attachDeviceIntegrity, extraHeaders: extraHeaders)
+     }
+ 
+     private func accessFailure(code: Int, body: String?, path: String,
+-                               store: EntitlementStore, revision: UUID) async -> APIError {
++                               store: EntitlementStore, request: EntitlementStore.AuthorityRequest) async -> APIError {
+         let failure = APIError.httpStatus(code: code, body: body)
+         if Self.isExpensiveAIPath(path), failure.isPaidAccessDenial {
+             await MainActor.run {
+-                if store.authorityRevision == revision { store.closePaidMutationConfirmation() }
++                _ = store.closePaidMutationConfirmation(request: request)
+             }
+         }
+         return failure
+     }
+ 
+     private func request<Response: Decodable>(
+         path: String,
+         method: String,
+         bodyData: Data?,
+         bearerToken: String?,
+         attachDeviceIntegrity: Bool,
+         extraHeaders: [String: String] = [:]
+     ) async throws -> Response {
+         let requestGeneration = await accountSessionGenerationProvider()
+         let authorityStore = await MainActor.run { entitlementStore ?? .shared }
+-        let authorityRevision = await authorityStore.authorityRevision
++        let authorityRequest = await authorityStore.beginAuthorityRequest()
+         guard let url = URL(string: path, relativeTo: baseURL) else { throw APIError.invalidURL }
+ 
+         var req = URLRequest(url: url)
+         req.httpMethod = method
+         if bodyData != nil {
+             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+         }
+         if let bearerToken {
+             req.setValue("Bearer \(bearerToken)", forHTTPHeaderField: "Authorization")
+         }
+@@ -476,21 +476,21 @@ actor APIClient {
+         guard let http = response as? HTTPURLResponse else {
+             throw APIError.transport(URLError(.badServerResponse))
+         }
+         if attachDeviceIntegrity {
+             guard await accountSessionGenerationProvider() == requestGeneration else { throw AccountSessionError.signedOut }
+         }
+ 
+         guard (200 ... 299).contains(http.statusCode) else {
+             let text = String(data: data, encoding: .utf8)
+             let failure = await accessFailure(code: http.statusCode, body: text, path: path,
+-                store: authorityStore, revision: authorityRevision)
++                store: authorityStore, request: authorityRequest)
+             throw failure
+         }
+ 
+         if data.isEmpty {
+             throw APIError.emptyResponse
+         }
+ 
+         do {
+             return try decoder.decode(Response.self, from: data)
+         } catch {
+diff --git a/Infrastructure/Purchases/EntitlementStore.swift b/Infrastructure/Purchases/EntitlementStore.swift
+index d9619c6..669283d 100644
+--- a/Infrastructure/Purchases/EntitlementStore.swift
++++ b/Infrastructure/Purchases/EntitlementStore.swift
+@@ -15,40 +15,47 @@ private final class PaidMutationConfirmation: @unchecked Sendable {
+     }
+     static func isFresh(_ checkedAt: Date?, at now: Date) -> Bool {
+         guard let checkedAt else { return false }
+         let age = now.timeIntervalSince(checkedAt)
+         return age >= 0 && age < 5 * 60
+     }
+ }
+ 
+ @MainActor
+ final class EntitlementStore: ObservableObject {
++    struct AuthorityRequest: Sendable {
++        fileprivate let identityEpoch: UUID
++        fileprivate let order: UInt64
++    }
++
+     static let shared = EntitlementStore()
+ 
+     @Published private(set) var entitlement: EntitlementDTO
+ 
+     private let defaults: UserDefaults
+     /// Persisted snapshot key. Static + nonisolated so non-actor code (e.g. `WordRepository`'s
+     /// synchronous SQL methods) can read the current entitlement status without an actor hop.
+     nonisolated static let snapshotDefaultsKey = "FlashCardAI.entitlement.snapshot"
+     private let updatedAtKey = "FlashCardAI.entitlement.updatedAt"
+     private let graceDays: TimeInterval = 14 * 24 * 60 * 60
+     private var deviceEntitlement: EntitlementDTO = .free
+     private var accountEntitlement: EntitlementDTO?
+     private let linkedPurchaseKey = "FlashCardAI.entitlement.linkedPurchase"
+     private let accountSnapshotKey = "FlashCardAI.entitlement.accountSnapshot"
+     private let deviceSnapshotKey = "FlashCardAI.entitlement.deviceSnapshot"
+     nonisolated private static let sharedConfirmation = PaidMutationConfirmation()
+     private let confirmation: PaidMutationConfirmation
+     private var deviceCheckedAt: Date?
+     private var accountCheckedAt: Date?
+-    private(set) var authorityRevision = UUID()
++    private var identityEpoch = UUID()
++    private var nextAuthorityOrder: UInt64 = 0
++    private var lastAcceptedAuthorityOrder: UInt64 = 0
+     private let accountReadHistoryKey = "FlashCardAI.entitlement.accountReadHistory"
+     private var accountID: String?
+     private var accountReadHistory: [String: EntitlementDTO] = [:]
+ 
+     /// Current entitlement status read straight from the persisted snapshot, callable from any
+     /// context. Falls back to `"free"` when nothing is stored yet. `EntitlementStore.update(_:)`
+     /// writes this synchronously, so it stays current.
+     nonisolated static func currentStatusSnapshot() -> String {
+         currentEntitlementSnapshot().status
+     }
+@@ -98,100 +105,162 @@ final class EntitlementStore: ObservableObject {
+ 
+     var allowsAddingWords: Bool {
+         canUseAI
+     }
+ 
+     var hasOfflineReadGrace: Bool {
+         guard let updatedAt = defaults.object(forKey: updatedAtKey) as? Date else { return false }
+         return Date().timeIntervalSince(updatedAt) <= graceDays
+     }
+ 
++    func beginAuthorityRequest() -> AuthorityRequest {
++        nextAuthorityOrder += 1
++        return AuthorityRequest(identityEpoch: identityEpoch, order: nextAuthorityOrder)
++    }
++
++    func isCurrentAuthorityRequest(_ request: AuthorityRequest) -> Bool {
++        request.identityEpoch == identityEpoch && request.order > lastAcceptedAuthorityOrder
++    }
++
++    @discardableResult
++    private func acceptAuthority(_ request: AuthorityRequest) -> Bool {
++        guard isCurrentAuthorityRequest(request) else { return false }
++        lastAcceptedAuthorityOrder = request.order
++        return true
++    }
++
+     func update(_ next: EntitlementDTO, accountAuthorized: Bool = false) {
++        _ = update(next, accountAuthorized: accountAuthorized, request: beginAuthorityRequest())
++    }
++
++    @discardableResult
++    func update(_ next: EntitlementDTO, accountAuthorized: Bool = false, request: AuthorityRequest) -> Bool {
++        guard isCurrentAuthorityRequest(request) else { return false }
++        let isDeviceResolution = next.resolutionSource == "device"
++            || (next.resolutionSource == nil && !accountAuthorized)
++        guard isDeviceResolution || next.status == "account_required" || next.purchaseIsLinked == true else {
++            // A shared account body is not an independent guest purchase or an authority decision.
++            recompute()
++            return false
++        }
++        guard acceptAuthority(request) else { return false }
+         if next.purchaseIsLinked == true || next.status == "account_required" {
+             defaults.set(true, forKey: linkedPurchaseKey)
+         }
+         // A shared account response is not evidence about an independent guest purchase.
+         // Older account-authenticated responses have ambiguous provenance: do not cache them
+         // as guest access either. AccountProfileModel refreshes the separate account state.
+-        let isDeviceResolution = next.resolutionSource == "device"
+-            || (next.resolutionSource == nil && !accountAuthorized)
+         guard isDeviceResolution || next.status == "account_required" else {
+             recompute()
+-            return
++            return true
+         }
+-        authorityRevision = UUID()
+         deviceEntitlement = next
+         deviceCheckedAt = Date()
+         if next.status != "account_required", next.purchaseIsLinked == false {
+             defaults.set(false, forKey: linkedPurchaseKey)
+         } else if next.purchaseIsLinked == nil, !accountAuthorized,
+                   ["premium", "trial", "grace"].contains(next.status) {
+             defaults.set(false, forKey: linkedPurchaseKey)
+         }
+         if let data = try? JSONEncoder().encode(next) { defaults.set(data, forKey: deviceSnapshotKey) }
+         recompute(recordCheck: true)
++        return true
+     }
+ 
+     func markDevicePurchaseLinked() {
++        _ = acceptAuthority(beginAuthorityRequest())
+         defaults.set(true, forKey: linkedPurchaseKey)
+         recompute()
+     }
+ 
+     func setAccountEntitlement(_ next: EntitlementDTO?) {
+-        if next != nil || accountEntitlement != nil { authorityRevision = UUID() }
++        _ = setAccountEntitlement(next, request: beginAuthorityRequest())
++    }
++
++    @discardableResult
++    func setAccountEntitlement(_ next: EntitlementDTO?, request: AuthorityRequest) -> Bool {
++        guard next != nil || accountEntitlement != nil else { return false }
++        guard acceptAuthority(request) else { return false }
++        applyAccountEntitlement(next)
++        return true
++    }
++
++    @discardableResult
++    func acceptAccountClaim(_ next: EntitlementDTO, request: AuthorityRequest) -> Bool {
++        guard acceptAuthority(request) else { return false }
++        defaults.set(true, forKey: linkedPurchaseKey)
++        applyAccountEntitlement(next)
++        return true
++    }
++
++    private func applyAccountEntitlement(_ next: EntitlementDTO?) {
+         accountEntitlement = next
+         accountCheckedAt = next == nil ? nil : Date()
+         if let next, let accountID {
+             accountReadHistory[accountID] = next
+             persistAccountReadHistory()
+         }
+         recompute(recordCheck: next != nil)
+     }
+ 
+     func selectAccountIdentity(_ next: String?) {
+         guard accountID != next else { return }
+         accountID = next
+-        authorityRevision = UUID()
++        identityEpoch = UUID()
++        nextAuthorityOrder = 0
++        lastAcceptedAuthorityOrder = 0
+         accountCheckedAt = nil
+         accountEntitlement = next.flatMap { accountReadHistory[$0] }
+         recompute()
+     }
+ 
+     func forgetAccountReadHistory(for deletedAccountID: String) {
+         guard accountReadHistory.removeValue(forKey: deletedAccountID) != nil else { return }
+         persistAccountReadHistory()
+         guard accountID == deletedAccountID else { return }
+-        authorityRevision = UUID()
++        _ = acceptAuthority(beginAuthorityRequest())
+         accountEntitlement = nil
+         accountCheckedAt = nil
+         recompute()
+     }
+ 
+     private func persistAccountReadHistory() {
+         if accountReadHistory.isEmpty {
+             defaults.removeObject(forKey: accountReadHistoryKey)
+         } else if let data = try? JSONEncoder().encode(accountReadHistory) {
+             defaults.set(data, forKey: accountReadHistoryKey)
+         }
+     }
+ 
+     func accountRefreshFailed() {
+-        authorityRevision = UUID()
++        _ = accountRefreshFailed(request: beginAuthorityRequest())
++    }
++
++    @discardableResult
++    func accountRefreshFailed(request: AuthorityRequest) -> Bool {
++        guard isCurrentAuthorityRequest(request) else { return false }
+         accountCheckedAt = nil
+         recompute()
++        return true
+     }
+ 
+     func closePaidMutationConfirmation() {
+-        authorityRevision = UUID()
++        _ = closePaidMutationConfirmation(request: beginAuthorityRequest())
++    }
++
++    @discardableResult
++    func closePaidMutationConfirmation(request: AuthorityRequest) -> Bool {
++        guard acceptAuthority(request) else { return false }
+         deviceCheckedAt = nil
+         accountCheckedAt = nil
+         recompute()
++        return true
+     }
+ 
+     private func recompute(recordCheck: Bool = false) {
+         let device = deviceEntitlement.effective(at: Date())
+         let independentDeviceHistory = !defaults.bool(forKey: linkedPurchaseKey)
+             && ["trial", "premium", "grace", "expired_paid"].contains(device.status)
+         var selectedCheck: Date?
+         if let accountEntitlement,
+            ["trial", "premium", "grace"].contains(accountEntitlement.effective(at: Date()).status)
+                 && PaidMutationConfirmation.isFresh(accountCheckedAt, at: Date()) || !independentDeviceHistory {
+diff --git a/Infrastructure/Purchases/StoreKitService.swift b/Infrastructure/Purchases/StoreKitService.swift
+index 3c21602..0defafa 100644
+--- a/Infrastructure/Purchases/StoreKitService.swift
++++ b/Infrastructure/Purchases/StoreKitService.swift
+@@ -191,53 +191,61 @@ final class StoreKitService: ObservableObject {
+             errorText = error.localizedDescription
+             return false
+         }
+     }
+ 
+     func refreshTokenAndEntitlement() async {
+         let refreshID = UUID()
+         refreshRevision = refreshID
+         await account.refresh()
+         guard refreshRevision == refreshID else { return }
+-        let authority = entitlements.authorityRevision
++        let accountAuthorized = await accountProfile() != nil
++        guard refreshRevision == refreshID else { return }
++        let authorityRequest = entitlements.beginAuthorityRequest()
+         do {
+-            let accountAuthorized = await accountProfile() != nil
+-            guard refreshRevision == refreshID, entitlements.authorityRevision == authority else { return }
+             let response = try await apiClient.iapToken()
+-            guard refreshRevision == refreshID, entitlements.authorityRevision == authority else { return }
++            guard refreshRevision == refreshID, entitlements.isCurrentAuthorityRequest(authorityRequest) else { return }
+             try persistToken(response.accessToken, response.expiresIn)
+-            entitlements.update(response.entitlement, accountAuthorized: accountAuthorized)
++            entitlements.update(response.entitlement, accountAuthorized: accountAuthorized, request: authorityRequest)
+             errorText = nil
+         } catch {
+-            guard refreshRevision == refreshID, entitlements.authorityRevision == authority else { return }
+-            if case APIError.httpStatus(let code, _) = error, code == 402 || code == 403 {
+-                entitlements.closePaidMutationConfirmation()
++            guard refreshRevision == refreshID, entitlements.isCurrentAuthorityRequest(authorityRequest) else { return }
++            if let apiError = error as? APIError, apiError.isPaidAccessDenial {
++                entitlements.closePaidMutationConfirmation(request: authorityRequest)
++            } else if case APIError.httpStatus(let code, _) = error, code == 403 {
++                // Keep the existing token-endpoint 403 behavior for legacy bodies.
++                entitlements.closePaidMutationConfirmation(request: authorityRequest)
+             }
+             errorText = error.localizedDescription
+         }
+     }
+ 
+     @discardableResult
+     func verifyWithBackend(jwsTransaction: String) async throws -> Bool {
+         let refreshID = UUID()
+         refreshRevision = refreshID
+-        let authority = entitlements.authorityRevision
+         let accountAuthorized = await accountProfile() != nil
+-        guard entitlements.authorityRevision == authority, refreshRevision == refreshID else { return false }
+-        let response = try await apiClient.iapVerify(
+-            jwsTransaction: jwsTransaction
+-        )
+-        guard entitlements.authorityRevision == authority, refreshRevision == refreshID else { return false }
+-        try persistToken(response.accessToken, response.expiresIn)
+-        entitlements.update(response.entitlement, accountAuthorized: accountAuthorized)
+-        await account.refresh()
+-        return true
++        guard refreshRevision == refreshID else { return false }
++        let authorityRequest = entitlements.beginAuthorityRequest()
++        do {
++            let response = try await apiClient.iapVerify(jwsTransaction: jwsTransaction)
++            guard refreshRevision == refreshID, entitlements.isCurrentAuthorityRequest(authorityRequest) else { return false }
++            try persistToken(response.accessToken, response.expiresIn)
++            entitlements.update(response.entitlement, accountAuthorized: accountAuthorized, request: authorityRequest)
++            await account.refresh()
++            return true
++        } catch {
++            if refreshRevision == refreshID, let apiError = error as? APIError, apiError.isPaidAccessDenial {
++                entitlements.closePaidMutationConfirmation(request: authorityRequest)
++            }
++            throw error
++        }
+     }
+ 
+     /// Called only after the user confirms the destination account in Profile.
+     func verifiedPurchaseForAccountClaim() async throws -> String {
+         try await AppStore.sync()
+         var candidates: [(Transaction, String)] = []
+         for await result in Transaction.currentEntitlements {
+             let transaction = try checkVerified(result)
+             guard [Self.monthlyProductId, Self.yearlyProductId].contains(transaction.productID),
+                   transaction.revocationDate == nil, !transaction.isUpgraded,
+diff --git a/Infrastructure/Repositories/WordRepository.swift b/Infrastructure/Repositories/WordRepository.swift
+index ba1c2f1..80be9e6 100644
+--- a/Infrastructure/Repositories/WordRepository.swift
++++ b/Infrastructure/Repositories/WordRepository.swift
+@@ -597,45 +597,63 @@ final class WordRepository {
+             )
+         }
+ 
+         let secondary = secondaryLanguage.flatMap(LanguageOption.canonicalSupportedCode)
+             .flatMap { $0 == LanguageOption.canonicalSupportedCode(nativeLanguage) ? nil : $0 }
+         let cachedPrimary = try fetchStoredDetail(
+             normalized: requestedNormalized,
+             native: native,
+             learning: learning
+         )
+-        // Bundled responses allow a single primary translation. Keep the legacy
+-        // multi-translation refresh rule for searches without a secondary language.
++        // Keep the existing AI enrichment behavior for a saved single translation
++        // while current access permits a new request.
+         let hasPrimaryCache = cachedPrimary.map { detail in
+             secondary == nil ? Self.hasMultipleTranslations(detail) : Self.primaryTranslation(from: detail) != nil
+         } ?? false
+         let hasSecondaryCache = secondary.map { target in
+             (try? cachedPrimary?.secondaryTranslation?.validated(for: target)) != nil
+         } ?? true
+         if let cached = cachedPrimary, hasPrimaryCache, hasSecondaryCache {
+             AppLog.localHit(
+                 "\(requestedNormalized) \(native)/\(learning)"
+             )
+             return stageResolvedDetail(
+                 cached,
+                 requestedDisplay: requestedDisplay,
+                 requestedNormalized: requestedNormalized,
+                 native: native,
+                 learning: learning,
+                 existingWordID: existingWordID
+             )
+         }
+ 
+-        // An existing primary cache hit still goes to the server when the secondary
+-        // is missing; the server authorizes and generates only missing content.
+-        _ = try requireAIPermission(allowsExistingFreeWord: hasPrimaryCache)
++        if let cached = cachedPrimary, existingWordID != nil, secondary == nil,
++           Self.primaryTranslation(from: cached) != nil {
++            do {
++                _ = try requireAIPermission()
++            } catch APIError.httpStatus(let code, _) where code == 402 {
++                // Denied enrichment cannot hide an otherwise eligible saved card.
++                return stageResolvedDetail(
++                    cached,
++                    requestedDisplay: requestedDisplay,
++                    requestedNormalized: requestedNormalized,
++                    native: native,
++                    learning: learning,
++                    existingWordID: existingWordID
++                )
++            } catch {
++                throw error
++            }
++        } else {
++            // A missing secondary remains a server-authorized AI request.
++            _ = try requireAIPermission(allowsExistingFreeWord: hasPrimaryCache)
++        }
+ 
+         AppLog.apiCall(
+             "word-detail \(requestedNormalized) \(native)/\(learning)"
+         )
+         let detail = try await api.wordDetail(
+             word: word.trimmingCharacters(in: .whitespacesAndNewlines),
+             learningLanguage: learningLanguage,
+             nativeLanguage: nativeLanguage,
+             secondaryLanguage: secondary
+         )
+diff --git a/Presentation/Features/Home/Components/DashboardWordCard.swift b/Presentation/Features/Home/Components/DashboardWordCard.swift
+index 108e136..d2d02ba 100644
+--- a/Presentation/Features/Home/Components/DashboardWordCard.swift
++++ b/Presentation/Features/Home/Components/DashboardWordCard.swift
+@@ -49,20 +49,21 @@ struct DashboardWordCard: View {
+                 HStack {
+                     lockedChip
+                     Spacer(minLength: 0)
+                 }
+                 .padding(.bottom, 8)
+             }
+ 
+             cardSummary
+                 .opacity(isLocked ? 0.55 : 1)
+             accessDenialControls
++            if isLocked { deleteButton.padding(.top, 8) }
+ 
+             flashcardSetRow
+                 .padding(.top, 10)
+                 .opacity(isLocked ? 0.55 : 1)
+ 
+             if shouldShowExpandedContent {
+                 expandedSection
+             }
+         }
+         .padding(16)
+@@ -161,20 +162,21 @@ struct DashboardWordCard: View {
+                     }
+                     if isLocked {
+                         lockedChip
+                     }
+                 }
+                 .frame(width: 96, alignment: .trailing)
+             }
+             .frame(minHeight: 74)
+             .opacity(isLocked ? 0.55 : 1)
+             accessDenialControls
++            if isLocked { deleteButton.padding(.top, 8) }
+ 
+             if shouldShowExpandedContent {
+                 expandedSection
+                     .padding(.top, 12)
+             }
+         }
+         .padding(.horizontal, 14)
+         .padding(.vertical, 12)
+         .frame(maxWidth: .infinity, alignment: .leading)
+         .background(homeCard)
+@@ -425,39 +427,45 @@ struct DashboardWordCard: View {
+                     } label: {
+                         HStack(spacing: 6) {
+                             Image(systemName: "pencil")
+                             Text("Edit")
+                         }
+                         .font(.system(size: 15, weight: .medium))
+                         .foregroundStyle(theme.palette.mutedForeground)
+                     }
+                     .buttonStyle(.plain)
+                 }
+-                if let onDelete {
+-                    Button {
+-                        onDelete(row)
+-                    } label: {
+-                        HStack(spacing: 6) {
+-                            Image(systemName: "trash")
+-                            Text("Delete")
+-                        }
+-                        .font(.system(size: 15, weight: .medium))
+-                        .foregroundStyle(theme.palette.mutedForeground)
+-                    }
+-                    .buttonStyle(.plain)
+-                }
++                deleteButton
+             }
+             .padding(.top, 4)
+         }
+         .padding(.top, 8)
+     }
+ 
++    @ViewBuilder
++    private var deleteButton: some View {
++        if let onDelete {
++            Button {
++                onDelete(row)
++            } label: {
++                HStack(spacing: 6) {
++                    Image(systemName: "trash")
++                    Text("Delete")
++                }
++                .font(.system(size: 15, weight: .medium))
++                .foregroundStyle(theme.palette.mutedForeground)
++            }
++            .buttonStyle(.plain)
++            .accessibilityIdentifier("word.delete.\(row.id)")
++        }
++    }
++
+     private func translationFontSize(for text: String) -> CGFloat {
+         wordCount(in: text) <= 2 ? 18 : 16
+     }
+ 
+     private func wordCount(in text: String) -> Int {
+         text
+             .split { $0.isWhitespace || $0.isNewline }
+             .count
+     }
+ 
+diff --git a/Presentation/Features/Settings/ViewModels/AccountProfileModel.swift b/Presentation/Features/Settings/ViewModels/AccountProfileModel.swift
+index b33532f..71af4bf 100644
+--- a/Presentation/Features/Settings/ViewModels/AccountProfileModel.swift
++++ b/Presentation/Features/Settings/ViewModels/AccountProfileModel.swift
+@@ -26,33 +26,37 @@ final class AccountProfileModel: ObservableObject {
+         refreshRevision = refreshID
+         let current = await client.profile()
+         guard revision == started, refreshRevision == refreshID else { return }
+         profile = current
+         entitlementStore.selectAccountIdentity(current?.id)
+         guard current != nil else {
+             entitlement = nil
+             entitlementStore.setAccountEntitlement(nil)
+             return
+         }
++        let authorityRequest = entitlementStore.beginAuthorityRequest()
+         do {
+             let next = try await client.entitlement()
+             let stillSignedIn = await client.profile()?.id == current?.id
+-            guard revision == started, refreshRevision == refreshID, stillSignedIn else { return }
++            guard revision == started, refreshRevision == refreshID, stillSignedIn,
++                  entitlementStore.isCurrentAuthorityRequest(authorityRequest) else { return }
+             entitlement = next
+-            entitlementStore.setAccountEntitlement(next.localEntitlement)
++            entitlementStore.setAccountEntitlement(next.localEntitlement, request: authorityRequest)
+             errorText = nil
+         } catch {
+-            guard revision == started, refreshRevision == refreshID else { return }
++            guard revision == started, refreshRevision == refreshID,
++                  entitlementStore.isCurrentAuthorityRequest(authorityRequest) else { return }
+             let stillCurrent = await client.profile()
+-            guard revision == started, refreshRevision == refreshID, stillCurrent?.id == current?.id else { return }
++            guard revision == started, refreshRevision == refreshID, stillCurrent?.id == current?.id,
++                  entitlementStore.isCurrentAuthorityRequest(authorityRequest) else { return }
+             entitlement = nil
+-            entitlementStore.accountRefreshFailed()
++            entitlementStore.accountRefreshFailed(request: authorityRequest)
+             profile = stillCurrent
+             errorText = error.localizedDescription
+         }
+     }
+ 
+     func signIn(email: String, password: String, confirmation: String?) async {
+         guard !isBusy else { return }
+         isBusy = true; errorText = nil
+         revision = UUID(); entitlement = nil
+         entitlementStore.selectAccountIdentity(nil)
+@@ -93,25 +97,41 @@ final class AccountProfileModel: ObservableObject {
+             revision = UUID(); profile = nil; entitlement = nil
+             entitlementStore.selectAccountIdentity(nil)
+             entitlementStore.setAccountEntitlement(nil)
+         } catch {
+             guard revision == started else { return }
+             errorText = error.localizedDescription
+         }
+     }
+ 
+     func claim(storeKit: StoreKitService, accountID: String) async {
++        await claim(accountID: accountID) { try await storeKit.verifiedPurchaseForAccountClaim() }
++    }
++
++    // The verified purchase proof is supplied by StoreKit in the app and by a fixed JWS in tests.
++    func claim(accountID: String, verifiedPurchase: () async throws -> String) async {
+         guard !isBusy, profile?.id == accountID else { return }
+         isBusy = true; errorText = nil
+         let started = revision
++        var claimRequest: EntitlementStore.AuthorityRequest?
+         defer { isBusy = false }
+         do {
+-            let jws = try await storeKit.verifiedPurchaseForAccountClaim()
++            let jws = try await verifiedPurchase()
+             guard revision == started, profile?.id == accountID else { throw AccountSessionError.signedOut }
++            let claimGeneration = await client.sessionGeneration()
++            let currentAccount = await client.profile()?.id
++            guard revision == started, currentAccount == accountID else { throw AccountSessionError.signedOut }
++            claimRequest = entitlementStore.beginAuthorityRequest()
+             let next = try await client.claim(accountID: accountID, jws: jws)
+-            guard revision == started else { return }
+-            entitlementStore.markDevicePurchaseLinked()
++            let stillSignedIn = await client.profile()?.id == accountID
++            let sameSession = await client.sessionGeneration() == claimGeneration
++            guard revision == started, profile?.id == accountID, stillSignedIn, sameSession,
++                  let claimRequest, entitlementStore.acceptAccountClaim(next.localEntitlement, request: claimRequest)
++            else { return }
+             entitlement = next
+-            entitlementStore.setAccountEntitlement(next.localEntitlement)
+-        } catch { errorText = error.localizedDescription }
++        } catch {
++            guard revision == started, profile?.id == accountID else { return }
++            if let claimRequest, !entitlementStore.isCurrentAuthorityRequest(claimRequest) { return }
++            errorText = error.localizedDescription
++        }
+     }
+ }

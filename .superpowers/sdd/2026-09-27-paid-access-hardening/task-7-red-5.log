@@ -1,0 +1,173 @@
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-mggc-4xg6-vcxf
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-q939-rpr3-3284
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Mavrylo.Services.csproj : warning NU1510: PackageReference System.Formats.Cbor will not be pruned. This package is automatically available and does not need to be referenced explicitly. Remove the PackageReference item.
+  Mavrylo.Entities -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Entities\bin\Debug\net10.0\Mavrylo.Entities.dll
+  Mavrylo.Data -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Data\bin\Debug\net10.0\Mavrylo.Data.dll
+  Mavrylo.Services -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\bin\Debug\net10.0\Mavrylo.Services.dll
+  Mavrylo -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\bin\Debug\net10.0\Mavrylo.dll
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs(36,146): warning CS8601: Possible null reference assignment. [D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj]
+  Mavrylo.Tests -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Debug\net10.0\Mavrylo.Tests.dll
+Test run for D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Debug\net10.0\Mavrylo.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:00.10]   Discovering: Mavrylo.Tests
+[xUnit.net 00:00:00.20]   Discovered:  Mavrylo.Tests
+[xUnit.net 00:00:00.22]   Starting:    Mavrylo.Tests
+[xUnit.net 00:00:00.28]     Mavrylo.Tests.FallbackAiJsonServiceTests.UnknownPrimaryProviderFailsClosed [FAIL]
+[xUnit.net 00:00:00.28]       Assert.Throws() Failure: No exception was thrown
+[xUnit.net 00:00:00.28]       Expected: typeof(Mavrylo.Services.AiSpendDeniedException)
+[xUnit.net 00:00:00.28]       Stack Trace:
+[xUnit.net 00:00:00.29]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\FallbackAiJsonServiceTests.cs(16,0): at Mavrylo.Tests.FallbackAiJsonServiceTests.UnknownPrimaryProviderFailsClosed()
+[xUnit.net 00:00:00.29]         --- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.FallbackAiJsonServiceTests.UnknownPrimaryProviderFailsClosed [26 ms]
+  Error Message:
+   Assert.Throws() Failure: No exception was thrown
+Expected: typeof(Mavrylo.Services.AiSpendDeniedException)
+  Stack Trace:
+     at Mavrylo.Tests.FallbackAiJsonServiceTests.UnknownPrimaryProviderFailsClosed() in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\FallbackAiJsonServiceTests.cs:line 16
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:02.89]     Mavrylo.Tests.AiSpendRouteTests.NormalAuthorizationGrantsContextAndEntitlementOrQuotaDenialHasZeroSpend(kind: "paid-device") [FAIL]
+[xUnit.net 00:00:02.89]       System.InvalidOperationException : The LINQ expression '@token_Claims
+[xUnit.net 00:00:02.90]           .Where(e => e.Type == "keyId")' could not be translated. Either rewrite the query in a form that can be translated, or switch to client evaluation explicitly by inserting a call to 'AsEnumerable', 'AsAsyncEnumerable', 'ToList', or 'ToListAsync'. See https://go.microsoft.com/fwlink/?linkid=2101038 for more information.
+[xUnit.net 00:00:02.90]       Stack Trace:
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.QueryableMethodTranslatingExpressionVisitor.Translate(Expression expression)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.QueryableMethodTranslatingExpressionVisitor.TranslateSubquery(Expression expression)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.RelationalSqlTranslatingExpressionVisitor.<VisitMethodCall>g__TranslateAsSubquery|31_0(Expression expression, <>c__DisplayClass31_0&)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.RelationalSqlTranslatingExpressionVisitor.VisitMethodCall(MethodCallExpression methodCallExpression)
+[xUnit.net 00:00:02.90]            at Npgsql.EntityFrameworkCore.PostgreSQL.Query.Internal.NpgsqlSqlTranslatingExpressionVisitor.VisitMethodCall(MethodCallExpression methodCallExpression)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.RelationalSqlTranslatingExpressionVisitor.VisitBinary(BinaryExpression binaryExpression)
+[xUnit.net 00:00:02.90]            at Npgsql.EntityFrameworkCore.PostgreSQL.Query.Internal.NpgsqlSqlTranslatingExpressionVisitor.VisitBinary(BinaryExpression binaryExpression)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.RelationalSqlTranslatingExpressionVisitor.TranslateInternal(Expression expression, Boolean applyDefaultTypeMapping)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.RelationalSqlTranslatingExpressionVisitor.Translate(Expression expression, Boolean applyDefaultTypeMapping)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.RelationalQueryableMethodTranslatingExpressionVisitor.TranslateExpression(Expression expression, Boolean applyDefaultTypeMapping)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.RelationalQueryableMethodTranslatingExpressionVisitor.TranslateLambdaExpression(ShapedQueryExpression shapedQueryExpression, LambdaExpression lambdaExpression)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.RelationalQueryableMethodTranslatingExpressionVisitor.TranslateWhere(ShapedQueryExpression source, LambdaExpression predicate)
+[xUnit.net 00:00:02.90]            at Npgsql.EntityFrameworkCore.PostgreSQL.Query.Internal.NpgsqlQueryableMethodTranslatingExpressionVisitor.TranslateWhere(ShapedQueryExpression source, LambdaExpression predicate)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.QueryableMethodTranslatingExpressionVisitor.VisitMethodCall(MethodCallExpression methodCallExpression)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.RelationalQueryableMethodTranslatingExpressionVisitor.VisitMethodCall(MethodCallExpression methodCallExpression)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.QueryableMethodTranslatingExpressionVisitor.VisitMethodCall(MethodCallExpression methodCallExpression)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.RelationalQueryableMethodTranslatingExpressionVisitor.VisitMethodCall(MethodCallExpression methodCallExpression)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.QueryableMethodTranslatingExpressionVisitor.Translate(Expression expression)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.QueryCompilationContext.CreateQueryExecutorExpression[TResult](Expression query)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.QueryCompilationContext.CreateQueryExecutor[TResult](Expression query)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Storage.Database.CompileQuery[TResult](Expression query, Boolean async)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.CompileQueryCore[TResult](IDatabase database, Expression query, IModel model, Boolean async)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.<>c__DisplayClass11_0`1.<ExecuteCore>b__0()
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.Internal.CompiledQueryCache.GetOrAddQuery[TResult](Object cacheKey, Func`1 compiler)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.ExecuteCore[TResult](Expression query, Boolean async, CancellationToken cancellationToken)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.ExecuteAsync[TResult](Expression query, CancellationToken cancellationToken)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.Query.Internal.EntityQueryProvider.ExecuteAsync[TResult](Expression expression, CancellationToken cancellationToken)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ExecuteAsync[TSource,TResult](MethodInfo operatorMethodInfo, IQueryable`1 source, Expression expression, CancellationToken cancellationToken)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ExecuteAsync[TSource,TResult](MethodInfo operatorMethodInfo, IQueryable`1 source, LambdaExpression expression, CancellationToken cancellationToken)
+[xUnit.net 00:00:02.90]            at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync[TSource](IQueryable`1 source, Expression`1 predicate, CancellationToken cancellationToken)
+[xUnit.net 00:00:02.90]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs(35,0): at Mavrylo.Tests.AiSpendRouteTests.NormalAuthorizationGrantsContextAndEntitlementOrQuotaDenialHasZeroSpend(String kind)
+[xUnit.net 00:00:02.90]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs(52,0): at Mavrylo.Tests.AiSpendRouteTests.NormalAuthorizationGrantsContextAndEntitlementOrQuotaDenialHasZeroSpend(String kind)
+[xUnit.net 00:00:02.90]         --- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.AiSpendRouteTests.NormalAuthorizationGrantsContextAndEntitlementOrQuotaDenialHasZeroSpend(kind: "paid-device") [1 s]
+  Error Message:
+   System.InvalidOperationException : The LINQ expression '@token_Claims
+    .Where(e => e.Type == "keyId")' could not be translated. Either rewrite the query in a form that can be translated, or switch to client evaluation explicitly by inserting a call to 'AsEnumerable', 'AsAsyncEnumerable', 'ToList', or 'ToListAsync'. See https://go.microsoft.com/fwlink/?linkid=2101038 for more information.
+  Stack Trace:
+     at Microsoft.EntityFrameworkCore.Query.QueryableMethodTranslatingExpressionVisitor.Translate(Expression expression)
+   at Microsoft.EntityFrameworkCore.Query.QueryableMethodTranslatingExpressionVisitor.TranslateSubquery(Expression expression)
+   at Microsoft.EntityFrameworkCore.Query.RelationalSqlTranslatingExpressionVisitor.<VisitMethodCall>g__TranslateAsSubquery|31_0(Expression expression, <>c__DisplayClass31_0&)
+   at Microsoft.EntityFrameworkCore.Query.RelationalSqlTranslatingExpressionVisitor.VisitMethodCall(MethodCallExpression methodCallExpression)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Query.Internal.NpgsqlSqlTranslatingExpressionVisitor.VisitMethodCall(MethodCallExpression methodCallExpression)
+   at Microsoft.EntityFrameworkCore.Query.RelationalSqlTranslatingExpressionVisitor.VisitBinary(BinaryExpression binaryExpression)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Query.Internal.NpgsqlSqlTranslatingExpressionVisitor.VisitBinary(BinaryExpression binaryExpression)
+   at Microsoft.EntityFrameworkCore.Query.RelationalSqlTranslatingExpressionVisitor.TranslateInternal(Expression expression, Boolean applyDefaultTypeMapping)
+   at Microsoft.EntityFrameworkCore.Query.RelationalSqlTranslatingExpressionVisitor.Translate(Expression expression, Boolean applyDefaultTypeMapping)
+   at Microsoft.EntityFrameworkCore.Query.RelationalQueryableMethodTranslatingExpressionVisitor.TranslateExpression(Expression expression, Boolean applyDefaultTypeMapping)
+   at Microsoft.EntityFrameworkCore.Query.RelationalQueryableMethodTranslatingExpressionVisitor.TranslateLambdaExpression(ShapedQueryExpression shapedQueryExpression, LambdaExpression lambdaExpression)
+   at Microsoft.EntityFrameworkCore.Query.RelationalQueryableMethodTranslatingExpressionVisitor.TranslateWhere(ShapedQueryExpression source, LambdaExpression predicate)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Query.Internal.NpgsqlQueryableMethodTranslatingExpressionVisitor.TranslateWhere(ShapedQueryExpression source, LambdaExpression predicate)
+   at Microsoft.EntityFrameworkCore.Query.QueryableMethodTranslatingExpressionVisitor.VisitMethodCall(MethodCallExpression methodCallExpression)
+   at Microsoft.EntityFrameworkCore.Query.RelationalQueryableMethodTranslatingExpressionVisitor.VisitMethodCall(MethodCallExpression methodCallExpression)
+   at Microsoft.EntityFrameworkCore.Query.QueryableMethodTranslatingExpressionVisitor.VisitMethodCall(MethodCallExpression methodCallExpression)
+   at Microsoft.EntityFrameworkCore.Query.RelationalQueryableMethodTranslatingExpressionVisitor.VisitMethodCall(MethodCallExpression methodCallExpression)
+   at Microsoft.EntityFrameworkCore.Query.QueryableMethodTranslatingExpressionVisitor.Translate(Expression expression)
+   at Microsoft.EntityFrameworkCore.Query.QueryCompilationContext.CreateQueryExecutorExpression[TResult](Expression query)
+   at Microsoft.EntityFrameworkCore.Query.QueryCompilationContext.CreateQueryExecutor[TResult](Expression query)
+   at Microsoft.EntityFrameworkCore.Storage.Database.CompileQuery[TResult](Expression query, Boolean async)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.CompileQueryCore[TResult](IDatabase database, Expression query, IModel model, Boolean async)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.<>c__DisplayClass11_0`1.<ExecuteCore>b__0()
+   at Microsoft.EntityFrameworkCore.Query.Internal.CompiledQueryCache.GetOrAddQuery[TResult](Object cacheKey, Func`1 compiler)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.ExecuteCore[TResult](Expression query, Boolean async, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.ExecuteAsync[TResult](Expression query, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.EntityQueryProvider.ExecuteAsync[TResult](Expression expression, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ExecuteAsync[TSource,TResult](MethodInfo operatorMethodInfo, IQueryable`1 source, Expression expression, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ExecuteAsync[TSource,TResult](MethodInfo operatorMethodInfo, IQueryable`1 source, LambdaExpression expression, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync[TSource](IQueryable`1 source, Expression`1 predicate, CancellationToken cancellationToken)
+   at Mavrylo.Tests.AiSpendRouteTests.NormalAuthorizationGrantsContextAndEntitlementOrQuotaDenialHasZeroSpend(String kind) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs:line 35
+   at Mavrylo.Tests.AiSpendRouteTests.NormalAuthorizationGrantsContextAndEntitlementOrQuotaDenialHasZeroSpend(String kind) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs:line 52
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:03.17]     Mavrylo.Tests.AiSpendRouteTests.NormalAuthorizationGrantsContextAndEntitlementOrQuotaDenialHasZeroSpend(kind: "account") [FAIL]
+[xUnit.net 00:00:03.17]       Microsoft.EntityFrameworkCore.DbUpdateException : An error occurred while saving the entity changes. See the inner exception for details.
+[xUnit.net 00:00:03.17]       ---- Npgsql.PostgresException : 23502: null value in column "DeviceUuid" of relation "subscriptions" violates not-null constraint
+[xUnit.net 00:00:03.17]       
+[xUnit.net 00:00:03.17]       DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+[xUnit.net 00:00:03.17]       Stack Trace:
+[xUnit.net 00:00:03.17]            at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+[xUnit.net 00:00:03.17]            at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+[xUnit.net 00:00:03.17]            at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+[xUnit.net 00:00:03.17]            at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+[xUnit.net 00:00:03.17]            at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+[xUnit.net 00:00:03.17]            at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+[xUnit.net 00:00:03.17]            at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+[xUnit.net 00:00:03.17]            at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+[xUnit.net 00:00:03.17]            at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+[xUnit.net 00:00:03.17]            at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+[xUnit.net 00:00:03.17]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs(39,0): at Mavrylo.Tests.AiSpendRouteTests.NormalAuthorizationGrantsContextAndEntitlementOrQuotaDenialHasZeroSpend(String kind)
+[xUnit.net 00:00:03.17]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs(52,0): at Mavrylo.Tests.AiSpendRouteTests.NormalAuthorizationGrantsContextAndEntitlementOrQuotaDenialHasZeroSpend(String kind)
+[xUnit.net 00:00:03.17]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:03.17]         ----- Inner Stack Trace -----
+[xUnit.net 00:00:03.17]            at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+[xUnit.net 00:00:03.17]            at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+[xUnit.net 00:00:03.17]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:00:03.17]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:00:03.17]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:00:03.17]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:00:03.17]            at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:00:03.17]            at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+[xUnit.net 00:00:03.17]            at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+[xUnit.net 00:00:03.17]            at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+[xUnit.net 00:00:03.84]   Finished:    Mavrylo.Tests
+  Failed Mavrylo.Tests.AiSpendRouteTests.NormalAuthorizationGrantsContextAndEntitlementOrQuotaDenialHasZeroSpend(kind: "account") [269 ms]
+  Error Message:
+   Microsoft.EntityFrameworkCore.DbUpdateException : An error occurred while saving the entity changes. See the inner exception for details.
+---- Npgsql.PostgresException : 23502: null value in column "DeviceUuid" of relation "subscriptions" violates not-null constraint
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+  Stack Trace:
+     at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Mavrylo.Tests.AiSpendRouteTests.NormalAuthorizationGrantsContextAndEntitlementOrQuotaDenialHasZeroSpend(String kind) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs:line 39
+   at Mavrylo.Tests.AiSpendRouteTests.NormalAuthorizationGrantsContextAndEntitlementOrQuotaDenialHasZeroSpend(String kind) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs:line 52
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+  Passed Mavrylo.Tests.AiSpendRouteTests.NormalAuthorizationGrantsContextAndEntitlementOrQuotaDenialHasZeroSpend(kind: "free-device") [479 ms]
+
+Test Run Failed.
+Total tests: 4
+     Passed: 1
+     Failed: 3
+ Total time: 4.2633 Seconds

@@ -1,0 +1,22 @@
+[Unit]
+Description=Owl AI FlashCard API
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=owlapi
+Group=owlapi
+WorkingDirectory=/var/www/owl-api/current
+ExecStart=/usr/bin/dotnet /var/www/owl-api/current/Mavrylo.dll
+EnvironmentFile=/etc/owl-ai/api.env
+Restart=always
+RestartSec=5
+KillSignal=SIGINT
+SyslogIdentifier=owl-api
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/var/www/owl-api /etc/owl-ai
+
+[Install]
+WantedBy=multi-user.target

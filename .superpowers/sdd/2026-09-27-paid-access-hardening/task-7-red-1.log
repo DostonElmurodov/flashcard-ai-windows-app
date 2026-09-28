@@ -1,0 +1,86 @@
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-mggc-4xg6-vcxf
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-q939-rpr3-3284
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Mavrylo.Services.csproj : warning NU1510: PackageReference System.Formats.Cbor will not be pruned. This package is automatically available and does not need to be referenced explicitly. Remove the PackageReference item.
+  Mavrylo.Entities -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Entities\bin\Debug\net10.0\Mavrylo.Entities.dll
+  Mavrylo.Data -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Data\bin\Debug\net10.0\Mavrylo.Data.dll
+  Mavrylo.Services -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\bin\Debug\net10.0\Mavrylo.Services.dll
+  Mavrylo -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\bin\Debug\net10.0\Mavrylo.dll
+  Mavrylo.Tests -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Debug\net10.0\Mavrylo.Tests.dll
+Test run for D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Debug\net10.0\Mavrylo.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:00.87]   Discovering: Mavrylo.Tests
+[xUnit.net 00:00:01.01]   Discovered:  Mavrylo.Tests
+[xUnit.net 00:00:01.05]   Starting:    Mavrylo.Tests
+[xUnit.net 00:00:01.14]     Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderAuthorizationOrQuotaFailure_DoesNotFallbackOrAlert(status: 401) [FAIL]
+[xUnit.net 00:00:01.14]       Assert.Throws() Failure: No exception was thrown
+[xUnit.net 00:00:01.14]       Expected: typeof(Mavrylo.Services.AiProviderException)
+[xUnit.net 00:00:01.14]       Stack Trace:
+[xUnit.net 00:00:01.15]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\FallbackAiJsonServiceTests.cs(20,0): at Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderAuthorizationOrQuotaFailure_DoesNotFallbackOrAlert(Int32 status)
+[xUnit.net 00:00:01.15]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.16]     Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderAuthorizationOrQuotaFailure_DoesNotFallbackOrAlert(status: 403) [FAIL]
+[xUnit.net 00:00:01.16]       Assert.Throws() Failure: No exception was thrown
+[xUnit.net 00:00:01.16]       Expected: typeof(Mavrylo.Services.AiProviderException)
+[xUnit.net 00:00:01.16]       Stack Trace:
+[xUnit.net 00:00:01.16]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\FallbackAiJsonServiceTests.cs(20,0): at Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderAuthorizationOrQuotaFailure_DoesNotFallbackOrAlert(Int32 status)
+[xUnit.net 00:00:01.16]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.16]     Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderAuthorizationOrQuotaFailure_DoesNotFallbackOrAlert(status: 429) [FAIL]
+[xUnit.net 00:00:01.16]       Assert.Throws() Failure: No exception was thrown
+[xUnit.net 00:00:01.16]       Expected: typeof(Mavrylo.Services.AiProviderException)
+[xUnit.net 00:00:01.16]       Stack Trace:
+[xUnit.net 00:00:01.16]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\FallbackAiJsonServiceTests.cs(20,0): at Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderAuthorizationOrQuotaFailure_DoesNotFallbackOrAlert(Int32 status)
+[xUnit.net 00:00:01.16]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.16]       Assert.ThrowsAny() Failure: No exception was thrown
+[xUnit.net 00:00:01.16]       Expected: typeof(System.Exception)
+[xUnit.net 00:00:01.16]     Mavrylo.Tests.AiProviderServiceTests.MissingSpendConfigurationAndTrustedContext_DeniesBeforeHttp(gemini: True) [FAIL]
+[xUnit.net 00:00:01.16]       Stack Trace:
+[xUnit.net 00:00:01.16]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderServiceTests.cs(23,0): at Mavrylo.Tests.AiProviderServiceTests.MissingSpendConfigurationAndTrustedContext_DeniesBeforeHttp(Boolean gemini)
+[xUnit.net 00:00:01.16]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.17]     Mavrylo.Tests.AiProviderServiceTests.MissingSpendConfigurationAndTrustedContext_DeniesBeforeHttp(gemini: False) [FAIL]
+[xUnit.net 00:00:01.17]       Assert.ThrowsAny() Failure: No exception was thrown
+[xUnit.net 00:00:01.17]       Expected: typeof(System.Exception)
+[xUnit.net 00:00:01.17]       Stack Trace:
+[xUnit.net 00:00:01.17]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderServiceTests.cs(23,0): at Mavrylo.Tests.AiProviderServiceTests.MissingSpendConfigurationAndTrustedContext_DeniesBeforeHttp(Boolean gemini)
+[xUnit.net 00:00:01.17]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.17]   Finished:    Mavrylo.Tests
+  Failed Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderAuthorizationOrQuotaFailure_DoesNotFallbackOrAlert(status: 401) [38 ms]
+  Error Message:
+   Assert.Throws() Failure: No exception was thrown
+Expected: typeof(Mavrylo.Services.AiProviderException)
+  Stack Trace:
+     at Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderAuthorizationOrQuotaFailure_DoesNotFallbackOrAlert(Int32 status) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\FallbackAiJsonServiceTests.cs:line 20
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderAuthorizationOrQuotaFailure_DoesNotFallbackOrAlert(status: 403) [< 1 ms]
+  Error Message:
+   Assert.Throws() Failure: No exception was thrown
+Expected: typeof(Mavrylo.Services.AiProviderException)
+  Stack Trace:
+     at Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderAuthorizationOrQuotaFailure_DoesNotFallbackOrAlert(Int32 status) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\FallbackAiJsonServiceTests.cs:line 20
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderAuthorizationOrQuotaFailure_DoesNotFallbackOrAlert(status: 429) [< 1 ms]
+  Error Message:
+   Assert.Throws() Failure: No exception was thrown
+Expected: typeof(Mavrylo.Services.AiProviderException)
+  Stack Trace:
+     at Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderAuthorizationOrQuotaFailure_DoesNotFallbackOrAlert(Int32 status) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\FallbackAiJsonServiceTests.cs:line 20
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.AiProviderServiceTests.MissingSpendConfigurationAndTrustedContext_DeniesBeforeHttp(gemini: True) [58 ms]
+  Error Message:
+   Assert.ThrowsAny() Failure: No exception was thrown
+Expected: typeof(System.Exception)
+  Stack Trace:
+     at Mavrylo.Tests.AiProviderServiceTests.MissingSpendConfigurationAndTrustedContext_DeniesBeforeHttp(Boolean gemini) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderServiceTests.cs:line 23
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.AiProviderServiceTests.MissingSpendConfigurationAndTrustedContext_DeniesBeforeHttp(gemini: False) [10 ms]
+  Error Message:
+   Assert.ThrowsAny() Failure: No exception was thrown
+Expected: typeof(System.Exception)
+  Stack Trace:
+     at Mavrylo.Tests.AiProviderServiceTests.MissingSpendConfigurationAndTrustedContext_DeniesBeforeHttp(Boolean gemini) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderServiceTests.cs:line 23
+--- End of stack trace from previous location ---
+
+Test Run Failed.
+Total tests: 5
+     Failed: 5
+ Total time: 1.9130 Seconds

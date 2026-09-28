@@ -1,0 +1,21 @@
+RUNTIME .NET 10.0.12
+POSTGRES 13.23
+OMITTED_ZERO_SUCCESS calls=1 result=Hello charged=568536 settled=False pending=1
+OMITTED_ZERO_NEXT reason=budget_or_concurrency calls=1
+EXPLICIT_ZERO_CONTROL calls=2 eachCharged=99 settled=2 pending=0
+POSTDISPATCH_CANCEL calls=1 charged=568536 settled=False pendingAfterNewContext=1
+LEDGER_UNAVAILABLE reason=ledger_unavailable calls=0
+BODY_DEADLINE calls=1 alerts=0 completionUnknown=True
+Unhandled exception. System.InvalidOperationException: Can't find 'D:\07 Hobby\FlashcardAI\.superpowers\sdd\2026-09-27-paid-access-hardening\task-7-review-probes\Mavrylo.deps.json'. This file is required for functional tests to run properly. There should be a copy of the file on your source project bin folder. If that is not the case, make sure that the property PreserveCompilationContext is set to true on your project file. E.g '<PreserveCompilationContext>true</PreserveCompilationContext>'. For functional tests to work they need to either run from the build output folder or the Mavrylo.deps.json file from your application's output directory must be copied to the folder where the tests are running on. A common cause for this error is having shadow copying enabled when the tests run.
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.EnsureDepsFile()
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.StartServer()
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(DelegatingHandler[] handlers)
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(Uri baseAddress, DelegatingHandler[] handlers)
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateClient(WebApplicationFactoryClientOptions options)
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateClient()
+   at Probes.DeadlineRoute(String connection)
+   at Probes.DeadlineRoute(String connection)
+   at Probes.Run()
+   at Probes.Run()
+   at ReviewEntry.Main()
+   at ReviewEntry.<Main>()

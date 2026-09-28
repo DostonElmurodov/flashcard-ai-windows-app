@@ -1,0 +1,89 @@
+#env
+# Build
+bin/
+obj/
+DerivedData/
+.build/
+.swiftpm/
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+
+# User / IDE
+.worktrees/
+.vs/
+.vscode/
+*.user
+*.suo
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Database (your case!)
+*.db
+*.db-shm
+*.db-wal
+
+# Env
+.env
+appsettings.json
+appsettings.Development.json
+appsettings.development.json
+**/appsettings.json
+**/appsettings.Development.json
+**/appsettings.development.json
+GoogleService-Info.plist
+**/GoogleService-Info.plist
+*.p8
+AuthKey_*.p8
+
+# Node (React app)
+node_modules/
+dist/
+build/
+
+
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+xcuserdata/
+**/xcuserdata/
+*.xcuserstate
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+*.db
+apps/api-dotnet/flashcard.db
+apps/api-dotnet/appsettings.Development.json
+appsettings.development.json
+apps/api-dotnet/bin/
+
+# Test run artifacts
+TestResults/

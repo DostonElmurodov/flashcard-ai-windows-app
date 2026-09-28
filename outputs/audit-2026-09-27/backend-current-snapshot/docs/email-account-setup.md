@@ -1,0 +1,13 @@
+# Email account sessions
+
+The native account flow uses `POST /owlai/account/register` (`email`, `password`, `confirm_password`) and `POST /owlai/account/email/session` (`email`, `password`). Registration returns HTTP 201; login returns HTTP 200. Both return the existing snake_case account session with profile provider `email`. Registration does not send verification mail or establish email ownership.
+
+Errors contain `code` and a safe `error` message: `invalid_email`, `invalid_password`, `password_mismatch` (400), `email_exists` (409), or `invalid_credentials` (401). Email is trimmed and lowercased. Addresses must use practical ASCII syntax, at most 254 characters, a local part at most 64 characters without leading/trailing/repeated dots, and a dotted DNS hostname with labels at most 63 characters. Passwords preserve all contents, contain 8–64 Unicode code points, and cannot be whitespace-only.
+
+New passwords use ASP.NET Core Identity's versioned, salted PBKDF2 PasswordHasher format, including full Unicode contents. Password-only legacy bcrypt accounts may authenticate and are upgraded after successful proof of the password. Google and Apple identities are never attached to passwords by matching email. Email login rejects ambiguous historical normalized addresses.
+
+Registration checks all existing identities using trimmed, case-insensitive email comparison. PostgreSQL transaction advisory locks coordinate registration and Google sign-in across API instances; the existing filtered unique email index also protects canonical email insertions. Google remains keyed by verified subject and may independently sign in when a password account shares its email. All production writers must preserve normalization and participate in this registration protocol; manual inserts bypassing it are outside the API guarantee.
+
+Email sessions reuse the distinct account JWT audience, refresh rotation and replay revocation, 30-day absolute session lifetime, logout, and account deletion. Account JWTs cannot authorize legacy or device routes. The account controller's existing IP rate limit (20 requests per minute) applies to anonymous registration and login. No email-provider configuration is required. Keep legacy authentication disabled in production as described in the existing setup guide.
+
+Rollout: deploy the backend before the native client and apply the existing `AddGoogleAccounts` migration from the Google-account baseline. This feature requires no additional schema migration. Account signing still requires the configured `Jwt:Key`, `Jwt:Issuer`, and distinct `Account:Audience` settings. Google configuration is independent of email accounts. Do not log request bodies containing passwords.

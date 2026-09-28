@@ -1,0 +1,16 @@
+{"owner":"guest","testMode":false,"storedWords":101,"normalModeReviewQueue":101}
+{"owner":"account-workspace","testMode":false,"storedWords":101,"normalModeReviewQueue":101}
+{"unpaidAiRequestsSentToStub":1,"server402Propagated":true}
+{"revokedCachedReadAllowed":true,"newAiRequestsForRevokedRead":0}
+✔ false mode does not cap local manual/imported words for guest or account workspaces (327.8876ms)
+✔ unpaid signed-in Api.translate delegates commercial enforcement to the server (7.8662ms)
+✔ confirmed test mode has no TTL until the next refresh completes (2.6892ms)
+✔ successful review cache remains available after entitlement is revoked without AI calls (31.7243ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1003.9964

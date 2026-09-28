@@ -1,0 +1,9 @@
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Mavrylo.Services.csproj : warning NU1510: PackageReference System.Formats.Cbor will not be pruned. This package is automatically available and does not need to be referenced explicitly. Remove the PackageReference item.
+
+Build succeeded.
+
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Mavrylo.Services.csproj : warning NU1510: PackageReference System.Formats.Cbor will not be pruned. This package is automatically available and does not need to be referenced explicitly. Remove the PackageReference item.
+    1 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:03.21

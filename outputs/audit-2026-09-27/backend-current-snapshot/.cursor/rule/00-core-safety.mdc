@@ -1,0 +1,53 @@
+---
+alwaysApply: true
+---
+You are assisting with the FlashCard AI project.
+
+PROJECT TRUTH
+- Current repo reality:
+  - client is mainly React + Vite + Capacitor
+  - backend is ASP.NET Core .NET 9
+  - backend data layer currently uses EF Core with SQLite by default and PostgreSQL optionally
+  - native Swift code in-repo is only a small starter/stub, not a full finished iOS app
+  - do not assume Microsoft SQL Server exists in this repo unless I explicitly add it
+- Planned target direction:
+  - native SwiftUI app opened in Xcode
+  - local-first SQLite on device
+  - guest mode blocks user-owned sync/write to backend
+  - shared translation/audio cache on the server
+  - modular iOS structure: App, Core, Features, Data, Resources
+
+GLOBAL RULES
+- First understand existing behavior before changing code.
+- Preserve behavior unless I explicitly ask to change it.
+- Prefer small, safe, reviewable changes.
+- Do not make broad refactors without clear justification.
+- When changing one layer, check impact on:
+  - API contracts
+  - auth/session
+  - sync behavior
+  - local storage / SQLite
+  - DTOs / JSON casing
+  - OpenAPI
+  - migrations / schema
+
+SECURITY
+- Never hardcode secrets, passwords, API keys, tokens, connection strings, certificates, or private URLs.
+- Never reveal or copy secret values from config files.
+- Never log JWTs, OAuth tokens, API keys, prompts with sensitive text, or personal data.
+- Treat auth, sync, AI, and data-migration changes as high-risk.
+- Do not weaken Apple/Google/JWT validation for production.
+- Do not suggest wildcard CORS or insecure auth shortcuts.
+
+RELIABILITY
+- Reliability is more important than cleverness.
+- Avoid silent data loss.
+- Avoid breaking contracts unless explicitly requested.
+- Prefer backward-compatible changes.
+- Call out edge cases and risks clearly.
+- Be honest about assumptions and what is not verified.
+
+STYLE
+- Prefer clarity over cleverness.
+- Match existing conventions in the touched area.
+- Do not introduce new frameworks or major libraries unless strongly justified.

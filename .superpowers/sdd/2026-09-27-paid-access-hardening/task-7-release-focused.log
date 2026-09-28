@@ -1,0 +1,139 @@
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-mggc-4xg6-vcxf
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-q939-rpr3-3284
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Mavrylo.Services.csproj : warning NU1510: PackageReference System.Formats.Cbor will not be pruned. This package is automatically available and does not need to be referenced explicitly. Remove the PackageReference item.
+  Mavrylo.Entities -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Entities\bin\Release\net10.0\Mavrylo.Entities.dll
+  Mavrylo.Data -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Data\bin\Release\net10.0\Mavrylo.Data.dll
+  Mavrylo.Services -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\bin\Release\net10.0\Mavrylo.Services.dll
+  Mavrylo -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\bin\Release\net10.0\Mavrylo.dll
+  Mavrylo.Tests -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll
+Test run for D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:02.48]   Discovering: Mavrylo.Tests
+[xUnit.net 00:00:02.60]   Discovered:  Mavrylo.Tests
+[xUnit.net 00:00:02.63]   Starting:    Mavrylo.Tests
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.BothProvidersFailTriggersAlertAndReturnsNull [661 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.KnownModelCeilingsRoundUpAndGeminiUsageIncludesThoughtsExactlyOnce [661 ms]
+  Passed Mavrylo.Tests.AiProviderServiceTests.MissingSpendConfigurationAndTrustedContext_DeniesBeforeHttp(gemini: True) [668 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: False, fault: "model") [4 ms]
+  Passed Mavrylo.Tests.AiProviderServiceTests.MissingSpendConfigurationAndTrustedContext_DeniesBeforeHttp(gemini: False) [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: True, fault: "model") [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: True, fault: "image") [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: False, fault: "operation") [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: False, fault: "prompt") [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: True, fault: "profile") [< 1 ms]
+  Passed Mavrylo.Tests.SmtpDevAlertEmailServiceTests.NotifyAiProvidersFailedAsync_SendsConfiguredEmailAndAuthenticatesWhenCredentialsExist [821 ms]
+  Passed Mavrylo.Tests.SmtpDevAlertEmailServiceTests.NotifyAiProvidersFailedAsync_RespectsCooldown [1 ms]
+  Passed Mavrylo.Tests.SmtpDevAlertEmailServiceTests.NotifyAiProvidersFailedAsync_DoesNotCreateSmtpClientWhenConfigIncomplete [1 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.OpenAiFailureCallsGemini [246 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.UnknownPrimaryProviderFailsClosed [< 1 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.AlertCooldownPreventsDuplicateClaimsInsideFifteenMinutes [< 1 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.ConfiguredGeminiPrimaryCallsOpenAiSecond [< 1 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderAuthorizationOrQuotaFailure_DoesNotFallbackOrAlert(status: 401) [1 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderAuthorizationOrQuotaFailure_DoesNotFallbackOrAlert(status: 403) [< 1 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderAuthorizationOrQuotaFailure_DoesNotFallbackOrAlert(status: 429) [< 1 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.PrivateExceptionTextDoesNotReachLogsOrAlerts [2 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderCancellationIsTerminalEvenBeforeCallerTokenIsMarked [1 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.OpenAiSuccessSkipsGemini [< 1 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.OpenAiNullCallsGemini [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: True, fault: "budget") [258 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: False, fault: "context") [5 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: True, fault: "prompt") [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: False, fault: "image") [1 ms]
+  Passed Mavrylo.Tests.AiProviderServiceTests.Gemini_BuildsGenerateContentRequest_AndParsesCandidateTextJson [267 ms]
+  Passed Mavrylo.Tests.AiProviderServiceTests.EveryTextRequestSpecifiesOutputLimitAndStandardTier(gemini: True) [1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.KnownAndUnknownLengthOversizeResponsesRemainReserved(gemini: False, knownLength: False) [3 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.KnownAndUnknownLengthOversizeResponsesRemainReserved(gemini: True, knownLength: True) [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.KnownAndUnknownLengthOversizeResponsesRemainReserved(gemini: True, knownLength: False) [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderServiceTests.EveryTextRequestSpecifiesOutputLimitAndStandardTier(gemini: False) [1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.KnownAndUnknownLengthOversizeResponsesRemainReserved(gemini: False, knownLength: True) [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.MalformedJsonRetainsUnknownReservation(gemini: True) [2 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.MalformedJsonRetainsUnknownReservation(gemini: False) [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderServiceTests.OpenAi_DefaultRequests_UseLunaWithReasoningDisabled(vision: True) [5 ms]
+  Passed Mavrylo.Tests.AiProviderServiceTests.OpenAi_DefaultRequests_UseLunaWithReasoningDisabled(vision: False) [< 1 ms]
+[xUnit.net 00:00:03.65]     Mavrylo.Tests.AiProviderBoundaryTests.SlowBodyHonorsFullDeadlineAndCancellationIsTerminal(gemini: True) [FAIL]
+[xUnit.net 00:00:03.65]       Assert.ThrowsAny() Failure: Exception type was not compatible
+[xUnit.net 00:00:03.66]       Expected: typeof(System.OperationCanceledException)
+[xUnit.net 00:00:03.66]       Actual:   typeof(Mavrylo.Services.AiSpendDeniedException)
+[xUnit.net 00:00:03.66]       ---- Mavrylo.Services.AiSpendDeniedException : AI provider expenditure is unavailable.
+[xUnit.net 00:00:03.66]       Stack Trace:
+[xUnit.net 00:00:03.66]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderBoundaryTests.cs(94,0): at Mavrylo.Tests.AiProviderBoundaryTests.SlowBodyHonorsFullDeadlineAndCancellationIsTerminal(Boolean gemini)
+[xUnit.net 00:00:03.66]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:03.66]         ----- Inner Stack Trace -----
+[xUnit.net 00:00:03.66]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\FallbackAiJsonService.cs(92,0): at Mavrylo.Services.FallbackAiJsonService.OrderedProviders()+MoveNext()
+[xUnit.net 00:00:03.66]            at System.Linq.Enumerable.<ToArray>g__EnumerableToArray|324_0[TSource](IEnumerable`1 source)
+[xUnit.net 00:00:03.66]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\FallbackAiJsonService.cs(32,0): at Mavrylo.Services.FallbackAiJsonService.CompleteWithFallbackAsync(String operationName, Func`2 complete, CancellationToken ct)
+  Passed Mavrylo.Tests.AiProviderServiceTests.OpenAi_VisionRequest_IncludesDataUrlWithMimeType [1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.InvalidOutputJsonDoesNotLeakPrivateJsonPathsToAdapterLogger(gemini: True) [9 ms]
+  Passed Mavrylo.Tests.AiProviderServiceTests.ProviderHttpFailures_ThrowProviderExceptionWithStatus [7 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.InvalidOutputJsonDoesNotLeakPrivateJsonPathsToAdapterLogger(gemini: False) [3 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.MissingCacheWriteUsageCannotBecomeZeroCost [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderServiceTests.OpenAi_BuildsResponsesRequest_AndParsesOutputTextJson [10 ms]
+  Failed Mavrylo.Tests.AiProviderBoundaryTests.SlowBodyHonorsFullDeadlineAndCancellationIsTerminal(gemini: True) [4 ms]
+  Error Message:
+   Assert.ThrowsAny() Failure: Exception type was not compatible
+Expected: typeof(System.OperationCanceledException)
+Actual:   typeof(Mavrylo.Services.AiSpendDeniedException)
+---- Mavrylo.Services.AiSpendDeniedException : AI provider expenditure is unavailable.
+  Stack Trace:
+     at Mavrylo.Tests.AiProviderBoundaryTests.SlowBodyHonorsFullDeadlineAndCancellationIsTerminal(Boolean gemini) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderBoundaryTests.cs:line 94
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+   at Mavrylo.Services.FallbackAiJsonService.OrderedProviders()+MoveNext() in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\FallbackAiJsonService.cs:line 92
+   at System.Linq.Enumerable.<ToArray>g__EnumerableToArray|324_0[TSource](IEnumerable`1 source)
+   at Mavrylo.Services.FallbackAiJsonService.CompleteWithFallbackAsync(String operationName, Func`2 complete, CancellationToken ct) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\FallbackAiJsonService.cs:line 32
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.SlowBodyHonorsFullDeadlineAndCancellationIsTerminal(gemini: False) [94 ms]
+  Passed Mavrylo.Tests.AiControllerTests.AnalyzeWord_Returns503WhenAiProviderFails [2 s]
+  Passed Mavrylo.Tests.AiSpendGuardTests.MissingInvalidAndDisabledConfigurationCannotReserve(key: "AccountMicroUsd", value: null) [1 s]
+  Passed Mavrylo.Tests.AiSpendGuardTests.MissingInvalidAndDisabledConfigurationCannotReserve(key: "GuestMicroUsd", value: "-1") [104 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.MissingInvalidAndDisabledConfigurationCannotReserve(key: "Enabled", value: "false") [49 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.MissingInvalidAndDisabledConfigurationCannotReserve(key: "GlobalMicroUsd", value: "9223372036854775808") [23 ms]
+  Passed Mavrylo.Tests.AiProviderTransportTests.RegisteredHandlerSubmitsExactlyOneBoundedPost(mode: "redirect") [1 s]
+  Passed Mavrylo.Tests.AiSpendGuardTests.MissingInvalidAndDisabledConfigurationCannotReserve(key: "MaxConcurrentAttempts", value: "0") [27 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.MissingInvalidAndDisabledConfigurationCannotReserve(key: "GlobalMicroUsd", value: "0") [29 ms]
+  Passed Mavrylo.Tests.AiProviderTransportTests.RegisteredHandlerSubmitsExactlyOneBoundedPost(mode: "chunked") [182 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "missing") [179 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "model") [32 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "total") [27 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "negative") [21 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "reasoning") [33 ms]
+  Passed Mavrylo.Tests.AiProviderTransportTests.RegisteredHandlerSubmitsExactlyOneBoundedPost(mode: "disconnect") [162 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "input") [37 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "output") [29 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "overflow") [27 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "cache") [25 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "tier") [21 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.UsageSettlementIsIdempotentAcrossReplicasAndReleasesOnlyValidatedDifference [63 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.SyntheticHundredBudgetBoundsActualTransportSubmissions(secondAmount: 40, submissions: 2) [52 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.SyntheticHundredBudgetBoundsActualTransportSubmissions(secondAmount: 60, submissions: 1) [30 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.ReplicasCannotReserveSixtyTwice_AndRestartRetainsUnknownSpend [43 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.CacheComponentsUseAlternativeRatesAndReasoningIsNotAddedTwice [32 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.OverflowingCostAndForgedUpperBoundAreControlledDenials [46 ms]
+  Passed Mavrylo.Tests.AiProviderTransportTests.RegisteredHandlerSubmitsExactlyOneBoundedPost(mode: "slow") [651 ms]
+  Passed Mavrylo.Tests.AiProviderTransportTests.PooledConnectionDisconnectAfterPostDoesNotResubmit [147 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.AuthenticatedRoutesUsePersistentGuardAndCacheHitsHaveNoProviderAttempt(account: True, operation: "word-detail") [2 s]
+  Passed Mavrylo.Tests.AiSpendRouteTests.AuthenticatedRoutesUsePersistentGuardAndCacheHitsHaveNoProviderAttempt(account: False, operation: "batch") [161 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.AuthenticatedRoutesUsePersistentGuardAndCacheHitsHaveNoProviderAttempt(account: False, operation: "word-detail") [135 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.AuthenticatedRoutesUsePersistentGuardAndCacheHitsHaveNoProviderAttempt(account: False, operation: "analyze-word") [141 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.AuthenticatedRoutesUsePersistentGuardAndCacheHitsHaveNoProviderAttempt(account: True, operation: "review-translation") [110 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.AuthenticatedRoutesUsePersistentGuardAndCacheHitsHaveNoProviderAttempt(account: True, operation: "batch") [112 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.AuthenticatedRoutesUsePersistentGuardAndCacheHitsHaveNoProviderAttempt(account: False, operation: "review-translation") [109 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.AuthenticatedRoutesUsePersistentGuardAndCacheHitsHaveNoProviderAttempt(account: False, operation: "extract-words") [89 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.AuthenticatedRoutesUsePersistentGuardAndCacheHitsHaveNoProviderAttempt(account: True, operation: "extract-words") [74 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.AuthenticatedRoutesUsePersistentGuardAndCacheHitsHaveNoProviderAttempt(account: True, operation: "analyze-word") [98 ms]
+[xUnit.net 00:00:10.38]   Finished:    Mavrylo.Tests
+  Passed Mavrylo.Tests.AiSpendRouteTests.FallbackHasSeparatePersistentReservationAndRetainsFailedPrimary [79 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.NormalAuthorizationGrantsContextAndEntitlementOrQuotaDenialHasZeroSpend(kind: "paid-device") [114 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.NormalAuthorizationGrantsContextAndEntitlementOrQuotaDenialHasZeroSpend(kind: "account") [124 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.NormalAuthorizationGrantsContextAndEntitlementOrQuotaDenialHasZeroSpend(kind: "free-device") [160 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.AuthenticatedTestModeCannotBypassAnExhaustedBudget(account: True) [94 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.AuthenticatedTestModeCannotBypassAnExhaustedBudget(account: False) [125 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.StartupAppliesAdditiveMigrationToOldSchemaWithoutLosingExistingRows [2 s]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GuestAndAccountPoolsAreIndependentButShareGlobalBudget [66 ms]
+
+Total tests: 93
+     Passed: 92
+     Failed: 1
+Test Run Failed.
+ Total time: 12.7622 Seconds

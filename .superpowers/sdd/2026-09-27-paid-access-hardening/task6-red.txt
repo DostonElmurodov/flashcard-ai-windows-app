@@ -1,0 +1,208 @@
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-mggc-4xg6-vcxf
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-q939-rpr3-3284
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Mavrylo.Services.csproj : warning NU1510: PackageReference System.Formats.Cbor will not be pruned. This package is automatically available and does not need to be referenced explicitly. Remove the PackageReference item.
+  Mavrylo.Entities -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Entities\bin\Release\net10.0\Mavrylo.Entities.dll
+  Mavrylo.Data -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Data\bin\Release\net10.0\Mavrylo.Data.dll
+  Mavrylo.Services -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\bin\Release\net10.0\Mavrylo.Services.dll
+  Mavrylo -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\bin\Release\net10.0\Mavrylo.dll
+  Mavrylo.Tests -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll
+Test run for D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:03.28]   Discovering: Mavrylo.Tests
+[xUnit.net 00:00:03.59]   Discovered:  Mavrylo.Tests
+[xUnit.net 00:00:03.62]   Starting:    Mavrylo.Tests
+[xUnit.net 00:00:10.96]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.InactiveDeviceCannotChangeExistingActiveWordButCanAcknowledgeAndDelete(status: "revoked") [FAIL]
+[xUnit.net 00:00:10.96]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:10.96]       Expected: PaymentRequired
+[xUnit.net 00:00:10.96]       Actual:   Forbidden
+[xUnit.net 00:00:10.96]       Stack Trace:
+[xUnit.net 00:00:10.96]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(67,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InactiveDeviceCannotChangeExistingActiveWordButCanAcknowledgeAndDelete(String status)
+[xUnit.net 00:00:10.96]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(81,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InactiveDeviceCannotChangeExistingActiveWordButCanAcknowledgeAndDelete(String status)
+[xUnit.net 00:00:10.96]         --- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.InactiveDeviceCannotChangeExistingActiveWordButCanAcknowledgeAndDelete(status: "revoked") [4 s]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: PaymentRequired
+Actual:   Forbidden
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InactiveDeviceCannotChangeExistingActiveWordButCanAcknowledgeAndDelete(String status) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 67
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InactiveDeviceCannotChangeExistingActiveWordButCanAcknowledgeAndDelete(String status) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 81
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:11.17]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.InactiveDeviceCannotChangeExistingActiveWordButCanAcknowledgeAndDelete(status: "expired_paid") [FAIL]
+[xUnit.net 00:00:11.17]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:11.17]       Expected: PaymentRequired
+[xUnit.net 00:00:11.17]       Actual:   Forbidden
+[xUnit.net 00:00:11.17]       Stack Trace:
+[xUnit.net 00:00:11.17]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(67,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InactiveDeviceCannotChangeExistingActiveWordButCanAcknowledgeAndDelete(String status)
+[xUnit.net 00:00:11.17]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(81,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InactiveDeviceCannotChangeExistingActiveWordButCanAcknowledgeAndDelete(String status)
+[xUnit.net 00:00:11.17]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:11.30]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.InactiveDeviceCannotChangeExistingActiveWordButCanAcknowledgeAndDelete(status: "expired_trial") [FAIL]
+[xUnit.net 00:00:11.30]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:11.30]       Expected: PaymentRequired
+[xUnit.net 00:00:11.30]       Actual:   Forbidden
+[xUnit.net 00:00:11.30]       Stack Trace:
+[xUnit.net 00:00:11.30]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(67,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InactiveDeviceCannotChangeExistingActiveWordButCanAcknowledgeAndDelete(String status)
+[xUnit.net 00:00:11.30]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(81,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InactiveDeviceCannotChangeExistingActiveWordButCanAcknowledgeAndDelete(String status)
+[xUnit.net 00:00:11.30]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:11.84]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(accountRoute: False, invalid: "empty") [FAIL]
+[xUnit.net 00:00:11.84]       Assert.False() Failure
+[xUnit.net 00:00:11.84]       Expected: False
+[xUnit.net 00:00:11.84]       Actual:   True
+[xUnit.net 00:00:11.84]       Stack Trace:
+[xUnit.net 00:00:11.84]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(42,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid)
+[xUnit.net 00:00:11.84]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(43,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid)
+[xUnit.net 00:00:11.84]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:12.09]       Assert.False() Failure
+[xUnit.net 00:00:12.09]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(accountRoute: True, invalid: "invalid") [FAIL]
+[xUnit.net 00:00:12.09]       Expected: False
+[xUnit.net 00:00:12.09]       Actual:   True
+[xUnit.net 00:00:12.09]       Stack Trace:
+[xUnit.net 00:00:12.09]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(42,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid)
+[xUnit.net 00:00:12.09]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(43,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid)
+[xUnit.net 00:00:12.09]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:12.20]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(accountRoute: False, invalid: "language") [FAIL]
+[xUnit.net 00:00:12.20]       Assert.False() Failure
+[xUnit.net 00:00:12.20]       Expected: False
+[xUnit.net 00:00:12.20]       Actual:   True
+[xUnit.net 00:00:12.20]       Stack Trace:
+[xUnit.net 00:00:12.20]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(42,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid)
+[xUnit.net 00:00:12.20]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(43,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid)
+[xUnit.net 00:00:12.20]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:12.28]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(accountRoute: False, invalid: "invalid") [FAIL]
+[xUnit.net 00:00:12.28]       Assert.False() Failure
+[xUnit.net 00:00:12.28]       Expected: False
+[xUnit.net 00:00:12.28]       Actual:   True
+[xUnit.net 00:00:12.28]       Stack Trace:
+[xUnit.net 00:00:12.28]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(42,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid)
+[xUnit.net 00:00:12.28]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(43,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid)
+[xUnit.net 00:00:12.28]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:12.41]       Assert.False() Failure
+[xUnit.net 00:00:12.41]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(accountRoute: True, invalid: "empty") [FAIL]
+[xUnit.net 00:00:12.41]       Expected: False
+[xUnit.net 00:00:12.41]       Actual:   True
+[xUnit.net 00:00:12.41]       Stack Trace:
+[xUnit.net 00:00:12.41]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(42,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid)
+[xUnit.net 00:00:12.41]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(43,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid)
+[xUnit.net 00:00:12.41]         --- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.InactiveDeviceCannotChangeExistingActiveWordButCanAcknowledgeAndDelete(status: "expired_paid") [209 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: PaymentRequired
+Actual:   Forbidden
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InactiveDeviceCannotChangeExistingActiveWordButCanAcknowledgeAndDelete(String status) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 67
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InactiveDeviceCannotChangeExistingActiveWordButCanAcknowledgeAndDelete(String status) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 81
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.InactiveDeviceCannotChangeExistingActiveWordButCanAcknowledgeAndDelete(status: "expired_trial") [128 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: PaymentRequired
+Actual:   Forbidden
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InactiveDeviceCannotChangeExistingActiveWordButCanAcknowledgeAndDelete(String status) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 67
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InactiveDeviceCannotChangeExistingActiveWordButCanAcknowledgeAndDelete(String status) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 81
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(accountRoute: False, invalid: "empty") [538 ms]
+  Error Message:
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 42
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 43
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(accountRoute: True, invalid: "invalid") [249 ms]
+  Error Message:
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 42
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 43
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(accountRoute: False, invalid: "language") [113 ms]
+  Error Message:
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 42
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 43
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(accountRoute: False, invalid: "invalid") [72 ms]
+  Error Message:
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 42
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 43
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(accountRoute: True, invalid: "empty") [130 ms]
+  Error Message:
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 42
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 43
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:12.56]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(accountRoute: True, invalid: "missing") [FAIL]
+[xUnit.net 00:00:12.56]       Assert.False() Failure
+[xUnit.net 00:00:12.56]       Expected: False
+[xUnit.net 00:00:12.56]       Actual:   True
+[xUnit.net 00:00:12.56]       Stack Trace:
+[xUnit.net 00:00:12.56]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(42,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid)
+[xUnit.net 00:00:12.56]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(43,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid)
+[xUnit.net 00:00:12.56]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:12.69]       Assert.False() Failure
+[xUnit.net 00:00:12.69]       Expected: False
+[xUnit.net 00:00:12.69]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(accountRoute: False, invalid: "missing") [FAIL]
+[xUnit.net 00:00:12.69]       Actual:   True
+[xUnit.net 00:00:12.69]       Stack Trace:
+[xUnit.net 00:00:12.69]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(42,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid)
+[xUnit.net 00:00:12.69]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(43,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid)
+[xUnit.net 00:00:12.69]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:12.81]       Assert.False() Failure
+[xUnit.net 00:00:12.81]       Expected: False
+[xUnit.net 00:00:12.81]       Actual:   True
+[xUnit.net 00:00:12.81]       Stack Trace:
+[xUnit.net 00:00:12.81]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(42,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid)
+[xUnit.net 00:00:12.81]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(43,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid)
+[xUnit.net 00:00:12.81]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:12.81]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(accountRoute: True, invalid: "language") [FAIL]
+[xUnit.net 00:00:13.01]   Finished:    Mavrylo.Tests
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(accountRoute: True, invalid: "missing") [151 ms]
+  Error Message:
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 42
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 43
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(accountRoute: False, invalid: "missing") [129 ms]
+  Error Message:
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 42
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 43
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(accountRoute: True, invalid: "language") [117 ms]
+  Error Message:
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 42
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.InvalidMultipartDoesNotConsumeQuotaOrReachProvider(Boolean accountRoute, String invalid) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 43
+--- End of stack trace from previous location ---
+
+Total tests: 11
+Test Run Failed.
+     Failed: 11
+ Total time: 16.1215 Seconds

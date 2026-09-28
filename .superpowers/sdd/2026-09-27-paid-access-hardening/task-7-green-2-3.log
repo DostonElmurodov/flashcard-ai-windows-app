@@ -1,0 +1,41 @@
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-mggc-4xg6-vcxf
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-q939-rpr3-3284
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Mavrylo.Services.csproj : warning NU1510: PackageReference System.Formats.Cbor will not be pruned. This package is automatically available and does not need to be referenced explicitly. Remove the PackageReference item.
+  Mavrylo.Entities -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Entities\bin\Debug\net10.0\Mavrylo.Entities.dll
+  Mavrylo.Data -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Data\bin\Debug\net10.0\Mavrylo.Data.dll
+  Mavrylo.Services -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\bin\Debug\net10.0\Mavrylo.Services.dll
+  Mavrylo -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\bin\Debug\net10.0\Mavrylo.dll
+  Mavrylo.Tests -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Debug\net10.0\Mavrylo.Tests.dll
+Test run for D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Debug\net10.0\Mavrylo.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:03.06]   Discovering: Mavrylo.Tests
+[xUnit.net 00:00:03.24]   Discovered:  Mavrylo.Tests
+[xUnit.net 00:00:03.27]   Starting:    Mavrylo.Tests
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.BothProvidersFailTriggersAlertAndReturnsNull [759 ms]
+  Passed Mavrylo.Tests.AiProviderServiceTests.MissingSpendConfigurationAndTrustedContext_DeniesBeforeHttp(gemini: True) [766 ms]
+  Passed Mavrylo.Tests.AiProviderServiceTests.MissingSpendConfigurationAndTrustedContext_DeniesBeforeHttp(gemini: False) [1 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.OpenAiFailureCallsGemini [17 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.AlertCooldownPreventsDuplicateClaimsInsideFifteenMinutes [4 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.ConfiguredGeminiPrimaryCallsOpenAiSecond [< 1 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderAuthorizationOrQuotaFailure_DoesNotFallbackOrAlert(status: 401) [1 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderAuthorizationOrQuotaFailure_DoesNotFallbackOrAlert(status: 403) [< 1 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderAuthorizationOrQuotaFailure_DoesNotFallbackOrAlert(status: 429) [< 1 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.OpenAiSuccessSkipsGemini [< 1 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.OpenAiNullCallsGemini [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderServiceTests.Gemini_BuildsGenerateContentRequest_AndParsesCandidateTextJson [33 ms]
+  Passed Mavrylo.Tests.AiProviderServiceTests.EveryTextRequestSpecifiesOutputLimitAndStandardTier(gemini: True) [2 ms]
+  Passed Mavrylo.Tests.AiProviderServiceTests.EveryTextRequestSpecifiesOutputLimitAndStandardTier(gemini: False) [4 ms]
+  Passed Mavrylo.Tests.AiProviderServiceTests.OpenAi_DefaultRequests_UseLunaWithReasoningDisabled(vision: True) [6 ms]
+  Passed Mavrylo.Tests.AiProviderServiceTests.OpenAi_DefaultRequests_UseLunaWithReasoningDisabled(vision: False) [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderServiceTests.OpenAi_VisionRequest_IncludesDataUrlWithMimeType [1 ms]
+  Passed Mavrylo.Tests.AiProviderServiceTests.ProviderHttpFailures_ThrowProviderExceptionWithStatus [3 ms]
+  Passed Mavrylo.Tests.AiProviderServiceTests.OpenAi_BuildsResponsesRequest_AndParsesOutputTextJson [4 ms]
+[xUnit.net 00:00:08.07]   Finished:    Mavrylo.Tests
+  Passed Mavrylo.Tests.AiSpendGuardTests.ReplicasCannotReserveSixtyTwice_AndRestartRetainsUnknownSpend [1 s]
+
+Test Run Successful.
+Total tests: 20
+     Passed: 20
+ Total time: 11.3522 Seconds

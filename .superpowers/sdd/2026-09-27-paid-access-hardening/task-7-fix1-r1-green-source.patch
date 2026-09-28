@@ -1,0 +1,148 @@
+diff --git a/docs/ai-provider-spend.md b/docs/ai-provider-spend.md
+index abec07a..1cce068 100644
+--- a/docs/ai-provider-spend.md
++++ b/docs/ai-provider-spend.md
+@@ -75,7 +75,14 @@ output including thoughts $4.50/M (540/54/4500 nano-USD per token). No explicit
+ cache creation/storage is used. Requests select `serviceTier=standard`, one
+ candidate, `thinkingBudget=0`, and a positive output cap. Settlement requires
+ exact `modelVersion=gemini-2.5-flash` and `usageMetadata.serviceTier=standard`;
+-unrecognized/missing versions or usage components retain the reserve.
++unrecognized/missing versions or required usage components retain the reserve.
++Only omitted `thoughtsTokenCount` and `cachedContentTokenCount` default to zero:
++these are implicit-presence proto3 integer fields in the official
++[Gemini schema](https://github.com/googleapis/googleapis/blob/master/google/ai/generativelanguage/v1beta/generative_service.proto),
++whose [JSON encoding omits default values](https://protobuf.dev/programming-guides/json/#presence-and-default-values).
++The usage object, aggregate counts, model and tier must still be present and
++consistent. Present malformed, null, negative or oversized components cannot
++release a reservation. OpenAI's required components remain unchanged.
+ 
+ Reservation = ceil((full input ceiling × maximum input nano-rate + configured
+ output cap × output nano-rate) / 1000). Validated settlement applies the frozen
+diff --git a/src/Mavrylo.Services/Services/AiProviderTransport.cs b/src/Mavrylo.Services/Services/AiProviderTransport.cs
+index f4fc8be..dafaa66 100644
+--- a/src/Mavrylo.Services/Services/AiProviderTransport.cs
++++ b/src/Mavrylo.Services/Services/AiProviderTransport.cs
+@@ -73,6 +73,8 @@ public sealed class AiProviderTransport(IHttpClientFactory clients, IAiSpendGuar
+         try
+         {
+             static long Number(JsonElement item, string name) => item.GetProperty(name).GetInt64();
++            // These two Gemini proto3 scalars omit zero on the wire. Present malformed values remain unknown.
++            static long GeminiZeroComponent(JsonElement item, string name) => item.TryGetProperty(name, out var value) ? value.GetInt64() : 0;
+             if (provider == "OpenAI")
+             {
+                 var u = root.GetProperty("usage");
+@@ -82,14 +84,14 @@ public sealed class AiProviderTransport(IHttpClientFactory clients, IAiSpendGuar
+                     Number(input, "cached_tokens"), Number(input, "cache_write_tokens"), Number(u, "total_tokens"));
+             }
+             var usage = root.GetProperty("usageMetadata");
+-            var reasoning = Number(usage, "thoughtsTokenCount");
++            var reasoning = GeminiZeroComponent(usage, "thoughtsTokenCount");
+             return new(root.GetProperty("modelVersion").GetString()!, usage.GetProperty("serviceTier").GetString()!,
+                 Number(usage, "promptTokenCount"), checked(Number(usage, "candidatesTokenCount") + reasoning), reasoning,
+-                Number(usage, "cachedContentTokenCount"), 0, Number(usage, "totalTokenCount"));
++                GeminiZeroComponent(usage, "cachedContentTokenCount"), 0, Number(usage, "totalTokenCount"));
+         }
+         catch (Exception ex) when (ex is KeyNotFoundException or InvalidOperationException or FormatException or OverflowException)
+         {
+-            // Omitted fields are unknown, not a measured zero-cost response.
++            // Missing required fields or malformed values are unknown, not a measured zero-cost response.
+             return null;
+         }
+     }
+diff --git a/tests/AiSpendGuardTests.cs b/tests/AiSpendGuardTests.cs
+index fc80037..6890fdf 100644
+--- a/tests/AiSpendGuardTests.cs
++++ b/tests/AiSpendGuardTests.cs
+@@ -3,12 +3,92 @@ using Mavrylo.Services;
+ using Mavrylo.Tests.TestSupport;
+ using Microsoft.EntityFrameworkCore;
+ using Microsoft.Extensions.Configuration;
++using Microsoft.Extensions.Logging.Abstractions;
++using System.Text.Json.Nodes;
+ using Xunit;
+ 
+ namespace Mavrylo.Tests;
+ 
+ public class AiSpendGuardTests(PostgresContainerFixture postgres) : IClassFixture<PostgresContainerFixture>
+ {
++    private const string GeminiZeroUsage = """{"modelVersion":"gemini-2.5-flash","usageMetadata":{"serviceTier":"standard","promptTokenCount":100,"candidatesTokenCount":10,"totalTokenCount":110},"candidates":[{"content":{"parts":[{"text":"{\"translation\":\"Hello\"}"}]}}]}""";
++
++    [Theory]
++    [InlineData(false)]
++    [InlineData(true)]
++    public async Task GeminiProtocolZeroComponentsSettleRepeatedSuccessesAndReleaseSlots(bool explicitZeros)
++    {
++        await ResetAsync(); await using var db = Database();
++        var body = JsonNode.Parse(GeminiZeroUsage)!;
++        if (explicitZeros)
++        {
++            body["usageMetadata"]!["thoughtsTokenCount"] = 0;
++            body["usageMetadata"]!["cachedContentTokenCount"] = 0;
++        }
++        var handler = new FakeHttpMessageHandler(_ => FakeHttpMessageHandler.Json(body.ToJsonString())); using var client = new HttpClient(handler);
++        var config = AiSpendTestSupport.Config(new() { ["AiSpend:MaxConcurrentAttempts"] = "1", ["AiSpend:DeadlineMilliseconds"] = "5000" });
++        var provider = new GeminiJsonService(config, AiSpendTestSupport.Transport(client, new AiSpendGuard(db, config, new Events())), NullLogger<GeminiJsonService>.Instance);
++        for (var call = 1; call <= 2; call++)
++        {
++            var result = await provider.CompleteJsonAsync("word-detail", "synthetic word");
++            Assert.Equal("Hello", result!.Value.GetProperty("translation").GetString());
++            var rows = await db.AiSpendReservations.AsNoTracking().ToListAsync();
++            Assert.Equal(call, rows.Count);
++            Assert.All(rows, row => { Assert.NotNull(row.SettledAt); Assert.Equal(99, row.ChargedMicroUsd); Assert.Equal(0, row.ReasoningTokens); Assert.Equal(0, row.CachedTokens); });
++            var bucket = await db.AiSpendBuckets.AsNoTracking().SingleAsync(x => x.Id == "global");
++            Assert.Equal(0, bucket.PendingAttempts); Assert.Equal(call * 99, bucket.ChargedMicroUsd);
++        }
++        Assert.Equal(2, handler.CapturedRequests.Count);
++    }
++
++    [Theory]
++    [InlineData("missing_usage")]
++    [InlineData("missing_total")]
++    [InlineData("missing_prompt")]
++    [InlineData("missing_candidates")]
++    [InlineData("missing_model")]
++    [InlineData("missing_tier")]
++    [InlineData("unknown_model")]
++    [InlineData("unknown_tier")]
++    [InlineData("negative_thoughts")]
++    [InlineData("negative_cache")]
++    [InlineData("malformed_thoughts")]
++    [InlineData("malformed_cache")]
++    [InlineData("inconsistent_total")]
++    [InlineData("oversized_output")]
++    [InlineData("overflow_output")]
++    public async Task GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(string fault)
++    {
++        await ResetAsync(); await using var db = Database(); var body = JsonNode.Parse(GeminiZeroUsage)!.AsObject();
++        var usage = body["usageMetadata"]!.AsObject();
++        switch (fault)
++        {
++            case "missing_usage": body.Remove("usageMetadata"); break;
++            case "missing_total": usage.Remove("totalTokenCount"); break;
++            case "missing_prompt": usage.Remove("promptTokenCount"); break;
++            case "missing_candidates": usage.Remove("candidatesTokenCount"); break;
++            case "missing_model": body.Remove("modelVersion"); break;
++            case "missing_tier": usage.Remove("serviceTier"); break;
++            case "unknown_model": body["modelVersion"] = "unknown"; break;
++            case "unknown_tier": usage["serviceTier"] = "unknown"; break;
++            case "negative_thoughts": usage["thoughtsTokenCount"] = -1; break;
++            case "negative_cache": usage["cachedContentTokenCount"] = -1; break;
++            case "malformed_thoughts": usage["thoughtsTokenCount"] = "invalid"; break;
++            case "malformed_cache": usage["cachedContentTokenCount"] = "invalid"; break;
++            case "inconsistent_total": usage["totalTokenCount"] = 111; break;
++            case "oversized_output": usage["candidatesTokenCount"] = 513; usage["totalTokenCount"] = 613; break;
++            case "overflow_output": usage["candidatesTokenCount"] = long.MaxValue; usage["thoughtsTokenCount"] = 1; break;
++        }
++        var handler = new FakeHttpMessageHandler(_ => FakeHttpMessageHandler.Json(body.ToJsonString())); using var client = new HttpClient(handler);
++        var config = AiSpendTestSupport.Config(new() { ["AiSpend:MaxConcurrentAttempts"] = "1", ["AiSpend:DeadlineMilliseconds"] = "5000" });
++        var provider = new GeminiJsonService(config, AiSpendTestSupport.Transport(client, new AiSpendGuard(db, config, new Events())), NullLogger<GeminiJsonService>.Instance);
++        Assert.NotNull(await provider.CompleteJsonAsync("word-detail", "synthetic word"));
++        var row = await db.AiSpendReservations.AsNoTracking().SingleAsync();
++        Assert.Null(row.SettledAt); Assert.Equal(568536, row.ChargedMicroUsd);
++        Assert.Equal(1, (await db.AiSpendBuckets.AsNoTracking().SingleAsync(x => x.Id == "global")).PendingAttempts);
++        await Assert.ThrowsAsync<AiSpendDeniedException>(() => provider.CompleteJsonAsync("word-detail", "next synthetic word"));
++        Assert.Single(handler.CapturedRequests);
++    }
+     private AppDbContext Database() => new(new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(postgres.ConnectionString).Options);
+     private async Task ResetAsync()
+     {

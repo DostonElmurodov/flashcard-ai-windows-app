@@ -1,0 +1,33 @@
+{
+  "name": "UserSettings",
+  "type": "object",
+  "properties": {
+    "native_language": {
+      "type": "string",
+      "default": "en",
+      "description": "User's native language code"
+    },
+    "learning_language": {
+      "type": "string",
+      "default": "en",
+      "description": "Language being learned"
+    },
+    "daily_goal": {
+      "type": "number",
+      "default": 10
+    },
+    "onboarding_complete": {
+      "type": "boolean",
+      "default": false
+    },
+    "review_direction": {
+      "type": "string",
+      "enum": [
+        "native_to_target",
+        "target_to_native"
+      ],
+      "default": "target_to_native"
+    }
+  },
+  "required": []
+}

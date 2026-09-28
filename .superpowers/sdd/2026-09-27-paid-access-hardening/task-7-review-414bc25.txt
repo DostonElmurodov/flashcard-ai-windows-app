@@ -1,0 +1,3005 @@
+diff --git a/Filters/AccountAiProtectionFilter.cs b/Filters/AccountAiProtectionFilter.cs
+index d5bf1d8..3f36335 100644
+--- a/Filters/AccountAiProtectionFilter.cs
++++ b/Filters/AccountAiProtectionFilter.cs
+@@ -42,6 +42,7 @@ public sealed class AccountAiProtectionFilter(AccountEntitlementService entitlem
+         }
+         if (TestModePolicy.IsEnabled(configuration, host))
+         {
++            AiSpendContext.AuthorizeAcceptedRequest(http, account);
+             await next();
+             return;
+         }
+@@ -57,6 +58,7 @@ public sealed class AccountAiProtectionFilter(AccountEntitlementService entitlem
+             context.Result = new ObjectResult(new { code = "account_ai_limit", error = "Account AI limit reached." }) { StatusCode = 429 };
+             return;
+         }
++        AiSpendContext.AuthorizeAcceptedRequest(http, account);
+         await next();
+     }
+ }
+diff --git a/Filters/AiProtectionFilter.cs b/Filters/AiProtectionFilter.cs
+index 7a33210..d827ff1 100644
+--- a/Filters/AiProtectionFilter.cs
++++ b/Filters/AiProtectionFilter.cs
+@@ -109,6 +109,7 @@ public sealed class AiProtectionFilter(
+         // Test access starts only after the device and its request proof are verified.
+         if (TestModePolicy.IsEnabled(config, host))
+         {
++            AiSpendContext.AuthorizeAcceptedRequest(http, resolved.AccountId, keyId);
+             await next();
+             return;
+         }
+@@ -138,6 +139,7 @@ public sealed class AiProtectionFilter(
+                 context.Result = Problem(http, StatusCodes.Status429TooManyRequests, "Account AI limit reached.");
+                 return;
+             }
++            AiSpendContext.AuthorizeAcceptedRequest(http, resolved.AccountId, keyId);
+             await next();
+             return;
+         }
+@@ -173,6 +175,7 @@ public sealed class AiProtectionFilter(
+             return;
+         }
+ 
++        AiSpendContext.AuthorizeAcceptedRequest(http, resolved.AccountId, keyId);
+         await next();
+     }
+ 
+diff --git a/Program.cs b/Program.cs
+index 0a29d50..b7f914d 100644
+--- a/Program.cs
++++ b/Program.cs
+@@ -19,6 +19,13 @@ if (!builder.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>
+     throw new InvalidOperationException("TestMode:Enabled must be false outside Development.");
+ 
+ builder.Services.AddHttpClient();
++builder.Services.AddHttpClient(AiProviderTransport.ClientName, c => c.Timeout = Timeout.InfiniteTimeSpan)
++    .RedactLoggedHeaders(_ => true)
++    .ConfigurePrimaryHttpMessageHandler(AiProviderTransport.CreateHandler);
++builder.Services.AddScoped<AiSpendContext>();
++builder.Services.AddScoped<IAiSpendGuard, AiSpendGuard>();
++builder.Services.AddScoped<AiProviderTransport>();
++builder.Services.AddSingleton<IAiSpendEvents, AiSpendEvents>();
+ builder.Services.AddSingleton(TimeProvider.System);
+ builder.Services.AddScoped<JwtTokenService>();
+ builder.Services.AddScoped<OpenAiJsonService>();
+diff --git a/appsettings.example.json b/appsettings.example.json
+index 9a3e790..22f1938 100644
+--- a/appsettings.example.json
++++ b/appsettings.example.json
+@@ -31,6 +31,20 @@
+   "AI": {
+     "Provider": "OpenAI"
+   },
++  "AiSpend": {
++    "_comment": "Disabled until reviewed configuration and approved cumulative money allowances. No automatic reset. See docs/ai-provider-spend.md.",
++    "Enabled": false,
++    "GlobalMicroUsd": 0,
++    "GuestMicroUsd": 0,
++    "AccountMicroUsd": 0,
++    "MaxConcurrentAttempts": 0,
++    "PriceProfile": "",
++    "MaxPromptBytes": 0,
++    "MaxImageBytes": 0,
++    "MaxOutputTokens": 0,
++    "MaxResponseBytes": 0,
++    "DeadlineMilliseconds": 0
++  },
+   "AccountAi": {
+     "DailyQuota": 200,
+     "RequestsPerMinute": 30
+diff --git a/docs/ai-provider-spend.md b/docs/ai-provider-spend.md
+new file mode 100644
+index 0000000..abec07a
+--- /dev/null
++++ b/docs/ai-provider-spend.md
+@@ -0,0 +1,145 @@
++# Provider expenditure guard
++
++The guard is disabled in example configuration. No production money amounts,
++commercial D2 quota, or automatic monetary reset has been approved. Enabling it
++requires all positive limits below and a reviewed price profile. Missing,
++invalid, disabled or unsupported configuration denies new provider traffic with
++503. Test mode cannot bypass this boundary. Saved reading/review is unaffected;
++a valid service-cache hit creates no provider reservation.
++
++## Accounting and authorization boundary
++
++Each actual OpenAI/Gemini attempt has a new server-generated ID and an atomic
++PostgreSQL reservation before HTTP. Fallback needs another reservation. A short
++transaction advisory lock serializes global and cohort accounting across API
++replicas; it is released before HTTP. Amounts are integer micro-USD (1 USD =
++1,000,000 micro-USD). The global allowance covers both aggregate pools: `guest`
++and `account`. These are cumulative allowances, with no UTC-day/month reset and
++no identity/clock-based forgiveness. Budget changes do not erase recorded spend.
++
++The accepted authorization filters grant the scoped context after authentication,
++request proof and applicable entitlement/quota gates. Development test mode grants
++it only after authentication/proof. The account reference comes from validated
++account authentication; the guest reference comes from the authenticated device
++key. Only a SHA-256 reference is stored in this ledger; it is still pseudonymous
++internal data. Neither that key nor a mutable device UUID proves immutable
++anonymous purchase ownership. Tasks2/3/6 must integrate the final anonymous
++owner/recovery and shared-owner operation quota contracts. This task does not
++implement those schemas, key-rotation allowance sharing, or desktop linking.
++
++Only consistent usage matching the reserved model and requested standard tier
++releases the verified difference. The settled amount remains a **conservative
++usage-based cost ceiling**, not the provider invoice. OpenAI output already
++includes reasoning; cache reads/writes are alternatives to ordinary input.
++Gemini candidates plus thoughts form output; cached input is a subset of prompt
++tokens. Missing required usage components, mismatched model/tier, negative or
++inconsistent values, overflow, and usage exceeding caps retain the full reserve.
++Settlement is idempotent and rates/caps are frozen on each reservation.
++
++An HTTP error, malformed response, cancellation, timeout, failed settlement or
++process crash is not evidence of zero cost. Unknown outcomes retain both money
++and their persistent concurrency slots. There is no TTL release. This can stop
++new AI calls after enough unknown attempts; this availability cost is deliberate.
++Known complete usage settlement releases the slot, but never the accounted cost.
++
++## Reviewed profile and arithmetic
++
++The only live-capable profile identifier is `2026-09-27-model-ceilings-v1`.
++All four operations (`analyze-word`, `word-detail`, `review-translation`,
++`extract-words`) use the same conservative ceilings; the word-detail primary/
++secondary bundle is one operation, not multi-word fan-out. Images use a full
++model input ceiling, not an invented byte-to-token conversion. Only text and
++supported image MIME inputs are submitted. Tools, external files, audio, video,
++grounding, persistent cache creation and additional candidates are not requested.
++
++Official OpenAI model/pricing documentation reviewed 2026-09-27:
++[GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna),
++[Responses](https://developers.openai.com/api/reference/cli/resources/responses/methods/create),
++[cache usage](https://developers.openai.com/api/docs/guides/prompt-caching#monitor-cache-performance).
++Luna's documented context ceiling is 1,050,000 tokens (the docs connector also
++states a lower maximum input; using the full context is conservative). Reserve
++input at $0.125/M × 2 long-context × 1.10 regional × 2 fast = $0.55/M.
++Output envelope is $0.50/M × 1.5 long-context × 1.10 regional × 2 fast = $1.65/M.
++The ordinary/read/write input envelopes are 440/44/550 nano-USD per token;
++output is 1650. Requests explicitly select `service_tier=default` and reasoning
++`none`; settlement requires the returned tier `default` and model `gpt-6-luna`.
++This retains extra protection even though standard processing is requested.
++
++Official Gemini documentation reviewed 2026-09-27:
++[model limits](https://ai.google.dev/gemini-api/docs/models/gemini-2.5-flash),
++[pricing](https://ai.google.dev/gemini-api/docs/pricing#gemini-2.5-flash),
++[request/usage schema](https://ai.google.dev/api/generate-content).
++The input ceiling is 1,048,576 tokens. Priority text/image rates conservatively
++cover the requested standard tier: ordinary/cache input $0.54/$0.054 per million,
++output including thoughts $4.50/M (540/54/4500 nano-USD per token). No explicit
++cache creation/storage is used. Requests select `serviceTier=standard`, one
++candidate, `thinkingBudget=0`, and a positive output cap. Settlement requires
++exact `modelVersion=gemini-2.5-flash` and `usageMetadata.serviceTier=standard`;
++unrecognized/missing versions or usage components retain the reserve.
++
++Reservation = ceil((full input ceiling × maximum input nano-rate + configured
++output cap × output nano-rate) / 1000). Validated settlement applies the frozen
++rates to disjoint input components and normalized output, also rounding up.
++All arithmetic is checked. With a **synthetic test-only** output cap of 512,
++the reservations are 578,345 micro-USD (OpenAI) and 568,536 (Gemini). These are
++technical calculations, not approved allowances or expected invoice amounts.
++
++## Configuration and transport constraints
++
++Required `AiSpend` settings: `Enabled`, `GlobalMicroUsd`, `GuestMicroUsd`,
++`AccountMicroUsd`, `MaxConcurrentAttempts`, `PriceProfile`, `MaxPromptBytes`,
++`MaxImageBytes`, `MaxOutputTokens`, `MaxResponseBytes`, `DeadlineMilliseconds`.
++All numeric limits must be positive. Implemented maximum configuration bounds:
++64,000 UTF-8 prompt bytes, 20,000,000 image bytes, 65,536 output tokens,
++4,000,000 response bytes and 60,000 ms. These are technical upper bounds,
++not defaults or approved product quotas. Select smaller reviewed values as needed.
++Input is checked before Base64/JSON serialization; these caps also bound serialized
++request size. Text routes may have smaller upstream request-body limits.
++
++The named client uses exact HTTP/1.1, non-null POST content, no Expect-Continue,
++redirects, proxy, cookies, credentials, decompression or retry handlers. Header
++values are explicitly redacted. Response headers are bounded; `ResponseHeadersRead`
++plus incremental byte counting bounds the body with or without Content-Length.
++A linked deadline covers reservation, send, headers and body, independent of
++HttpClient's header-only timeout semantics. Automatic response draining is disabled.
++Settlement then has a separate bounded five-second database deadline. Cancellation is terminal. Provider
++401/402/403/429 and local authorization/quota/spend denials never trigger fallback
++or an outage email. Provider failures with unknown cost remain reserved.
++
++Transport evidence is local loopback against the actual Program named-client
++registration on .NET 10.0.12: posted-body disconnect, reused connection disconnect,
++307 redirect, oversized chunked body and headers-first body stall. Source basis:
++[HTTP/1 connection](https://raw.githubusercontent.com/dotnet/runtime/v10.0.12/src/libraries/System.Net.Http/src/System/Net/Http/SocketsHttpHandler/HttpConnection.cs)
++and [pool retries](https://raw.githubusercontent.com/dotnet/runtime/v10.0.12/src/libraries/System.Net.Http/src/System/Net/Http/SocketsHttpHandler/ConnectionPool/HttpConnectionPool.cs).
++Revalidate on runtime, handler, endpoint, model or pricing changes. The floating
++deployment image is not proof of the tested runtime. There were no live provider
++probes; provider adherence to documented token limits/rates remains an assumption.
++Other services sharing the provider keys are outside this ledger and must be
++budgeted independently. Provider dashboard budgets are not claimed as hard caps.
++
++## Internal monitoring and reconciliation
++
++`OwlAI.ProviderSpend` emits fixed-category event counters; structured logs record
++allowed/denied operations, reservations, provider attempts, fallback, 80% threshold,
++usage ceilings, retained outcomes and settlement failures. Logs do not include
++raw prompts, images, credentials, JWT/JWS or arbitrary provider exception text.
++The 100% allowance is enforced before the next attempt. Alerts in local tests use
++fake sinks only; this work sends no external notification.
++
++Before enabling or after an outage, inspect aggregate `ai_spend_buckets` amounts
++and pending counts and `ai_spend_reservations` grouped by provider/cohort and
++settled/pending state. Pending age is diagnostic, never authority to release.
++If the pending slots stop traffic, disable new calls on **all** replicas using
++`AiSpend__Enabled=false`. Preserve the ledger, isolate provider logs and reconcile
++each attempt against independently verified provider outcome/usage or proof it
++was never sent. Never clear rows, reset buckets, change identity, or wait for a
++TTL as a recovery shortcut. Any repair/reset/allowance increase needs a separate
++approved, reviewed and tested procedure; no live reconciliation/reset action is
++implemented here. Check effective configuration consistency across replicas.
++
++The migration only adds spend tables/index/check constraints. Local tests cover
++upgrading the preceding schema through actual API startup with an existing row,
++replica contention, restart retention, repeated settlement, all current routes,
++normal and test-mode grants, cache hits, and fake fallback. They do not establish
++production readiness, immutable anonymous ownership, live key usage, invoice
++accuracy, or approved financial policy.
+diff --git a/docs/paid-access-rollout.md b/docs/paid-access-rollout.md
+index f7194ee..8d54240 100644
+--- a/docs/paid-access-rollout.md
++++ b/docs/paid-access-rollout.md
+@@ -1,5 +1,11 @@
+ # Paid access rollout gates
+ 
++The local provider-spend machinery is described in [the expenditure runbook](ai-provider-spend.md).
++It is disabled without explicit valid configuration and approved cumulative
++allowances. Unknown outcomes retain money and concurrency slots; review that
++runbook's reconciliation/availability boundary before enabling it. This local
++implementation does not resolve the anonymous-owner/shared-quota gates below.
++
+ This is a preparation runbook, not a record of a live inventory, restore drill,
+ deployment, purchase, or release decision. The intended iPhone purchase and paid
+ use path remains account optional (D1=B). A desktop account is required for paid
+diff --git a/ops/linux/owl-api.env.example b/ops/linux/owl-api.env.example
+index bd6eee5..21fedb5 100644
+--- a/ops/linux/owl-api.env.example
++++ b/ops/linux/owl-api.env.example
+@@ -36,6 +36,20 @@ Apple__AppStoreServer__Environment=Production
+ Apple__AppStoreServer__AllowedProductIds=com.flashcardai.owlai.premium.monthly,com.flashcardai.owlai.premium.yearly
+ 
+ AI__Provider=OpenAI
++# Fail closed. No production money amounts or renewal/reset policy have been approved.
++# Supply all reviewed positive limits and the documented price profile before enabling.
++# Cumulative integer micro-USD allowances: global plus aggregate guest/account pools.
++AiSpend__Enabled=false
++AiSpend__GlobalMicroUsd=0
++AiSpend__GuestMicroUsd=0
++AiSpend__AccountMicroUsd=0
++AiSpend__MaxConcurrentAttempts=0
++AiSpend__PriceProfile=
++AiSpend__MaxPromptBytes=0
++AiSpend__MaxImageBytes=0
++AiSpend__MaxOutputTokens=0
++AiSpend__MaxResponseBytes=0
++AiSpend__DeadlineMilliseconds=0
+ Gemini__ApiKey=
+ Gemini__Model=gemini-2.5-flash
+ OpenAI__ApiKey=CHANGE_ME
+diff --git a/src/Mavrylo.Data/AppDbContext.cs b/src/Mavrylo.Data/AppDbContext.cs
+index 083d395..1b8ea79 100644
+--- a/src/Mavrylo.Data/AppDbContext.cs
++++ b/src/Mavrylo.Data/AppDbContext.cs
+@@ -16,6 +16,8 @@ public class AppDbContext : DbContext
+     public DbSet<DeviceEntity> Devices => Set<DeviceEntity>();
+     public DbSet<SubscriptionEntity> Subscriptions => Set<SubscriptionEntity>();
+     public DbSet<AiUsageEntity> AiUsage => Set<AiUsageEntity>();
++    public DbSet<AiSpendReservationEntity> AiSpendReservations => Set<AiSpendReservationEntity>();
++    public DbSet<AiSpendBucketEntity> AiSpendBuckets => Set<AiSpendBucketEntity>();
+     public DbSet<ChallengeEntity> Challenges => Set<ChallengeEntity>();
+     public DbSet<DeviceWordEntity> DeviceWords => Set<DeviceWordEntity>();
+     public DbSet<PublicFlashcardSetEntity> PublicFlashcardSets => Set<PublicFlashcardSetEntity>();
+@@ -25,6 +27,26 @@ public class AppDbContext : DbContext
+ 
+     protected override void OnModelCreating(ModelBuilder modelBuilder)
+     {
++        modelBuilder.Entity<AiSpendReservationEntity>(e =>
++        {
++            e.ToTable("ai_spend_reservations", t => t.HasCheckConstraint("CK_ai_spend_reservation_amounts",
++                "\"ReservedMicroUsd\" > 0 AND \"ChargedMicroUsd\" >= 0 AND \"ChargedMicroUsd\" <= \"ReservedMicroUsd\""));
++            e.HasKey(x => x.Id);
++            e.HasIndex(x => new { x.SettledAt, x.CreatedAt });
++            e.Property(x => x.Cohort).HasMaxLength(16);
++            e.Property(x => x.SubjectHash).HasMaxLength(64);
++            e.Property(x => x.Operation).HasMaxLength(32);
++            e.Property(x => x.Provider).HasMaxLength(16);
++            e.Property(x => x.Model).HasMaxLength(80);
++            e.Property(x => x.Profile).HasMaxLength(80);
++        });
++        modelBuilder.Entity<AiSpendBucketEntity>(e =>
++        {
++            e.ToTable("ai_spend_buckets", t => t.HasCheckConstraint("CK_ai_spend_bucket_amounts",
++                "\"ChargedMicroUsd\" >= 0 AND \"PendingAttempts\" >= 0"));
++            e.HasKey(x => x.Id);
++            e.Property(x => x.Id).HasMaxLength(16);
++        });
+         modelBuilder.Entity<AccountSyncEntity>(e =>
+         {
+             e.ToTable("account_sync_records");
+diff --git a/src/Mavrylo.Data/Migrations/20260928020241_AddAiSpendReservations.Designer.cs b/src/Mavrylo.Data/Migrations/20260928020241_AddAiSpendReservations.Designer.cs
+new file mode 100644
+index 0000000..dd64e41
+--- /dev/null
++++ b/src/Mavrylo.Data/Migrations/20260928020241_AddAiSpendReservations.Designer.cs
+@@ -0,0 +1,827 @@
++﻿// <auto-generated />
++using System;
++using Mavrylo.Data;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.EntityFrameworkCore.Infrastructure;
++using Microsoft.EntityFrameworkCore.Migrations;
++using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
++using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
++
++#nullable disable
++
++namespace Mavrylo.Migrations
++{
++    [DbContext(typeof(AppDbContext))]
++    [Migration("20260928020241_AddAiSpendReservations")]
++    partial class AddAiSpendReservations
++    {
++        /// <inheritdoc />
++        protected override void BuildTargetModel(ModelBuilder modelBuilder)
++        {
++#pragma warning disable 612, 618
++            modelBuilder
++                .HasAnnotation("ProductVersion", "10.0.9")
++                .HasAnnotation("Relational:MaxIdentifierLength", 63);
++
++            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
++
++            modelBuilder.Entity("Mavrylo.Models.AccountRefreshTokenEntity", b =>
++                {
++                    b.Property<string>("Hash")
++                        .HasMaxLength(64)
++                        .HasColumnType("character varying(64)");
++
++                    b.Property<DateTime?>("ConsumedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("SessionId")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.HasKey("Hash");
++
++                    b.HasIndex("SessionId");
++
++                    b.ToTable("account_refresh_tokens", (string)null);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AccountSessionEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("ExpiresAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<DateTime?>("RevokedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("UserId")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("UserId");
++
++                    b.ToTable("account_sessions", (string)null);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AccountSyncEntity", b =>
++                {
++                    b.Property<string>("UserId")
++                        .HasColumnType("text");
++
++                    b.Property<string>("Kind")
++                        .HasMaxLength(8)
++                        .HasColumnType("character varying(8)");
++
++                    b.Property<string>("Id")
++                        .HasMaxLength(128)
++                        .HasColumnType("character varying(128)");
++
++                    b.Property<long>("ChangeRevision")
++                        .HasColumnType("bigint");
++
++                    b.Property<string>("Data")
++                        .HasColumnType("jsonb");
++
++                    b.Property<bool>("Deleted")
++                        .HasColumnType("boolean");
++
++                    b.Property<long>("Version")
++                        .HasColumnType("bigint");
++
++                    b.HasKey("UserId", "Kind", "Id");
++
++                    b.HasIndex("UserId", "ChangeRevision");
++
++                    b.ToTable("account_sync_records", (string)null);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AiSpendBucketEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasMaxLength(16)
++                        .HasColumnType("character varying(16)");
++
++                    b.Property<long>("ChargedMicroUsd")
++                        .HasColumnType("bigint");
++
++                    b.Property<int>("PendingAttempts")
++                        .HasColumnType("integer");
++
++                    b.HasKey("Id");
++
++                    b.ToTable("ai_spend_buckets", null, t =>
++                        {
++                            t.HasCheckConstraint("CK_ai_spend_bucket_amounts", "\"ChargedMicroUsd\" >= 0 AND \"PendingAttempts\" >= 0");
++                        });
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AiSpendReservationEntity", b =>
++                {
++                    b.Property<Guid>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("uuid");
++
++                    b.Property<long>("CacheRate")
++                        .HasColumnType("bigint");
++
++                    b.Property<long>("CacheWriteRate")
++                        .HasColumnType("bigint");
++
++                    b.Property<long?>("CacheWriteTokens")
++                        .HasColumnType("bigint");
++
++                    b.Property<long?>("CachedTokens")
++                        .HasColumnType("bigint");
++
++                    b.Property<long>("ChargedMicroUsd")
++                        .HasColumnType("bigint");
++
++                    b.Property<string>("Cohort")
++                        .IsRequired()
++                        .HasMaxLength(16)
++                        .HasColumnType("character varying(16)");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<long>("InputRate")
++                        .HasColumnType("bigint");
++
++                    b.Property<long?>("InputTokens")
++                        .HasColumnType("bigint");
++
++                    b.Property<long>("MaxInputTokens")
++                        .HasColumnType("bigint");
++
++                    b.Property<int>("MaxOutputTokens")
++                        .HasColumnType("integer");
++
++                    b.Property<string>("Model")
++                        .IsRequired()
++                        .HasMaxLength(80)
++                        .HasColumnType("character varying(80)");
++
++                    b.Property<string>("Operation")
++                        .IsRequired()
++                        .HasMaxLength(32)
++                        .HasColumnType("character varying(32)");
++
++                    b.Property<long>("OutputRate")
++                        .HasColumnType("bigint");
++
++                    b.Property<long?>("OutputTokens")
++                        .HasColumnType("bigint");
++
++                    b.Property<string>("Profile")
++                        .IsRequired()
++                        .HasMaxLength(80)
++                        .HasColumnType("character varying(80)");
++
++                    b.Property<string>("Provider")
++                        .IsRequired()
++                        .HasMaxLength(16)
++                        .HasColumnType("character varying(16)");
++
++                    b.Property<long?>("ReasoningTokens")
++                        .HasColumnType("bigint");
++
++                    b.Property<long>("ReservedMicroUsd")
++                        .HasColumnType("bigint");
++
++                    b.Property<DateTime?>("SettledAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("SubjectHash")
++                        .IsRequired()
++                        .HasMaxLength(64)
++                        .HasColumnType("character varying(64)");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("SettledAt", "CreatedAt");
++
++                    b.ToTable("ai_spend_reservations", null, t =>
++                        {
++                            t.HasCheckConstraint("CK_ai_spend_reservation_amounts", "\"ReservedMicroUsd\" > 0 AND \"ChargedMicroUsd\" >= 0 AND \"ChargedMicroUsd\" <= \"ReservedMicroUsd\"");
++                        });
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AiUsageEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<int>("Count")
++                        .HasColumnType("integer");
++
++                    b.Property<string>("Date")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("KeyId")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("KeyId", "Date")
++                        .IsUnique();
++
++                    b.ToTable("ai_usage", (string)null);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AppUser", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<string>("AppleSub")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("DisplayName")
++                        .HasColumnType("text");
++
++                    b.Property<string>("Email")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("GoogleSub")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime?>("IosEnrolledAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("PasswordHash")
++                        .HasColumnType("text");
++
++                    b.Property<long>("SyncRevision")
++                        .HasColumnType("bigint");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("AppleSub");
++
++                    b.HasIndex("Email")
++                        .IsUnique()
++                        .HasFilter("\"GoogleSub\" IS NULL");
++
++                    b.HasIndex("GoogleSub")
++                        .IsUnique();
++
++                    b.ToTable("Users");
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.CategoryEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<string>("Color")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("Emoji")
++                        .HasColumnType("text");
++
++                    b.Property<bool>("IsDeleted")
++                        .HasColumnType("boolean");
++
++                    b.Property<string>("Name")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<int>("Order")
++                        .HasColumnType("integer");
++
++                    b.Property<DateTime>("UpdatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("UserId")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<int>("WordCount")
++                        .HasColumnType("integer");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("UserId");
++
++                    b.ToTable("Categories");
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.ChallengeEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime?>("ConsumedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<DateTime>("ExpiresAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("KeyId")
++                        .HasColumnType("text");
++
++                    b.Property<string>("Kind")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<byte[]>("Nonce")
++                        .IsRequired()
++                        .HasColumnType("bytea");
++
++                    b.Property<string>("RequestPath")
++                        .HasColumnType("text");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("ConsumedAt");
++
++                    b.HasIndex("Kind", "KeyId", "RequestPath", "ExpiresAt");
++
++                    b.ToTable("challenges", (string)null);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.DeviceEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("DeviceUuid")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("Environment")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("KeyId")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("LastSeenAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<byte[]>("PublicKey")
++                        .IsRequired()
++                        .HasColumnType("bytea");
++
++                    b.Property<bool>("RequiresAccountSubscription")
++                        .HasColumnType("boolean");
++
++                    b.Property<long>("SignCount")
++                        .HasColumnType("bigint");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("DeviceUuid");
++
++                    b.HasIndex("KeyId")
++                        .IsUnique();
++
++                    b.ToTable("devices", (string)null);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.DeviceWordEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<string>("ClientWordId")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("DetailJson")
++                        .HasColumnType("text");
++
++                    b.Property<string>("DeviceUuid")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("DisplayWord")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<bool>("IsActive")
++                        .HasColumnType("boolean");
++
++                    b.Property<string>("LearningLanguage")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("NativeLanguage")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("NormalizedWord")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("PartOfSpeech")
++                        .HasColumnType("text");
++
++                    b.Property<string>("Pronunciation")
++                        .HasColumnType("text");
++
++                    b.Property<string>("Translation")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("UpdatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("DeviceUuid", "ClientWordId");
++
++                    b.HasIndex("DeviceUuid", "IsActive");
++
++                    b.HasIndex("DeviceUuid", "NormalizedWord", "NativeLanguage", "LearningLanguage")
++                        .IsUnique();
++
++                    b.ToTable("device_words", (string)null);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.PublicFlashcardSetEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<string>("ClientSetId")
++                        .IsRequired()
++                        .HasMaxLength(100)
++                        .HasColumnType("character varying(100)");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("Description")
++                        .HasMaxLength(1000)
++                        .HasColumnType("character varying(1000)");
++
++                    b.Property<string>("OwnerAccountId")
++                        .HasColumnType("text");
++
++                    b.Property<string>("OwnerDeviceId")
++                        .HasColumnType("text");
++
++                    b.Property<string>("SearchText")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("SnapshotJson")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("Status")
++                        .IsRequired()
++                        .HasMaxLength(16)
++                        .HasColumnType("character varying(16)");
++
++                    b.Property<string>("Title")
++                        .IsRequired()
++                        .HasMaxLength(120)
++                        .HasColumnType("character varying(120)");
++
++                    b.Property<DateTime>("UpdatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<int>("WordCount")
++                        .HasColumnType("integer");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("OwnerAccountId", "ClientSetId")
++                        .IsUnique();
++
++                    b.HasIndex("OwnerDeviceId", "ClientSetId")
++                        .IsUnique();
++
++                    b.HasIndex("Status", "UpdatedAt");
++
++                    b.ToTable("public_flashcard_sets", null, t =>
++                        {
++                            t.HasCheckConstraint("CK_public_flashcard_sets_owner", "(\"OwnerDeviceId\" IS NOT NULL) <> (\"OwnerAccountId\" IS NOT NULL)");
++
++                            t.HasCheckConstraint("CK_public_flashcard_sets_status", "\"Status\" IN ('pending', 'approved')");
++                        });
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.SubscriptionEntity", b =>
++                {
++                    b.Property<string>("OriginalTransactionId")
++                        .HasColumnType("text");
++
++                    b.Property<bool>("AutoRenew")
++                        .HasColumnType("boolean");
++
++                    b.Property<DateTime?>("ClaimedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("DeviceUuid")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("Environment")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<DateTime?>("ExpiresAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<bool>("IsTrial")
++                        .HasColumnType("boolean");
++
++                    b.Property<DateTime?>("LastAppleEventAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<DateTime>("LastCheckedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("OwnerAccountId")
++                        .HasColumnType("text");
++
++                    b.Property<string>("ProductId")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<DateTime?>("RevokedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("Status")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<bool>("WasEverPaid")
++                        .HasColumnType("boolean");
++
++                    b.HasKey("OriginalTransactionId");
++
++                    b.HasIndex("DeviceUuid");
++
++                    b.HasIndex("OwnerAccountId");
++
++                    b.ToTable("subscriptions", (string)null);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.TranslationCacheEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<string>("AudioContentType")
++                        .HasColumnType("text");
++
++                    b.Property<string>("AudioStorageKey")
++                        .HasColumnType("text");
++
++                    b.Property<string>("AudioUrl")
++                        .HasColumnType("text");
++
++                    b.Property<string>("CacheKind")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<DateTime?>("LastHitAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("LearningLanguage")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("NativeLanguage")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("NormalizedKey")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("PromptVersion")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("ResponseJson")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("NormalizedKey", "NativeLanguage", "LearningLanguage", "CacheKind", "PromptVersion")
++                        .IsUnique()
++                        .HasDatabaseName("IX_translation_cache_lookup");
++
++                    b.ToTable("translation_cache", (string)null);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.UserSettingsEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<string>("AccentPreset")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<int>("DailyGoal")
++                        .HasColumnType("integer");
++
++                    b.Property<bool>("ExpandHistoryCards")
++                        .HasColumnType("boolean");
++
++                    b.Property<string>("LearningLanguage")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("NativeLanguage")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<bool>("OnboardingComplete")
++                        .HasColumnType("boolean");
++
++                    b.Property<string>("ReminderMinutesJson")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<bool>("RemindersEnabled")
++                        .HasColumnType("boolean");
++
++                    b.Property<string>("ReviewDirection")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("ThemeAppearance")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("UpdatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("UserId")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("UserId")
++                        .IsUnique();
++
++                    b.ToTable("UserSettings");
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.WordEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<string>("AudioUrl")
++                        .HasColumnType("text");
++
++                    b.Property<string>("CategoryId")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<double>("EaseFactor")
++                        .HasColumnType("double precision");
++
++                    b.Property<string>("ExampleTranslationsJson")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("ExamplesJson")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<bool>("IsDeleted")
++                        .HasColumnType("boolean");
++
++                    b.Property<bool>("IsMastered")
++                        .HasColumnType("boolean");
++
++                    b.Property<string>("NextReview")
++                        .HasColumnType("text");
++
++                    b.Property<string>("PartOfSpeech")
++                        .HasColumnType("text");
++
++                    b.Property<string>("Pronunciation")
++                        .HasColumnType("text");
++
++                    b.Property<int>("Repetitions")
++                        .HasColumnType("integer");
++
++                    b.Property<int>("ReviewInterval")
++                        .HasColumnType("integer");
++
++                    b.Property<string>("SourceLanguage")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("TargetLanguage")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("Translation")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("UpdatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("UserId")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("UserNotes")
++                        .HasColumnType("text");
++
++                    b.Property<string>("Word")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("UserId", "UpdatedAt");
++
++                    b.ToTable("Words");
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AccountRefreshTokenEntity", b =>
++                {
++                    b.HasOne("Mavrylo.Models.AccountSessionEntity", null)
++                        .WithMany()
++                        .HasForeignKey("SessionId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AccountSessionEntity", b =>
++                {
++                    b.HasOne("Mavrylo.Models.AppUser", null)
++                        .WithMany()
++                        .HasForeignKey("UserId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AccountSyncEntity", b =>
++                {
++                    b.HasOne("Mavrylo.Models.AppUser", null)
++                        .WithMany()
++                        .HasForeignKey("UserId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.PublicFlashcardSetEntity", b =>
++                {
++                    b.HasOne("Mavrylo.Models.AppUser", null)
++                        .WithMany()
++                        .HasForeignKey("OwnerAccountId")
++                        .OnDelete(DeleteBehavior.Cascade);
++
++                    b.HasOne("Mavrylo.Models.DeviceEntity", "OwnerDevice")
++                        .WithMany()
++                        .HasForeignKey("OwnerDeviceId")
++                        .OnDelete(DeleteBehavior.Cascade);
++
++                    b.Navigation("OwnerDevice");
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.SubscriptionEntity", b =>
++                {
++                    b.HasOne("Mavrylo.Models.AppUser", null)
++                        .WithMany()
++                        .HasForeignKey("OwnerAccountId")
++                        .OnDelete(DeleteBehavior.SetNull);
++                });
++#pragma warning restore 612, 618
++        }
++    }
++}
+diff --git a/src/Mavrylo.Data/Migrations/20260928020241_AddAiSpendReservations.cs b/src/Mavrylo.Data/Migrations/20260928020241_AddAiSpendReservations.cs
+new file mode 100644
+index 0000000..3c2f1d7
+--- /dev/null
++++ b/src/Mavrylo.Data/Migrations/20260928020241_AddAiSpendReservations.cs
+@@ -0,0 +1,77 @@
++﻿using System;
++using Microsoft.EntityFrameworkCore.Migrations;
++
++#nullable disable
++
++namespace Mavrylo.Migrations
++{
++    /// <inheritdoc />
++    public partial class AddAiSpendReservations : Migration
++    {
++        /// <inheritdoc />
++        protected override void Up(MigrationBuilder migrationBuilder)
++        {
++            migrationBuilder.CreateTable(
++                name: "ai_spend_buckets",
++                columns: table => new
++                {
++                    Id = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
++                    ChargedMicroUsd = table.Column<long>(type: "bigint", nullable: false),
++                    PendingAttempts = table.Column<int>(type: "integer", nullable: false)
++                },
++                constraints: table =>
++                {
++                    table.PrimaryKey("PK_ai_spend_buckets", x => x.Id);
++                    table.CheckConstraint("CK_ai_spend_bucket_amounts", "\"ChargedMicroUsd\" >= 0 AND \"PendingAttempts\" >= 0");
++                });
++
++            migrationBuilder.CreateTable(
++                name: "ai_spend_reservations",
++                columns: table => new
++                {
++                    Id = table.Column<Guid>(type: "uuid", nullable: false),
++                    Cohort = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
++                    SubjectHash = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
++                    Operation = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
++                    Provider = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
++                    Model = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: false),
++                    Profile = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: false),
++                    ReservedMicroUsd = table.Column<long>(type: "bigint", nullable: false),
++                    ChargedMicroUsd = table.Column<long>(type: "bigint", nullable: false),
++                    MaxInputTokens = table.Column<long>(type: "bigint", nullable: false),
++                    MaxOutputTokens = table.Column<int>(type: "integer", nullable: false),
++                    InputRate = table.Column<long>(type: "bigint", nullable: false),
++                    CacheRate = table.Column<long>(type: "bigint", nullable: false),
++                    CacheWriteRate = table.Column<long>(type: "bigint", nullable: false),
++                    OutputRate = table.Column<long>(type: "bigint", nullable: false),
++                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
++                    SettledAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
++                    InputTokens = table.Column<long>(type: "bigint", nullable: true),
++                    OutputTokens = table.Column<long>(type: "bigint", nullable: true),
++                    ReasoningTokens = table.Column<long>(type: "bigint", nullable: true),
++                    CachedTokens = table.Column<long>(type: "bigint", nullable: true),
++                    CacheWriteTokens = table.Column<long>(type: "bigint", nullable: true)
++                },
++                constraints: table =>
++                {
++                    table.PrimaryKey("PK_ai_spend_reservations", x => x.Id);
++                    table.CheckConstraint("CK_ai_spend_reservation_amounts", "\"ReservedMicroUsd\" > 0 AND \"ChargedMicroUsd\" >= 0 AND \"ChargedMicroUsd\" <= \"ReservedMicroUsd\"");
++                });
++
++            migrationBuilder.CreateIndex(
++                name: "IX_ai_spend_reservations_SettledAt_CreatedAt",
++                table: "ai_spend_reservations",
++                columns: new[] { "SettledAt", "CreatedAt" });
++        }
++
++        /// <inheritdoc />
++        protected override void Down(MigrationBuilder migrationBuilder)
++        {
++            migrationBuilder.DropTable(
++                name: "ai_spend_buckets");
++
++            migrationBuilder.DropTable(
++                name: "ai_spend_reservations");
++        }
++    }
++}
+diff --git a/src/Mavrylo.Data/Migrations/AppDbContextModelSnapshot.cs b/src/Mavrylo.Data/Migrations/AppDbContextModelSnapshot.cs
+index 7a6ce4f..4e80f56 100644
+--- a/src/Mavrylo.Data/Migrations/AppDbContextModelSnapshot.cs
++++ b/src/Mavrylo.Data/Migrations/AppDbContextModelSnapshot.cs
+@@ -96,6 +96,117 @@ namespace Mavrylo.Migrations
+                     b.ToTable("account_sync_records", (string)null);
+                 });
+ 
++            modelBuilder.Entity("Mavrylo.Models.AiSpendBucketEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasMaxLength(16)
++                        .HasColumnType("character varying(16)");
++
++                    b.Property<long>("ChargedMicroUsd")
++                        .HasColumnType("bigint");
++
++                    b.Property<int>("PendingAttempts")
++                        .HasColumnType("integer");
++
++                    b.HasKey("Id");
++
++                    b.ToTable("ai_spend_buckets", null, t =>
++                        {
++                            t.HasCheckConstraint("CK_ai_spend_bucket_amounts", "\"ChargedMicroUsd\" >= 0 AND \"PendingAttempts\" >= 0");
++                        });
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AiSpendReservationEntity", b =>
++                {
++                    b.Property<Guid>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("uuid");
++
++                    b.Property<long>("CacheRate")
++                        .HasColumnType("bigint");
++
++                    b.Property<long>("CacheWriteRate")
++                        .HasColumnType("bigint");
++
++                    b.Property<long?>("CacheWriteTokens")
++                        .HasColumnType("bigint");
++
++                    b.Property<long?>("CachedTokens")
++                        .HasColumnType("bigint");
++
++                    b.Property<long>("ChargedMicroUsd")
++                        .HasColumnType("bigint");
++
++                    b.Property<string>("Cohort")
++                        .IsRequired()
++                        .HasMaxLength(16)
++                        .HasColumnType("character varying(16)");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<long>("InputRate")
++                        .HasColumnType("bigint");
++
++                    b.Property<long?>("InputTokens")
++                        .HasColumnType("bigint");
++
++                    b.Property<long>("MaxInputTokens")
++                        .HasColumnType("bigint");
++
++                    b.Property<int>("MaxOutputTokens")
++                        .HasColumnType("integer");
++
++                    b.Property<string>("Model")
++                        .IsRequired()
++                        .HasMaxLength(80)
++                        .HasColumnType("character varying(80)");
++
++                    b.Property<string>("Operation")
++                        .IsRequired()
++                        .HasMaxLength(32)
++                        .HasColumnType("character varying(32)");
++
++                    b.Property<long>("OutputRate")
++                        .HasColumnType("bigint");
++
++                    b.Property<long?>("OutputTokens")
++                        .HasColumnType("bigint");
++
++                    b.Property<string>("Profile")
++                        .IsRequired()
++                        .HasMaxLength(80)
++                        .HasColumnType("character varying(80)");
++
++                    b.Property<string>("Provider")
++                        .IsRequired()
++                        .HasMaxLength(16)
++                        .HasColumnType("character varying(16)");
++
++                    b.Property<long?>("ReasoningTokens")
++                        .HasColumnType("bigint");
++
++                    b.Property<long>("ReservedMicroUsd")
++                        .HasColumnType("bigint");
++
++                    b.Property<DateTime?>("SettledAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("SubjectHash")
++                        .IsRequired()
++                        .HasMaxLength(64)
++                        .HasColumnType("character varying(64)");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("SettledAt", "CreatedAt");
++
++                    b.ToTable("ai_spend_reservations", null, t =>
++                        {
++                            t.HasCheckConstraint("CK_ai_spend_reservation_amounts", "\"ReservedMicroUsd\" > 0 AND \"ChargedMicroUsd\" >= 0 AND \"ChargedMicroUsd\" <= \"ReservedMicroUsd\"");
++                        });
++                });
++
+             modelBuilder.Entity("Mavrylo.Models.AiUsageEntity", b =>
+                 {
+                     b.Property<string>("Id")
+diff --git a/src/Mavrylo.Entities/Models/AiSpendReservationEntity.cs b/src/Mavrylo.Entities/Models/AiSpendReservationEntity.cs
+new file mode 100644
+index 0000000..8a7563e
+--- /dev/null
++++ b/src/Mavrylo.Entities/Models/AiSpendReservationEntity.cs
+@@ -0,0 +1,35 @@
++namespace Mavrylo.Models;
++
++public sealed class AiSpendReservationEntity
++{
++    public Guid Id { get; set; }
++    public string Cohort { get; set; } = "";
++    public string SubjectHash { get; set; } = "";
++    public string Operation { get; set; } = "";
++    public string Provider { get; set; } = "";
++    public string Model { get; set; } = "";
++    public string Profile { get; set; } = "";
++    public long ReservedMicroUsd { get; set; }
++    public long ChargedMicroUsd { get; set; }
++    public long MaxInputTokens { get; set; }
++    public int MaxOutputTokens { get; set; }
++    public long InputRate { get; set; }
++    public long CacheRate { get; set; }
++    public long CacheWriteRate { get; set; }
++    public long OutputRate { get; set; }
++    public DateTime CreatedAt { get; set; }
++    public DateTime? SettledAt { get; set; }
++    public long? InputTokens { get; set; }
++    public long? OutputTokens { get; set; }
++    public long? ReasoningTokens { get; set; }
++    public long? CachedTokens { get; set; }
++    public long? CacheWriteTokens { get; set; }
++}
++
++/// <summary>Cumulative committed spend plus outstanding reservations; no clock-based resets.</summary>
++public sealed class AiSpendBucketEntity
++{
++    public string Id { get; set; } = "";
++    public long ChargedMicroUsd { get; set; }
++    public int PendingAttempts { get; set; }
++}
+diff --git a/src/Mavrylo.Services/Services/AiCostProfile.cs b/src/Mavrylo.Services/Services/AiCostProfile.cs
+new file mode 100644
+index 0000000..d046359
+--- /dev/null
++++ b/src/Mavrylo.Services/Services/AiCostProfile.cs
+@@ -0,0 +1,64 @@
++namespace Mavrylo.Services;
++
++/// <summary>Immutable reviewed price envelope. Rates are integer nano-USD per token.</summary>
++public sealed record AiCostProfile
++{
++    // Only the server's reviewed factory can expose a profile to other application assemblies.
++    internal AiCostProfile(string id, string provider, string model, long maxInputTokens, int maxOutputTokens,
++        long inputRate, long cacheRate, long cacheWriteRate, long outputRate,
++        int maxPromptBytes, int maxImageBytes, int maxResponseBytes, int deadlineMilliseconds)
++    {
++        Id = id; Provider = provider; Model = model; MaxInputTokens = maxInputTokens; MaxOutputTokens = maxOutputTokens;
++        InputRate = inputRate; CacheRate = cacheRate; CacheWriteRate = cacheWriteRate; OutputRate = outputRate;
++        MaxPromptBytes = maxPromptBytes; MaxImageBytes = maxImageBytes; MaxResponseBytes = maxResponseBytes; DeadlineMilliseconds = deadlineMilliseconds;
++    }
++    public string Id { get; internal init; }
++    public string Provider { get; internal init; }
++    public string Model { get; internal init; }
++    public long MaxInputTokens { get; internal init; }
++    public int MaxOutputTokens { get; internal init; }
++    public long InputRate { get; internal init; }
++    public long CacheRate { get; internal init; }
++    public long CacheWriteRate { get; internal init; }
++    public long OutputRate { get; internal init; }
++    public int MaxPromptBytes { get; internal init; }
++    public int MaxImageBytes { get; internal init; }
++    public int MaxResponseBytes { get; internal init; }
++    public int DeadlineMilliseconds { get; internal init; }
++
++    public static bool IsOperation(string operation) => operation is "analyze-word" or "word-detail" or "review-translation" or "extract-words";
++
++    public static AiCostProfile Read(IConfiguration config, string provider, string model, string operation, string prompt, byte[]? image, string? mime)
++    {
++        if (config["AiSpend:PriceProfile"] != "2026-09-27-model-ceilings-v1" || !IsOperation(operation)
++            || (operation == "extract-words") != (image != null)) throw new AiSpendDeniedException("profile");
++        int Limit(string key, int maximum)
++        {
++            if (!int.TryParse(config["AiSpend:" + key], out var value) || value <= 0 || value > maximum)
++                throw new AiSpendDeniedException("profile_limits");
++            return value;
++        }
++        var output = Limit("MaxOutputTokens", 65536);
++        var promptLimit = Limit("MaxPromptBytes", 64000);
++        var imageLimit = Limit("MaxImageBytes", 20000000);
++        var responseLimit = Limit("MaxResponseBytes", 4000000);
++        var deadline = Limit("DeadlineMilliseconds", 60000);
++        if (string.IsNullOrWhiteSpace(prompt) || System.Text.Encoding.UTF8.GetByteCount(prompt) > promptLimit
++            || image != null && (image.Length == 0 || image.Length > imageLimit || mime is not ("image/jpeg" or "image/png" or "image/webp" or "image/heic")))
++            throw new AiSpendDeniedException("input_limit");
++        // Full model ceilings bound text AND image inputs without guessing byte/token equivalence.
++        // OpenAI: base input/cache/write/output × long-context × regional × fast envelope.
++        // Gemini: priority text/image envelope. Both requests explicitly select standard processing.
++        // Provenance and assumptions: docs/ai-provider-spend.md (2026-09-27 official sources).
++        return (provider, model) switch
++        {
++            ("OpenAI", "gpt-6-luna") => new("2026-09-27-model-ceilings-v1", provider, model, 1050000, output, 440, 44, 550, 1650,
++                promptLimit, imageLimit, responseLimit, deadline),
++            ("Gemini", "gemini-2.5-flash") => new("2026-09-27-model-ceilings-v1", provider, model, 1048576, output, 540, 54, 540, 4500,
++                promptLimit, imageLimit, responseLimit, deadline),
++            _ => throw new AiSpendDeniedException("unknown_model")
++        };
++    }
++    public long ReservationMicroUsd => checked((checked(MaxInputTokens * Math.Max(InputRate, Math.Max(CacheRate, CacheWriteRate)))
++        + checked((long)MaxOutputTokens * OutputRate) + 999) / 1000);
++}
+diff --git a/src/Mavrylo.Services/Services/AiProviderTransport.cs b/src/Mavrylo.Services/Services/AiProviderTransport.cs
+new file mode 100644
+index 0000000..f4fc8be
+--- /dev/null
++++ b/src/Mavrylo.Services/Services/AiProviderTransport.cs
+@@ -0,0 +1,96 @@
++using System.Net;
++using System.Text.Json;
++
++namespace Mavrylo.Services;
++
++/// <summary>The single reserved, non-retrying HTTP boundary for both paid adapters.</summary>
++public sealed class AiProviderTransport(IHttpClientFactory clients, IAiSpendGuard guard, AiSpendContext context, IAiSpendEvents events)
++{
++    public const string ClientName = "ai-provider-single-attempt";
++
++    public static SocketsHttpHandler CreateHandler() => new()
++    {
++        AllowAutoRedirect = false, UseProxy = false, Credentials = null, PreAuthenticate = false,
++        AutomaticDecompression = DecompressionMethods.None, UseCookies = false,
++        ConnectTimeout = TimeSpan.FromSeconds(10), MaxResponseHeadersLength = 32, MaxResponseDrainSize = 0
++    };
++
++    public async Task<JsonDocument> SendAsync(AiCostProfile profile, string operation, HttpRequestMessage request, CancellationToken ct)
++    {
++        ct.ThrowIfCancellationRequested();
++        var subject = context.Subject ?? throw new AiSpendDeniedException("missing_context");
++        if (request.Method != HttpMethod.Post || request.Content == null) throw new AiSpendDeniedException("transport_shape");
++        // Pinned .NET 10 HTTP/1 path: non-null POST, no Expect/redirect/proxy/auth negotiation.
++        // Do not relax this without revalidating the loopback retry tests and runtime source.
++        request.Version = HttpVersion.Version11;
++        request.VersionPolicy = HttpVersionPolicy.RequestVersionExact;
++        request.Headers.ExpectContinue = false;
++        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
++        deadline.CancelAfter(profile.DeadlineMilliseconds);
++        SpendReservation? reservation;
++        try
++        {
++            reservation = await guard.TryReserveAsync(new(Guid.NewGuid(), subject, operation, profile, profile.ReservationMicroUsd), deadline.Token);
++        }
++        catch (OperationCanceledException) { throw; }
++        catch (Exception) { throw new AiSpendDeniedException("ledger_unavailable"); }
++        if (reservation == null) throw new AiSpendDeniedException("budget_or_concurrency");
++        AiAttemptUsage? usage = null;
++        try
++        {
++            deadline.Token.ThrowIfCancellationRequested();
++            events.Record("provider_attempt", profile.Provider);
++            using var response = await clients.CreateClient(ClientName).SendAsync(request, HttpCompletionOption.ResponseHeadersRead, deadline.Token);
++            if (!response.IsSuccessStatusCode)
++                throw new AiProviderException(profile.Provider, "Provider request failed.", (int)response.StatusCode);
++            if (response.Content.Headers.ContentLength > profile.MaxResponseBytes) throw new AiProviderException(profile.Provider, "Provider response exceeds limit.");
++            await using var stream = await response.Content.ReadAsStreamAsync(deadline.Token);
++            using var buffer = new MemoryStream();
++            var block = new byte[8192];
++            while (true)
++            {
++                var count = await stream.ReadAsync(block.AsMemory(0, Math.Min(block.Length, profile.MaxResponseBytes - (int)buffer.Length + 1)), deadline.Token);
++                if (count == 0) break;
++                if (buffer.Length + count > profile.MaxResponseBytes) throw new AiProviderException(profile.Provider, "Provider response exceeds limit.");
++                buffer.Write(block, 0, count);
++            }
++            deadline.Token.ThrowIfCancellationRequested();
++            var document = JsonDocument.Parse(buffer.ToArray());
++            usage = ReadUsage(profile.Provider, document.RootElement);
++            return document;
++        }
++        finally
++        {
++            // A client disconnect cannot erase a potential bill. Settlement has its own bounded token.
++            using var settlementDeadline = new CancellationTokenSource(TimeSpan.FromSeconds(5));
++            try { await guard.CompleteAsync(reservation.Id, usage, settlementDeadline.Token); }
++            catch (Exception) { events.Record("settlement_failed_retained", profile.Provider); }
++        }
++    }
++
++    internal static AiAttemptUsage? ReadUsage(string provider, JsonElement root)
++    {
++        try
++        {
++            static long Number(JsonElement item, string name) => item.GetProperty(name).GetInt64();
++            if (provider == "OpenAI")
++            {
++                var u = root.GetProperty("usage");
++                var input = u.GetProperty("input_tokens_details");
++                return new(root.GetProperty("model").GetString()!, root.GetProperty("service_tier").GetString()!,
++                    Number(u, "input_tokens"), Number(u, "output_tokens"), Number(u.GetProperty("output_tokens_details"), "reasoning_tokens"),
++                    Number(input, "cached_tokens"), Number(input, "cache_write_tokens"), Number(u, "total_tokens"));
++            }
++            var usage = root.GetProperty("usageMetadata");
++            var reasoning = Number(usage, "thoughtsTokenCount");
++            return new(root.GetProperty("modelVersion").GetString()!, usage.GetProperty("serviceTier").GetString()!,
++                Number(usage, "promptTokenCount"), checked(Number(usage, "candidatesTokenCount") + reasoning), reasoning,
++                Number(usage, "cachedContentTokenCount"), 0, Number(usage, "totalTokenCount"));
++        }
++        catch (Exception ex) when (ex is KeyNotFoundException or InvalidOperationException or FormatException or OverflowException)
++        {
++            // Omitted fields are unknown, not a measured zero-cost response.
++            return null;
++        }
++    }
++}
+diff --git a/src/Mavrylo.Services/Services/AiSpendContext.cs b/src/Mavrylo.Services/Services/AiSpendContext.cs
+new file mode 100644
+index 0000000..278bb89
+--- /dev/null
++++ b/src/Mavrylo.Services/Services/AiSpendContext.cs
+@@ -0,0 +1,22 @@
++namespace Mavrylo.Services;
++
++public sealed record AiSpendSubject
++{
++    internal AiSpendSubject(string kind, string reference) { Kind = kind; Reference = reference; }
++    public string Kind { get; }
++    public string Reference { get; }
++}
++
++/// <summary>Set only by the accepted authorization filters, never from request input alone.</summary>
++public sealed class AiSpendContext(IHttpContextAccessor accessor)
++{
++    private static readonly object GrantKey = new();
++    public AiSpendSubject? Subject => accessor.HttpContext?.Items[GrantKey] as AiSpendSubject;
++
++    // These references identify today's authenticated principal/key, NOT immutable purchase owners.
++    public static void AuthorizeAcceptedRequest(HttpContext http, string? account, string? authenticatedKey = null)
++    {
++        if (!string.IsNullOrWhiteSpace(account)) http.Items[GrantKey] = new AiSpendSubject("account", account);
++        else if (!string.IsNullOrWhiteSpace(authenticatedKey)) http.Items[GrantKey] = new AiSpendSubject("guest", authenticatedKey);
++    }
++}
+diff --git a/src/Mavrylo.Services/Services/AiSpendDeniedException.cs b/src/Mavrylo.Services/Services/AiSpendDeniedException.cs
+new file mode 100644
+index 0000000..e2f1cc8
+--- /dev/null
++++ b/src/Mavrylo.Services/Services/AiSpendDeniedException.cs
+@@ -0,0 +1,7 @@
++namespace Mavrylo.Services;
++
++/// <summary>A terminal local safety denial; never a reason to try another provider.</summary>
++public sealed class AiSpendDeniedException(string reason) : Exception("AI provider expenditure is unavailable.")
++{
++    public string Reason { get; } = reason;
++}
+diff --git a/src/Mavrylo.Services/Services/AiSpendGuard.cs b/src/Mavrylo.Services/Services/AiSpendGuard.cs
+new file mode 100644
+index 0000000..36e8538
+--- /dev/null
++++ b/src/Mavrylo.Services/Services/AiSpendGuard.cs
+@@ -0,0 +1,148 @@
++using System.Security.Cryptography;
++using System.Text;
++using Mavrylo.Data;
++using Mavrylo.Models;
++using Microsoft.EntityFrameworkCore;
++
++namespace Mavrylo.Services;
++
++public sealed record AiAttempt(Guid AttemptId, AiSpendSubject Subject, string Operation, AiCostProfile Profile, long UpperBoundMicroUsd);
++public sealed record SpendReservation(Guid Id, long ReservedMicroUsd);
++// Output includes reasoning exactly once, on both normalized provider paths.
++public sealed record AiAttemptUsage(string Model, string Tier, long Input, long Output, long Reasoning, long Cached, long CacheWrite, long Total);
++
++public interface IAiSpendGuard
++{
++    Task<SpendReservation?> TryReserveAsync(AiAttempt attempt, CancellationToken ct);
++    Task CompleteAsync(Guid reservationId, AiAttemptUsage? usage, CancellationToken ct);
++}
++
++public sealed class AiSpendGuard(AppDbContext db, IConfiguration config, IAiSpendEvents events) : IAiSpendGuard
++{
++    public async Task<SpendReservation?> TryReserveAsync(AiAttempt attempt, CancellationToken ct)
++    {
++        ct.ThrowIfCancellationRequested();
++        if (!bool.TryParse(config["AiSpend:Enabled"], out var enabled) || !enabled
++            || !Positive("GlobalMicroUsd", out var global) || !Positive("GuestMicroUsd", out var guest)
++            || !Positive("AccountMicroUsd", out var account) || !Positive("MaxConcurrentAttempts", out var concurrent)
++            || concurrent > int.MaxValue || attempt.Subject is not { Kind: "guest" or "account" }
++            || string.IsNullOrWhiteSpace(attempt.Subject.Reference) || attempt.AttemptId == Guid.Empty
++            || !AiCostProfile.IsOperation(attempt.Operation)) return Denied("configuration");
++        try
++        {
++            if (attempt.UpperBoundMicroUsd <= 0 || attempt.UpperBoundMicroUsd != attempt.Profile.ReservationMicroUsd)
++                return Denied("cost_bound");
++        }
++        catch (OverflowException) { return Denied("cost_bound"); }
++
++        // One short transaction lock orders reservation and settlement on every replica.
++        // Never hold this lock while awaiting an external provider.
++        await using var tx = await db.Database.BeginTransactionAsync(ct);
++        await LockAsync(ct);
++        if (await db.AiSpendReservations.AsNoTracking().AnyAsync(x => x.Id == attempt.AttemptId, ct)) return Denied("duplicate_attempt");
++        var cohort = attempt.Subject.Kind;
++        var scopes = new[] { (Id: "global", Limit: global), (Id: cohort, Limit: cohort == "guest" ? guest : account) };
++        var buckets = new List<AiSpendBucketEntity>();
++        foreach (var scope in scopes)
++        {
++            var bucket = await db.AiSpendBuckets.AsNoTracking().SingleOrDefaultAsync(x => x.Id == scope.Id, ct)
++                ?? new AiSpendBucketEntity { Id = scope.Id };
++            if (bucket.ChargedMicroUsd < 0 || bucket.PendingAttempts < 0
++                || attempt.UpperBoundMicroUsd > scope.Limit || bucket.ChargedMicroUsd > scope.Limit - attempt.UpperBoundMicroUsd)
++                return Denied(scope.Id);
++            if (bucket.PendingAttempts >= concurrent) return Denied("concurrency");
++            buckets.Add(bucket);
++        }
++        foreach (var bucket in buckets)
++        {
++            var amount = checked(bucket.ChargedMicroUsd + attempt.UpperBoundMicroUsd);
++            var pending = checked(bucket.PendingAttempts + 1);
++            await db.Database.ExecuteSqlInterpolatedAsync($"""
++                INSERT INTO ai_spend_buckets ("Id", "ChargedMicroUsd", "PendingAttempts") VALUES ({bucket.Id}, {amount}, {pending})
++                ON CONFLICT ("Id") DO UPDATE SET "ChargedMicroUsd" = EXCLUDED."ChargedMicroUsd", "PendingAttempts" = EXCLUDED."PendingAttempts"
++                """, ct);
++        }
++        var p = attempt.Profile;
++        var row = new AiSpendReservationEntity
++        {
++            Id = attempt.AttemptId, Cohort = cohort, SubjectHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(cohort + ":" + attempt.Subject.Reference))),
++            Operation = attempt.Operation, Provider = p.Provider, Model = p.Model, Profile = p.Id,
++            ReservedMicroUsd = attempt.UpperBoundMicroUsd, ChargedMicroUsd = attempt.UpperBoundMicroUsd,
++            MaxInputTokens = p.MaxInputTokens, MaxOutputTokens = p.MaxOutputTokens,
++            InputRate = p.InputRate, CacheRate = p.CacheRate, CacheWriteRate = p.CacheWriteRate, OutputRate = p.OutputRate, CreatedAt = DateTime.UtcNow
++        };
++        db.AiSpendReservations.Add(row);
++        try { await db.SaveChangesAsync(ct); await tx.CommitAsync(ct); }
++        finally { db.Entry(row).State = EntityState.Detached; }
++        events.Record("reserved", cohort, attempt.UpperBoundMicroUsd);
++        foreach (var scope in scopes)
++        {
++            var bucket = buckets.Single(x => x.Id == scope.Id);
++            // decimal avoids overflow when comparing large integer-micro-USD allowances.
++            if ((decimal)bucket.ChargedMicroUsd + attempt.UpperBoundMicroUsd >= (decimal)scope.Limit * 0.8m)
++                events.Record("threshold_80", scope.Id);
++        }
++        return new(row.Id, row.ReservedMicroUsd);
++    }
++
++    public async Task CompleteAsync(Guid reservationId, AiAttemptUsage? usage, CancellationToken ct)
++    {
++        await using var tx = await db.Database.BeginTransactionAsync(ct);
++        await LockAsync(ct);
++        var row = await db.AiSpendReservations.AsNoTracking().SingleOrDefaultAsync(x => x.Id == reservationId, ct);
++        if (row == null || row.SettledAt != null) return;
++        if (!TryCost(row, usage, out var cost)) { events.Record("retained_unknown", row.Cohort, row.ReservedMicroUsd); return; }
++        var released = row.ReservedMicroUsd - cost;
++        var now = DateTime.UtcNow;
++        foreach (var id in new[] { "global", row.Cohort })
++        {
++            var changed = await db.Database.ExecuteSqlInterpolatedAsync($"""
++                UPDATE ai_spend_buckets SET "ChargedMicroUsd" = "ChargedMicroUsd" - {released}, "PendingAttempts" = "PendingAttempts" - 1
++                WHERE "Id" = {id} AND "ChargedMicroUsd" >= {released} AND "PendingAttempts" > 0
++                """, ct);
++            if (changed != 1) throw new AiSpendDeniedException("ledger_inconsistent");
++        }
++        await db.AiSpendReservations.Where(x => x.Id == reservationId).ExecuteUpdateAsync(s => s
++            .SetProperty(x => x.ChargedMicroUsd, cost).SetProperty(x => x.SettledAt, now)
++            .SetProperty(x => x.InputTokens, usage!.Input).SetProperty(x => x.OutputTokens, usage!.Output)
++            .SetProperty(x => x.ReasoningTokens, usage!.Reasoning).SetProperty(x => x.CachedTokens, usage!.Cached)
++            .SetProperty(x => x.CacheWriteTokens, usage!.CacheWrite), ct);
++        await tx.CommitAsync(ct);
++        events.Record("settled_usage_ceiling", row.Cohort, cost);
++    }
++
++    private static bool TryCost(AiSpendReservationEntity row, AiAttemptUsage? u, out long cost)
++    {
++        cost = 0;
++        if (u == null || u.Model != row.Model || u.Tier != (row.Provider == "OpenAI" ? "default" : "standard")
++            || u.Input <= 0 || u.Input > row.MaxInputTokens || u.Output < 0 || u.Output > row.MaxOutputTokens
++            || u.Reasoning < 0 || u.Reasoning > u.Output || u.Cached < 0 || u.CacheWrite < 0
++            || row.InputRate <= 0 || row.CacheRate <= 0 || row.CacheWriteRate <= 0 || row.OutputRate <= 0) return false;
++        try
++        {
++            if (checked(u.Input + u.Output) != u.Total || checked(u.Cached + u.CacheWrite) > u.Input) return false;
++            var nano = checked(checked((u.Input - u.Cached - u.CacheWrite) * row.InputRate)
++                + checked(u.Cached * row.CacheRate) + checked(u.CacheWrite * row.CacheWriteRate) + checked(u.Output * row.OutputRate));
++            cost = checked(nano + 999) / 1000;
++            return cost <= row.ReservedMicroUsd;
++        }
++        catch (OverflowException) { return false; }
++    }
++
++    private bool Positive(string name, out long value) => long.TryParse(config["AiSpend:" + name], out value) && value > 0;
++    private SpendReservation? Denied(string scope) { events.Record("denied", scope); return null; }
++    private Task LockAsync(CancellationToken ct) => db.Database.ExecuteSqlRawAsync("SELECT pg_advisory_xact_lock(748237195013)", ct);
++}
++
++public interface IAiSpendEvents { void Record(string name, string scope, long value = 1); }
++
++public sealed class AiSpendEvents(ILogger<AiSpendEvents> log) : IAiSpendEvents
++{
++    private static readonly System.Diagnostics.Metrics.Meter Meter = new("OwlAI.ProviderSpend");
++    private static readonly System.Diagnostics.Metrics.Counter<long> EventCount = Meter.CreateCounter<long>("ai_spend_events");
++    public void Record(string name, string scope, long value = 1)
++    {
++        EventCount.Add(1, new KeyValuePair<string, object?>("event", name), new KeyValuePair<string, object?>("scope", scope));
++        log.LogInformation("AI spend event {Event} scope {Scope} value {Value}", name, scope, value);
++    }
++}
+diff --git a/src/Mavrylo.Services/Services/FallbackAiJsonService.cs b/src/Mavrylo.Services/Services/FallbackAiJsonService.cs
+index 855e8bf..5f9cc0e 100644
+--- a/src/Mavrylo.Services/Services/FallbackAiJsonService.cs
++++ b/src/Mavrylo.Services/Services/FallbackAiJsonService.cs
+@@ -6,7 +6,8 @@ public class FallbackAiJsonService(
+     IEnumerable<IAiProviderJsonService> providers,
+     IConfiguration config,
+     IDevAlertEmailService alerts,
+-    ILogger<FallbackAiJsonService> log) : IAiJsonService
++    ILogger<FallbackAiJsonService> log,
++    IAiSpendEvents? events = null) : IAiJsonService
+ {
+     private static readonly string[] ProviderFallbackOrder = ["OpenAI", "Gemini"];
+ 
+@@ -33,11 +34,14 @@ public class FallbackAiJsonService(
+ 
+         foreach (var provider in orderedProviders)
+         {
++            ct.ThrowIfCancellationRequested();
++            if (failures.Count > 0) events?.Record("fallback", provider.ProviderName);
+             try
+             {
+                 var result = await complete(provider);
+                 if (result != null)
+                 {
++                    events?.Record("operation_allowed", operationName);
+                     if (failures.Count > 0)
+                         log.LogInformation("{Provider} fallback succeeded for {Operation}", provider.ProviderName, operationName);
+                     return result;
+@@ -46,11 +50,16 @@ public class FallbackAiJsonService(
+                 failures.Add(new AiProviderFailure(provider.ProviderName, "Provider returned no usable JSON."));
+                 log.LogWarning("{Provider} returned no usable JSON for {Operation}", provider.ProviderName, operationName);
+             }
++            catch (Exception ex) when (ex is AiSpendDeniedException or OperationCanceledException
++                || ex is AiProviderException { StatusCode: 401 or 402 or 403 or 429 })
++            {
++                events?.Record("operation_denied", operationName);
++                throw;
++            }
+             catch (AiProviderException ex)
+             {
+-                failures.Add(new AiProviderFailure(provider.ProviderName, ex.Message, ex.StatusCode));
++                failures.Add(new AiProviderFailure(provider.ProviderName, "Provider request failed.", ex.StatusCode));
+                 log.LogWarning(
+-                    ex,
+                     "{Provider} failed for {Operation} with status {StatusCode}",
+                     provider.ProviderName,
+                     operationName,
+@@ -59,7 +68,7 @@ public class FallbackAiJsonService(
+             catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
+             {
+                 failures.Add(new AiProviderFailure(provider.ProviderName, SanitizeException(ex)));
+-                log.LogWarning(ex, "{Provider} failed for {Operation}", provider.ProviderName, operationName);
++                log.LogWarning("{Provider} failed for {Operation}: {Failure}", provider.ProviderName, operationName, SanitizeException(ex));
+             }
+         }
+ 
+@@ -80,10 +89,7 @@ public class FallbackAiJsonService(
+         }
+         else
+         {
+-            log.LogWarning("Configured AI provider '{Provider}' is not registered. Falling back to OpenAI.", primaryProvider);
+-            primaryProvider = "OpenAI";
+-            if (available.TryGetValue(primaryProvider, out primary))
+-                yield return primary;
++            throw new AiSpendDeniedException("unknown_provider");
+         }
+ 
+         foreach (var providerName in ProviderFallbackOrder)
+diff --git a/src/Mavrylo.Services/Services/GeminiJsonService.cs b/src/Mavrylo.Services/Services/GeminiJsonService.cs
+index c91baed..0f0a7d9 100644
+--- a/src/Mavrylo.Services/Services/GeminiJsonService.cs
++++ b/src/Mavrylo.Services/Services/GeminiJsonService.cs
+@@ -3,18 +3,19 @@ using System.Text.Json;
+ 
+ namespace Mavrylo.Services;
+ 
+-public class GeminiJsonService(IConfiguration config, IHttpClientFactory httpFactory, ILogger<GeminiJsonService> log) : IAiProviderJsonService
++public class GeminiJsonService(IConfiguration config, AiProviderTransport transport, ILogger<GeminiJsonService> log) : IAiProviderJsonService
+ {
+     private readonly string? _apiKey = config["Gemini:ApiKey"];
+     private readonly string _model = config["Gemini:Model"] ?? "gemini-2.5-flash";
+-    private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(20);
+ 
+     public string ProviderName => "Gemini";
+ 
+     public Task<JsonElement?> CompleteJsonAsync(string operationName, string userPrompt, CancellationToken ct = default)
+     {
++        var profile = AiCostProfile.Read(config, ProviderName, _model, operationName, userPrompt, null, null);
+         var body = new
+         {
++            serviceTier = "standard",
+             contents = new[]
+             {
+                 new
+@@ -27,17 +28,20 @@ public class GeminiJsonService(IConfiguration config, IHttpClientFactory httpFac
+             },
+             generationConfig = new
+             {
+-                responseMimeType = "application/json"
++                responseMimeType = "application/json", maxOutputTokens = profile.MaxOutputTokens,
++                candidateCount = 1, thinkingConfig = new { thinkingBudget = 0 }
+             }
+         };
+ 
+-        return GenerateJsonAsync(operationName, body, ct);
++        return GenerateJsonAsync(profile, operationName, body, ct);
+     }
+ 
+     public Task<JsonElement?> CompleteVisionJsonAsync(string operationName, string systemUserPrompt, byte[] imageBytes, string mimeType, CancellationToken ct = default)
+     {
++        var profile = AiCostProfile.Read(config, ProviderName, _model, operationName, systemUserPrompt, imageBytes, mimeType);
+         var body = new
+         {
++            serviceTier = "standard",
+             contents = new[]
+             {
+                 new
+@@ -58,22 +62,21 @@ public class GeminiJsonService(IConfiguration config, IHttpClientFactory httpFac
+             },
+             generationConfig = new
+             {
+-                responseMimeType = "application/json"
++                responseMimeType = "application/json", maxOutputTokens = profile.MaxOutputTokens,
++                candidateCount = 1, thinkingConfig = new { thinkingBudget = 0 }
+             }
+         };
+ 
+-        return GenerateJsonAsync(operationName, body, ct);
++        return GenerateJsonAsync(profile, operationName, body, ct);
+     }
+ 
+-    private async Task<JsonElement?> GenerateJsonAsync(string operationName, object body, CancellationToken ct)
++    private async Task<JsonElement?> GenerateJsonAsync(AiCostProfile profile, string operationName, object body, CancellationToken ct)
+     {
+         if (string.IsNullOrWhiteSpace(_apiKey))
+         {
+-            throw new AiProviderException("Gemini", "Gemini API key is not configured.");
++            throw new AiSpendDeniedException("provider_configuration");
+         }
+ 
+-        var client = httpFactory.CreateClient();
+-        client.Timeout = Timeout;
+         using var req = new HttpRequestMessage(
+             HttpMethod.Post,
+             $"https://generativelanguage.googleapis.com/v1beta/models/{Uri.EscapeDataString(_model)}:generateContent");
+@@ -82,18 +85,7 @@ public class GeminiJsonService(IConfiguration config, IHttpClientFactory httpFac
+         var json = JsonSerializer.Serialize(body);
+         req.Content = new StringContent(json, Encoding.UTF8, "application/json");
+ 
+-        using var resp = await client.SendAsync(req, ct);
+-        if (!resp.IsSuccessStatusCode)
+-        {
+-            log.LogWarning(
+-                "Gemini request failed for {Operation} with {StatusCode}",
+-                operationName,
+-                (int)resp.StatusCode);
+-            throw new AiProviderException("Gemini", "Gemini request failed.", (int)resp.StatusCode);
+-        }
+-
+-        await using var stream = await resp.Content.ReadAsStreamAsync(ct);
+-        using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
++        using var doc = await transport.SendAsync(profile, operationName, req, ct);
+         if (!TryReadText(doc.RootElement, out var text) || string.IsNullOrWhiteSpace(text))
+         {
+             log.LogWarning("Gemini response did not include text content for {Operation}", operationName);
+@@ -104,9 +96,9 @@ public class GeminiJsonService(IConfiguration config, IHttpClientFactory httpFac
+         {
+             return JsonSerializer.Deserialize<JsonElement>(text);
+         }
+-        catch (JsonException ex)
++        catch (JsonException)
+         {
+-            log.LogWarning(ex, "Gemini returned non-JSON content for {Operation}", operationName);
++            log.LogWarning("Gemini returned non-JSON content for {Operation}", operationName);
+             return null;
+         }
+     }
+diff --git a/src/Mavrylo.Services/Services/OpenAiJsonService.cs b/src/Mavrylo.Services/Services/OpenAiJsonService.cs
+index f80081f..d2d4f0c 100644
+--- a/src/Mavrylo.Services/Services/OpenAiJsonService.cs
++++ b/src/Mavrylo.Services/Services/OpenAiJsonService.cs
+@@ -4,23 +4,25 @@ using System.Text.Json;
+ 
+ namespace Mavrylo.Services;
+ 
+-public class OpenAiJsonService(IConfiguration config, IHttpClientFactory httpFactory, ILogger<OpenAiJsonService> log) : IAiProviderJsonService
++public class OpenAiJsonService(IConfiguration config, AiProviderTransport transport, ILogger<OpenAiJsonService> log) : IAiProviderJsonService
+ {
+     private readonly string? _apiKey = config["OpenAI:ApiKey"];
+     private readonly string _model = config["OpenAI:Model"] ?? "gpt-6-luna";
+-    private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(20);
+ 
+     public string ProviderName => "OpenAI";
+ 
+     public async Task<JsonElement?> CompleteJsonAsync(string operationName, string userPrompt, CancellationToken ct = default)
+     {
++        var profile = AiCostProfile.Read(config, ProviderName, _model, operationName, userPrompt, null, null);
+         if (string.IsNullOrWhiteSpace(_apiKey))
+         {
+-            throw new AiProviderException("OpenAI", "OpenAI API key is not configured.");
++            throw new AiSpendDeniedException("provider_configuration");
+         }
+         var body = new
+         {
+             model = _model,
++            service_tier = "default",
++            max_output_tokens = profile.MaxOutputTokens,
+             reasoning = new { effort = "none" },
+             input = userPrompt,
+             text = new
+@@ -28,17 +30,19 @@ public class OpenAiJsonService(IConfiguration config, IHttpClientFactory httpFac
+                 format = new { type = "json_object" }
+             }
+         };
+-        return await SendResponsesRequestAsync(operationName, body, ct);
++        return await SendResponsesRequestAsync(profile, operationName, body, ct);
+     }
+ 
+     public async Task<JsonElement?> CompleteVisionJsonAsync(string operationName, string systemUserPrompt, byte[] imageBytes, string mimeType, CancellationToken ct = default)
+     {
++        var profile = AiCostProfile.Read(config, ProviderName, _model, operationName, systemUserPrompt, imageBytes, mimeType);
+         if (string.IsNullOrWhiteSpace(_apiKey))
+-            throw new AiProviderException("OpenAI", "OpenAI API key is not configured.");
++            throw new AiSpendDeniedException("provider_configuration");
+         var b64 = Convert.ToBase64String(imageBytes);
+         var body = new
+         {
+             model = _model,
++            service_tier = "default",
+             reasoning = new { effort = "none" },
+             input = new object[]
+             {
+@@ -56,31 +60,17 @@ public class OpenAiJsonService(IConfiguration config, IHttpClientFactory httpFac
+             {
+                 format = new { type = "json_object" }
+             },
+-            max_output_tokens = 2048
++            max_output_tokens = profile.MaxOutputTokens
+         };
+-        return await SendResponsesRequestAsync(operationName, body, ct);
++        return await SendResponsesRequestAsync(profile, operationName, body, ct);
+     }
+ 
+-    private async Task<JsonElement?> SendResponsesRequestAsync(string operationName, object body, CancellationToken ct)
++    private async Task<JsonElement?> SendResponsesRequestAsync(AiCostProfile profile, string operationName, object body, CancellationToken ct)
+     {
+-        var client = httpFactory.CreateClient();
+-        client.Timeout = Timeout;
+-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+-
+-        var json = JsonSerializer.Serialize(body);
+-        using var content = new StringContent(json, Encoding.UTF8, "application/json");
+-        using var resp = await client.PostAsync("https://api.openai.com/v1/responses", content, ct);
+-        if (!resp.IsSuccessStatusCode)
+-        {
+-            log.LogWarning(
+-                "OpenAI request failed for {Operation} with {StatusCode}",
+-                operationName,
+-                (int)resp.StatusCode);
+-            throw new AiProviderException("OpenAI", "OpenAI request failed.", (int)resp.StatusCode);
+-        }
+-
+-        await using var stream = await resp.Content.ReadAsStreamAsync(ct);
+-        using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
++        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses");
++        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
++        request.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
++        using var doc = await transport.SendAsync(profile, operationName, request, ct);
+         if (!TryReadOutputText(doc.RootElement, out var text) || string.IsNullOrWhiteSpace(text))
+         {
+             log.LogWarning("OpenAI response did not include output text for {Operation}", operationName);
+@@ -91,9 +81,9 @@ public class OpenAiJsonService(IConfiguration config, IHttpClientFactory httpFac
+         {
+             return JsonSerializer.Deserialize<JsonElement>(text);
+         }
+-        catch (JsonException ex)
++        catch (JsonException)
+         {
+-            log.LogWarning(ex, "OpenAI returned non-JSON content for {Operation}", operationName);
++            log.LogWarning("OpenAI returned non-JSON content for {Operation}", operationName);
+             return null;
+         }
+     }
+diff --git a/src/Mavrylo.Services/Services/WordAiService.Batch.cs b/src/Mavrylo.Services/Services/WordAiService.Batch.cs
+index f327b51..d5714a6 100644
+--- a/src/Mavrylo.Services/Services/WordAiService.Batch.cs
++++ b/src/Mavrylo.Services/Services/WordAiService.Batch.cs
+@@ -62,6 +62,7 @@ public sealed partial class WordAiService
+                     + $"explanation (one or two short sentences about meaning or usage in {LanguageName(target)}).\n";
+             JsonElement? result;
+             try { result = await ai.CompleteJsonAsync("word-detail", prompt, ct); }
++            catch (AiSpendDeniedException) { return AiUnavailable(); }
+             catch (AiProviderException) { return AiUnavailable(); }
+             if (result is not { ValueKind: JsonValueKind.Object } root) return AiUnavailable();
+             if (missingPrimary)
+diff --git a/src/Mavrylo.Services/Services/WordAiService.cs b/src/Mavrylo.Services/Services/WordAiService.cs
+index ca1a033..acdfc54 100644
+--- a/src/Mavrylo.Services/Services/WordAiService.cs
++++ b/src/Mavrylo.Services/Services/WordAiService.cs
+@@ -42,6 +42,7 @@ example_translations (array of exactly 1 translation in {nativeLangName})";
+         {
+             el = await ai.CompleteJsonAsync("analyze-word", prompt, ct);
+         }
++        catch (AiSpendDeniedException) { return AiUnavailable(); }
+         catch (AiProviderException)
+         {
+             return AiUnavailable();
+@@ -85,6 +86,7 @@ example_translations (array of 1 translation in {nativeLangName})";
+         {
+             el = await ai.CompleteJsonAsync("word-detail", prompt, ct);
+         }
++        catch (AiSpendDeniedException) { return AiUnavailable(); }
+         catch (AiProviderException)
+         {
+             return AiUnavailable();
+@@ -128,6 +130,7 @@ Do not include pronunciation, audio, or additional fields.";
+         {
+             result = await ai.CompleteJsonAsync("review-translation", prompt, ct);
+         }
++        catch (AiSpendDeniedException) { return AiUnavailable(); }
+         catch (AiProviderException)
+         {
+             return AiUnavailable();
+@@ -210,6 +213,7 @@ Only nouns, verbs, adjectives, adverbs in base form; skip articles and numbers."
+         {
+             el = await ai.CompleteVisionJsonAsync("extract-words", prompt, imageBytes, mime, ct);
+         }
++        catch (AiSpendDeniedException) { return AiUnavailable(); }
+         catch (AiProviderException)
+         {
+             return AiUnavailable();
+diff --git a/tests/AiProviderBoundaryTests.cs b/tests/AiProviderBoundaryTests.cs
+new file mode 100644
+index 0000000..683b03d
+--- /dev/null
++++ b/tests/AiProviderBoundaryTests.cs
+@@ -0,0 +1,146 @@
++using System.Net;
++using System.Text;
++using Mavrylo.Services;
++using Mavrylo.Tests.TestSupport;
++using Microsoft.Extensions.Logging.Abstractions;
++using Xunit;
++
++namespace Mavrylo.Tests;
++
++public class AiProviderBoundaryTests
++{
++    [Theory]
++    [InlineData(false)]
++    [InlineData(true)]
++    public async Task InvalidOutputJsonDoesNotLeakPrivateJsonPathsToAdapterLogger(bool gemini)
++    {
++        const string secret = "private-card-text-secret-token";
++        var text = "{\"" + secret + "\":@}";
++        var response = gemini ? System.Text.Json.JsonSerializer.Serialize(new { candidates = new[] { new { content = new { parts = new[] { new { text } } } } } })
++            : System.Text.Json.JsonSerializer.Serialize(new { output_text = text });
++        var handler = new FakeHttpMessageHandler(_ => FakeHttpMessageHandler.Json(response)); using var client = new HttpClient(handler);
++        var config = AiSpendTestSupport.Config(); var transport = AiSpendTestSupport.Transport(client);
++        var openLogger = new FallbackAiJsonServiceTests.CapturingLogger<OpenAiJsonService>();
++        var geminiLogger = new FallbackAiJsonServiceTests.CapturingLogger<GeminiJsonService>();
++        IAiJsonService provider = gemini ? new GeminiJsonService(config, transport, geminiLogger) : new OpenAiJsonService(config, transport, openLogger);
++        Assert.Null(await provider.CompleteJsonAsync("word-detail", "private-prompt"));
++        Assert.DoesNotContain(secret, string.Join("\n", openLogger.Lines.Concat(geminiLogger.Lines)));
++    }
++
++    [Fact]
++    public void MissingCacheWriteUsageCannotBecomeZeroCost()
++    {
++        using var document = System.Text.Json.JsonDocument.Parse("""{"model":"gpt-6-luna","service_tier":"default","usage":{"input_tokens":100,"output_tokens":10,"total_tokens":110,"input_tokens_details":{"cached_tokens":20},"output_tokens_details":{"reasoning_tokens":0}}}""");
++        Assert.Null(AiProviderTransport.ReadUsage("OpenAI", document.RootElement));
++    }
++    [Theory]
++    [InlineData(false, "prompt")]
++    [InlineData(true, "prompt")]
++    [InlineData(false, "image")]
++    [InlineData(true, "image")]
++    [InlineData(false, "model")]
++    [InlineData(true, "model")]
++    [InlineData(false, "operation")]
++    [InlineData(true, "profile")]
++    [InlineData(false, "context")]
++    [InlineData(true, "budget")]
++    [InlineData(false, "key")]
++    [InlineData(true, "key")]
++    public async Task UnsafeRequestNeverSubmitsOrFallsBack(bool gemini, string fault)
++    {
++        var handler = new FakeHttpMessageHandler(_ => FakeHttpMessageHandler.Json("{}")); using var client = new HttpClient(handler);
++        var config = AiSpendTestSupport.Config(); var guard = new AiSpendTestSupport.RecordingGuard { Deny = fault == "budget" };
++        if (fault == "model") config[gemini ? "Gemini:Model" : "OpenAI:Model"] = "unknown";
++        if (fault == "profile") config["AiSpend:PriceProfile"] = "unknown";
++        if (fault == "key") config[gemini ? "Gemini:ApiKey" : "OpenAI:ApiKey"] = "";
++        var transport = AiSpendTestSupport.Transport(client, guard, fault != "context");
++        IAiProviderJsonService primary = gemini ? new GeminiJsonService(config, transport, NullLogger<GeminiJsonService>.Instance)
++            : new OpenAiJsonService(config, transport, NullLogger<OpenAiJsonService>.Instance);
++        config["AI:Provider"] = primary.ProviderName;
++        var alerts = new NoAlert();
++        var service = new FallbackAiJsonService([primary], config, alerts, NullLogger<FallbackAiJsonService>.Instance);
++        await Assert.ThrowsAsync<AiSpendDeniedException>(() => fault == "image"
++            ? service.CompleteVisionJsonAsync("extract-words", "prompt", new byte[1025], "image/png")
++            : service.CompleteJsonAsync(fault == "operation" ? "unknown" : "word-detail", fault == "prompt" ? new string('x', 16001) : "prompt"));
++        Assert.Empty(handler.CapturedRequests); Assert.Equal(0, alerts.Calls);
++    }
++
++    [Theory]
++    [InlineData(false, false)]
++    [InlineData(true, false)]
++    [InlineData(false, true)]
++    [InlineData(true, true)]
++    public async Task KnownAndUnknownLengthOversizeResponsesRemainReserved(bool gemini, bool knownLength)
++    {
++        var handler = new FakeHttpMessageHandler(_ => new(HttpStatusCode.OK)
++        { Content = knownLength ? new StringContent(new string('x', 500)) : new StreamContent(new NonSeekable(new MemoryStream(Encoding.UTF8.GetBytes(new string('x', 500))))) });
++        using var client = new HttpClient(handler); var config = AiSpendTestSupport.Config(new() { ["AiSpend:MaxResponseBytes"] = "100" });
++        var guard = new AiSpendTestSupport.RecordingGuard();
++        var transport = AiSpendTestSupport.Transport(client, guard);
++        IAiJsonService provider = gemini ? new GeminiJsonService(config, transport, NullLogger<GeminiJsonService>.Instance)
++            : new OpenAiJsonService(config, transport, NullLogger<OpenAiJsonService>.Instance);
++        await Assert.ThrowsAsync<AiProviderException>(() => provider.CompleteJsonAsync("word-detail", "prompt"));
++        Assert.Single(handler.CapturedRequests); Assert.Single(guard.Completions); Assert.Null(guard.Completions[0]);
++    }
++
++    [Theory]
++    [InlineData(false)]
++    [InlineData(true)]
++    public async Task SlowBodyHonorsFullDeadlineAndCancellationIsTerminal(bool gemini)
++    {
++        var handler = new FakeHttpMessageHandler(_ => new(HttpStatusCode.OK) { Content = new StreamContent(new SlowStream()) });
++        using var client = new HttpClient(handler); var config = AiSpendTestSupport.Config(new() { ["AiSpend:DeadlineMilliseconds"] = "80" });
++        var guard = new AiSpendTestSupport.RecordingGuard(); var transport = AiSpendTestSupport.Transport(client, guard);
++        IAiProviderJsonService provider = gemini ? new GeminiJsonService(config, transport, NullLogger<GeminiJsonService>.Instance)
++            : new OpenAiJsonService(config, transport, NullLogger<OpenAiJsonService>.Instance);
++        config["AI:Provider"] = provider.ProviderName;
++        var alerts = new NoAlert(); var service = new FallbackAiJsonService([provider], config, alerts, NullLogger<FallbackAiJsonService>.Instance);
++        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.CompleteJsonAsync("word-detail", "prompt"));
++        Assert.Equal(0, alerts.Calls); Assert.Null(Assert.Single(guard.Completions));
++    }
++
++    [Theory]
++    [InlineData(false)]
++    [InlineData(true)]
++    public async Task MalformedJsonRetainsUnknownReservation(bool gemini)
++    {
++        var handler = new FakeHttpMessageHandler(_ => FakeHttpMessageHandler.Json("{not-json")); using var client = new HttpClient(handler);
++        var guard = new AiSpendTestSupport.RecordingGuard(); var transport = AiSpendTestSupport.Transport(client, guard); var config = AiSpendTestSupport.Config();
++        IAiJsonService provider = gemini ? new GeminiJsonService(config, transport, NullLogger<GeminiJsonService>.Instance)
++            : new OpenAiJsonService(config, transport, NullLogger<OpenAiJsonService>.Instance);
++        await Assert.ThrowsAnyAsync<System.Text.Json.JsonException>(() => provider.CompleteJsonAsync("word-detail", "prompt"));
++        Assert.Null(Assert.Single(guard.Completions));
++    }
++
++    [Fact]
++    public void KnownModelCeilingsRoundUpAndGeminiUsageIncludesThoughtsExactlyOnce()
++    {
++        var config = AiSpendTestSupport.Config();
++        Assert.Equal(578345, AiCostProfile.Read(config, "OpenAI", "gpt-6-luna", "word-detail", "prompt", null, null).ReservationMicroUsd);
++        Assert.Equal(568536, AiCostProfile.Read(config, "Gemini", "gemini-2.5-flash", "word-detail", "prompt", null, null).ReservationMicroUsd);
++        using var doc = System.Text.Json.JsonDocument.Parse("""{"modelVersion":"gemini-2.5-flash","usageMetadata":{"serviceTier":"standard","promptTokenCount":100,"cachedContentTokenCount":30,"candidatesTokenCount":10,"thoughtsTokenCount":7,"totalTokenCount":117}}""");
++        var usage = AiProviderTransport.ReadUsage("Gemini", doc.RootElement);
++        Assert.NotNull(usage); Assert.Equal(100, usage.Input); Assert.Equal(17, usage.Output); Assert.Equal(7, usage.Reasoning); Assert.Equal(30, usage.Cached);
++    }
++
++    internal sealed class NoAlert : IDevAlertEmailService
++    {
++        public int Calls { get; private set; }
++        public Task NotifyAiProvidersFailedAsync(string operationName, string requestPath, IReadOnlyList<AiProviderFailure> failures, CancellationToken ct = default)
++        { Calls++; return Task.CompletedTask; }
++    }
++    internal class NonSeekable(Stream source) : Stream
++    {
++        public override bool CanRead => true; public override bool CanSeek => false; public override bool CanWrite => false;
++        public override long Length => throw new NotSupportedException(); public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
++        public override int Read(byte[] buffer, int offset, int count) => source.Read(buffer, offset, count);
++        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken ct = default) => source.ReadAsync(buffer, ct);
++        protected override void Dispose(bool disposing) { if (disposing) source.Dispose(); base.Dispose(disposing); }
++        public override void Flush() => throw new NotSupportedException(); public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
++        public override void SetLength(long value) => throw new NotSupportedException(); public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
++    }
++    private sealed class SlowStream() : NonSeekable(Stream.Null)
++    {
++        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken ct = default) { await Task.Delay(Timeout.Infinite, ct); return 0; }
++    }
++}
+diff --git a/tests/AiProviderServiceTests.cs b/tests/AiProviderServiceTests.cs
+index 19b717a..6de25a0 100644
+--- a/tests/AiProviderServiceTests.cs
++++ b/tests/AiProviderServiceTests.cs
+@@ -9,6 +9,48 @@ namespace Mavrylo.Tests;
+ 
+ public class AiProviderServiceTests
+ {
++    [Theory]
++    [InlineData(false)]
++    [InlineData(true)]
++    public async Task EveryTextRequestSpecifiesOutputLimitAndStandardTier(bool gemini)
++    {
++        var handler = new FakeHttpMessageHandler(_ => FakeHttpMessageHandler.Json("{}"));
++        using var client = new HttpClient(handler);
++        var config = AiSpendTestSupport.Config(new Dictionary<string, string?>
++        { ["OpenAI:ApiKey"] = "fake", ["Gemini:ApiKey"] = "fake", ["AiSpend:Enabled"] = "true", ["AiSpend:MaxOutputTokens"] = "512" });
++        IAiJsonService service = gemini
++            ? new GeminiJsonService(config, AiSpendTestSupport.Transport(client), NullLogger<GeminiJsonService>.Instance)
++            : new OpenAiJsonService(config, AiSpendTestSupport.Transport(client), NullLogger<OpenAiJsonService>.Instance);
++        await service.CompleteJsonAsync("word-detail", "prompt");
++        using var body = JsonDocument.Parse(Assert.Single(handler.CapturedRequests).Body!);
++        if (gemini)
++        {
++            var generation = body.RootElement.GetProperty("generationConfig");
++            Assert.Equal(512, generation.GetProperty("maxOutputTokens").GetInt32());
++            Assert.Equal(1, generation.GetProperty("candidateCount").GetInt32());
++            Assert.Equal(0, generation.GetProperty("thinkingConfig").GetProperty("thinkingBudget").GetInt32());
++            Assert.Equal("standard", body.RootElement.GetProperty("serviceTier").GetString());
++        }
++        else
++        {
++            Assert.Equal(512, body.RootElement.GetProperty("max_output_tokens").GetInt32());
++            Assert.Equal("default", body.RootElement.GetProperty("service_tier").GetString());
++        }
++    }
++    [Theory]
++    [InlineData(false)]
++    [InlineData(true)]
++    public async Task MissingSpendConfigurationAndTrustedContext_DeniesBeforeHttp(bool gemini)
++    {
++        var handler = new FakeHttpMessageHandler(_ => FakeHttpMessageHandler.Json("{}"));
++        using var client = new HttpClient(handler);
++        var config = TestConfig.Create(new Dictionary<string, string?> { ["OpenAI:ApiKey"] = "fake", ["Gemini:ApiKey"] = "fake" });
++        IAiJsonService service = gemini
++            ? new GeminiJsonService(config, AiSpendTestSupport.Transport(client), NullLogger<GeminiJsonService>.Instance)
++            : new OpenAiJsonService(config, AiSpendTestSupport.Transport(client), NullLogger<OpenAiJsonService>.Instance);
++        await Assert.ThrowsAnyAsync<Exception>(() => service.CompleteJsonAsync("word-detail", "prompt"));
++        Assert.Empty(handler.CapturedRequests);
++    }
+     [Theory]
+     [InlineData(false)]
+     [InlineData(true)]
+@@ -18,13 +60,13 @@ public class AiProviderServiceTests
+             FakeHttpMessageHandler.Json("""{"output":[{"type":"message","content":[{"type":"output_text","text":"{\"translation\":\"яблоко\"}"}]}]}"""));
+         using var client = new HttpClient(handler);
+         var service = new OpenAiJsonService(
+-            TestConfig.Create(new Dictionary<string, string?> { ["OpenAI:ApiKey"] = "sk-test" }),
+-            new FakeHttpClientFactory(client),
++            AiSpendTestSupport.Config(new Dictionary<string, string?> { ["OpenAI:ApiKey"] = "sk-test" }),
++            AiSpendTestSupport.Transport(client),
+             NullLogger<OpenAiJsonService>.Instance);
+ 
+         var result = vision
+             ? await service.CompleteVisionJsonAsync("extract-words", "Return JSON", [1, 2, 3], "image/png")
+-            : await service.CompleteJsonAsync("translate", "Return JSON");
++            : await service.CompleteJsonAsync("word-detail", "Return JSON");
+ 
+         Assert.Equal("яблоко", result?.GetProperty("translation").GetString());
+         using var request = JsonDocument.Parse(Assert.Single(handler.CapturedRequests).Body!);
+@@ -40,8 +82,8 @@ public class AiProviderServiceTests
+             FakeHttpMessageHandler.Json("""{"output_text":"{\"ok\":true,\"source\":\"openai\"}"}"""));
+         using var client = new HttpClient(handler);
+         var service = new OpenAiJsonService(
+-            TestConfig.Create(new Dictionary<string, string?> { ["OpenAI:ApiKey"] = "sk-test", ["OpenAI:Model"] = "gpt-test" }),
+-            new FakeHttpClientFactory(client),
++            AiSpendTestSupport.Config(new Dictionary<string, string?> { ["OpenAI:ApiKey"] = "sk-test", ["OpenAI:Model"] = "gpt-6-luna" }),
++            AiSpendTestSupport.Transport(client),
+             NullLogger<OpenAiJsonService>.Instance);
+ 
+         var result = await service.CompleteJsonAsync("word-detail", "Return JSON");
+@@ -51,7 +93,7 @@ public class AiProviderServiceTests
+         Assert.Equal(HttpMethod.Post, request.Method);
+         Assert.Equal("https://api.openai.com/v1/responses", request.Uri?.ToString());
+         Assert.Equal("Bearer", handler.Requests[0].Headers.Authorization?.Scheme);
+-        Assert.Contains("\"model\":\"gpt-test\"", request.Body);
++        Assert.Contains("\"model\":\"gpt-6-luna\"", request.Body);
+         Assert.Contains("\"format\":{\"type\":\"json_object\"}", request.Body);
+     }
+ 
+@@ -62,8 +104,8 @@ public class AiProviderServiceTests
+             FakeHttpMessageHandler.Json("""{"output":[{"content":[{"text":"{\"words\":[\"hola\"]}"}]}]}"""));
+         using var client = new HttpClient(handler);
+         var service = new OpenAiJsonService(
+-            TestConfig.Create(new Dictionary<string, string?> { ["OpenAI:ApiKey"] = "sk-test" }),
+-            new FakeHttpClientFactory(client),
++            AiSpendTestSupport.Config(new Dictionary<string, string?> { ["OpenAI:ApiKey"] = "sk-test" }),
++            AiSpendTestSupport.Transport(client),
+             NullLogger<OpenAiJsonService>.Instance);
+ 
+         var result = await service.CompleteVisionJsonAsync("extract-words", "prompt", [1, 2, 3], "image/png");
+@@ -79,15 +121,15 @@ public class AiProviderServiceTests
+             FakeHttpMessageHandler.Json("""{"candidates":[{"content":{"parts":[{"text":"{\"source\":\"gemini\"}"}]}}]}"""));
+         using var client = new HttpClient(handler);
+         var service = new GeminiJsonService(
+-            TestConfig.Create(new Dictionary<string, string?> { ["Gemini:ApiKey"] = "gm-test", ["Gemini:Model"] = "gemini-test" }),
+-            new FakeHttpClientFactory(client),
++            AiSpendTestSupport.Config(new Dictionary<string, string?> { ["Gemini:ApiKey"] = "gm-test", ["Gemini:Model"] = "gemini-2.5-flash" }),
++            AiSpendTestSupport.Transport(client),
+             NullLogger<GeminiJsonService>.Instance);
+ 
+         var result = await service.CompleteJsonAsync("analyze-word", "prompt");
+ 
+         Assert.Equal("gemini", result?.GetProperty("source").GetString());
+         var request = Assert.Single(handler.CapturedRequests);
+-        Assert.Equal("https://generativelanguage.googleapis.com/v1beta/models/gemini-test:generateContent", request.Uri?.ToString());
++        Assert.Equal("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent", request.Uri?.ToString());
+         Assert.True(request.Headers.TryGetValue("x-goog-api-key", out var apiKeys));
+         Assert.Equal("gm-test", Assert.Single(apiKeys));
+         Assert.Contains("\"responseMimeType\":\"application/json\"", request.Body);
+@@ -99,8 +141,8 @@ public class AiProviderServiceTests
+         var handler = new FakeHttpMessageHandler(_ => FakeHttpMessageHandler.Json("{}", HttpStatusCode.BadGateway));
+         using var client = new HttpClient(handler);
+         var service = new GeminiJsonService(
+-            TestConfig.Create(new Dictionary<string, string?> { ["Gemini:ApiKey"] = "gm-test" }),
+-            new FakeHttpClientFactory(client),
++            AiSpendTestSupport.Config(new Dictionary<string, string?> { ["Gemini:ApiKey"] = "gm-test" }),
++            AiSpendTestSupport.Transport(client),
+             NullLogger<GeminiJsonService>.Instance);
+ 
+         var ex = await Assert.ThrowsAsync<AiProviderException>(() => service.CompleteJsonAsync("word-detail", "prompt"));
+diff --git a/tests/AiProviderTransportTests.cs b/tests/AiProviderTransportTests.cs
+new file mode 100644
+index 0000000..3ae9605
+--- /dev/null
++++ b/tests/AiProviderTransportTests.cs
+@@ -0,0 +1,123 @@
++using System.Net;
++using System.Net.Sockets;
++using System.Text;
++using Mavrylo.Services;
++using Mavrylo.Tests.TestSupport;
++using Microsoft.AspNetCore.Http;
++using Microsoft.Extensions.DependencyInjection;
++using Xunit;
++
++namespace Mavrylo.Tests;
++
++public class AiProviderTransportTests(PostgresContainerFixture postgres) : IClassFixture<PostgresContainerFixture>
++{
++    [Theory]
++    [InlineData("disconnect")]
++    [InlineData("redirect")]
++    [InlineData("chunked")]
++    [InlineData("slow")]
++    public async Task RegisteredHandlerSubmitsExactlyOneBoundedPost(string mode)
++    {
++        await using var factory = new ApiFactory(postgres.ConnectionString);
++        _ = factory.CreateClient(); // Resolve the actual application's named client registration.
++        using var server = new Loopback(mode);
++        var guard = new AiSpendTestSupport.RecordingGuard();
++        var http = new DefaultHttpContext(); AiSpendContext.AuthorizeAcceptedRequest(http, null, "authenticated-loopback");
++        var transport = new AiProviderTransport(factory.Services.GetRequiredService<IHttpClientFactory>(), guard,
++            new(new HttpContextAccessor { HttpContext = http }), new AiSpendGuardTests.Events());
++        var config = AiSpendTestSupport.Config(new() { ["AiSpend:DeadlineMilliseconds"] = "500", ["AiSpend:MaxResponseBytes"] = "100" });
++        var profile = AiCostProfile.Read(config, "Gemini", "gemini-2.5-flash", "word-detail", "prompt", null, null);
++        using var request = new HttpRequestMessage(HttpMethod.Post, server.Url) { Content = new StringContent("{}", Encoding.UTF8, "application/json") };
++        request.Headers.Add("x-goog-api-key", "loopback-only-secret");
++        var error = await Record.ExceptionAsync(() => transport.SendAsync(profile, "word-detail", request, default));
++        Assert.NotNull(error);
++        if (mode == "slow") Assert.IsAssignableFrom<OperationCanceledException>(error);
++        if (mode == "redirect") Assert.Equal(307, Assert.IsType<AiProviderException>(error).StatusCode);
++        await Task.Delay(100); // A bounded observation for unexpected automatic retries/redirects.
++        Assert.Equal(1, server.Submissions);
++        Assert.Contains("POST / HTTP/1.1", server.LastHeaders);
++        Assert.DoesNotContain("Expect:", server.LastHeaders, StringComparison.OrdinalIgnoreCase);
++        Assert.Single(guard.Attempts); Assert.Null(Assert.Single(guard.Completions));
++    }
++
++    [Fact]
++    public async Task PooledConnectionDisconnectAfterPostDoesNotResubmit()
++    {
++        await using var factory = new ApiFactory(postgres.ConnectionString); _ = factory.CreateClient();
++        using var server = new Loopback("pooled"); var guard = new AiSpendTestSupport.RecordingGuard();
++        var http = new DefaultHttpContext(); AiSpendContext.AuthorizeAcceptedRequest(http, null, "authenticated-loopback");
++        var transport = new AiProviderTransport(factory.Services.GetRequiredService<IHttpClientFactory>(), guard,
++            new(new HttpContextAccessor { HttpContext = http }), new AiSpendGuardTests.Events());
++        var profile = AiCostProfile.Read(AiSpendTestSupport.Config(), "OpenAI", "gpt-6-luna", "word-detail", "prompt", null, null);
++        using var first = new HttpRequestMessage(HttpMethod.Post, server.Url) { Content = new StringContent("{}") };
++        using var document = await transport.SendAsync(profile, "word-detail", first, default);
++        using var second = new HttpRequestMessage(HttpMethod.Post, server.Url) { Content = new StringContent("{}") };
++        await Assert.ThrowsAsync<HttpRequestException>(() => transport.SendAsync(profile, "word-detail", second, default));
++        await Task.Delay(100);
++        Assert.Equal(2, server.Submissions); Assert.Equal(1, server.Connections); Assert.Equal(2, guard.Attempts.Count);
++    }
++
++    private sealed class Loopback : IDisposable
++    {
++        private readonly TcpListener listener = new(IPAddress.Loopback, 0);
++        private readonly CancellationTokenSource stopped = new();
++        private readonly Task serving;
++        private int submissions, connections;
++        public int Submissions => Volatile.Read(ref submissions);
++        public int Connections => Volatile.Read(ref connections);
++        public string LastHeaders { get; private set; } = "";
++        public string Url { get; }
++        public Loopback(string mode)
++        {
++            listener.Start(); Url = $"http://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}/";
++            serving = Serve(mode);
++        }
++        private async Task Serve(string mode)
++        {
++            try
++            {
++                while (!stopped.IsCancellationRequested)
++                {
++                    using var socket = await listener.AcceptTcpClientAsync(stopped.Token); Interlocked.Increment(ref connections);
++                    var stream = socket.GetStream();
++                    await ReadPost(stream);
++                    if (mode == "disconnect") continue;
++                    if (mode == "pooled")
++                    {
++                        await Write(stream, "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\n{}");
++                        await ReadPost(stream); continue;
++                    }
++                    if (mode == "redirect") await Write(stream, $"HTTP/1.1 307 Temporary Redirect\r\nLocation: {Url}target\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
++                    if (mode == "chunked") await Write(stream, "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n200\r\n" + new string('x', 512) + "\r\n0\r\n\r\n");
++                    if (mode == "slow")
++                    {
++                        await Write(stream, "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n");
++                        await Task.Delay(Timeout.Infinite, stopped.Token);
++                    }
++                }
++            }
++            catch (OperationCanceledException) { }
++            catch (IOException) when (stopped.IsCancellationRequested) { }
++            catch (SocketException) when (stopped.IsCancellationRequested) { }
++        }
++        private async Task ReadPost(NetworkStream stream)
++        {
++            using var header = new MemoryStream(); var one = new byte[1];
++            while (header.Length < 32768)
++            {
++                if (await stream.ReadAsync(one, stopped.Token) == 0) throw new IOException("Connection closed before request.");
++                header.WriteByte(one[0]);
++                if (header.Length >= 4 && Encoding.ASCII.GetString(header.GetBuffer(), (int)header.Length - 4, 4) == "\r\n\r\n") break;
++            }
++            LastHeaders = Encoding.ASCII.GetString(header.ToArray());
++            var length = int.Parse(LastHeaders.Split("\r\n").Single(x => x.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase)).Split(':')[1]);
++            var body = new byte[length]; await stream.ReadExactlyAsync(body, stopped.Token);
++            Interlocked.Increment(ref submissions);
++        }
++        private Task Write(NetworkStream stream, string content) => stream.WriteAsync(Encoding.ASCII.GetBytes(content), stopped.Token).AsTask();
++        public void Dispose()
++        {
++            stopped.Cancel(); listener.Stop(); serving.GetAwaiter().GetResult(); stopped.Dispose();
++        }
++    }
++}
+diff --git a/tests/AiSpendGuardTests.cs b/tests/AiSpendGuardTests.cs
+new file mode 100644
+index 0000000..fc80037
+--- /dev/null
++++ b/tests/AiSpendGuardTests.cs
+@@ -0,0 +1,190 @@
++using Mavrylo.Data;
++using Mavrylo.Services;
++using Mavrylo.Tests.TestSupport;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.Extensions.Configuration;
++using Xunit;
++
++namespace Mavrylo.Tests;
++
++public class AiSpendGuardTests(PostgresContainerFixture postgres) : IClassFixture<PostgresContainerFixture>
++{
++    private AppDbContext Database() => new(new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(postgres.ConnectionString).Options);
++    private async Task ResetAsync()
++    {
++        await using var db = Database(); await db.Database.MigrateAsync();
++        await db.AiSpendReservations.ExecuteDeleteAsync(); await db.AiSpendBuckets.ExecuteDeleteAsync();
++    }
++    internal static IConfiguration Config(long global = 100, long guest = 100, long account = 100, int concurrent = 100) =>
++        TestConfig.Create(new Dictionary<string, string?>
++        {
++            ["AiSpend:Enabled"] = "true", ["AiSpend:GlobalMicroUsd"] = global.ToString(),
++            ["AiSpend:GuestMicroUsd"] = guest.ToString(), ["AiSpend:AccountMicroUsd"] = account.ToString(),
++            ["AiSpend:MaxConcurrentAttempts"] = concurrent.ToString()
++        });
++    // Explicit synthetic nano-USD rates, not live provider prices.
++    internal static AiAttempt Attempt(long amount, string kind = "guest") => new(Guid.NewGuid(), new(kind, "authenticated-test-reference"), "word-detail",
++        new("synthetic-test", "OpenAI", "gpt-6-luna", 1, 1, amount * 500, amount * 500, amount * 500, amount * 500, 1000, 1000, 1000, 1000), amount);
++    internal sealed class Events : IAiSpendEvents
++    {
++        public List<(string Name, string Scope, long Value)> Values { get; } = [];
++        public void Record(string name, string scope, long value = 1) => Values.Add((name, scope, value));
++    }
++
++    [Fact]
++    public async Task ReplicasCannotReserveSixtyTwice_AndRestartRetainsUnknownSpend()
++    {
++        await ResetAsync();
++        await using var first = Database(); await first.Database.MigrateAsync();
++        await using var second = Database();
++        var results = await Task.WhenAll(new AiSpendGuard(first, Config(), new Events()).TryReserveAsync(Attempt(60), default),
++            new AiSpendGuard(second, Config(), new Events()).TryReserveAsync(Attempt(60), default));
++        Assert.Single(results, x => x != null);
++        await using var restarted = Database();
++        var guard = new AiSpendGuard(restarted, Config(), new Events());
++        await guard.CompleteAsync(results.Single(x => x != null)!.Id, null, default);
++        Assert.NotNull(await guard.TryReserveAsync(Attempt(40), default));
++        Assert.Null(await guard.TryReserveAsync(Attempt(1), default));
++    }
++
++    [Fact]
++    public async Task GuestAndAccountPoolsAreIndependentButShareGlobalBudget()
++    {
++        await ResetAsync(); await using var db = Database(); var events = new Events();
++        var guard = new AiSpendGuard(db, Config(100, 60, 80), events);
++        Assert.NotNull(await guard.TryReserveAsync(Attempt(60), default));
++        Assert.Null(await guard.TryReserveAsync(Attempt(1), default));
++        Assert.NotNull(await guard.TryReserveAsync(Attempt(40, "account"), default));
++        Assert.Null(await guard.TryReserveAsync(Attempt(1, "account"), default));
++        Assert.Contains(events.Values, x => x.Name == "threshold_80" && x.Scope == "global");
++        Assert.Equal(100, (await db.AiSpendBuckets.SingleAsync(x => x.Id == "global")).ChargedMicroUsd);
++    }
++
++    [Fact]
++    public async Task UsageSettlementIsIdempotentAcrossReplicasAndReleasesOnlyValidatedDifference()
++    {
++        await ResetAsync(); await using var db = Database(); var config = Config(concurrent: 1);
++        var guard = new AiSpendGuard(db, config, new Events()); var attempt = Attempt(60);
++        var reservation = await guard.TryReserveAsync(attempt, default); Assert.NotNull(reservation);
++        Assert.Null(await guard.TryReserveAsync(attempt, default));
++        Assert.Null(await guard.TryReserveAsync(Attempt(1), default));
++        var usage = new AiAttemptUsage("gpt-6-luna", "default", 1, 0, 0, 0, 0, 1); // 1 * 30000 nano = 30 micro.
++        await using var second = Database();
++        await Task.WhenAll(guard.CompleteAsync(reservation.Id, usage, default),
++            new AiSpendGuard(second, config, new Events()).CompleteAsync(reservation.Id, usage, default));
++        var row = await db.AiSpendReservations.AsNoTracking().SingleAsync();
++        Assert.Equal(30, row.ChargedMicroUsd); Assert.NotNull(row.SettledAt);
++        var bucket = await db.AiSpendBuckets.AsNoTracking().SingleAsync(x => x.Id == "global");
++        Assert.Equal(30, bucket.ChargedMicroUsd); Assert.Equal(0, bucket.PendingAttempts);
++        Assert.NotNull(await guard.TryReserveAsync(Attempt(60), default));
++    }
++
++    [Theory]
++    [InlineData("missing")]
++    [InlineData("negative")]
++    [InlineData("cache")]
++    [InlineData("output")]
++    [InlineData("input")]
++    [InlineData("reasoning")]
++    [InlineData("total")]
++    [InlineData("model")]
++    [InlineData("tier")]
++    [InlineData("overflow")]
++    public async Task InvalidUsageRetainsMoneyAndSlotAfterRestart(string fault)
++    {
++        await ResetAsync(); await using var db = Database(); var config = Config(concurrent: 1);
++        var reservation = await new AiSpendGuard(db, config, new Events()).TryReserveAsync(Attempt(60), default);
++        AiAttemptUsage? usage = new("gpt-6-luna", "default", 1, 0, 0, 0, 0, 1);
++        usage = fault switch
++        {
++            "missing" => null, "negative" => usage with { Cached = -1 }, "cache" => usage with { Cached = 1, CacheWrite = 1 },
++            "output" => usage with { Output = 2, Total = 3 }, "input" => usage with { Input = 2, Total = 2 },
++            "reasoning" => usage with { Reasoning = 1 }, "total" => usage with { Total = 0 },
++            "model" => usage with { Model = "unknown" }, "tier" => usage with { Tier = "priority" },
++            _ => usage with { Cached = long.MaxValue, CacheWrite = long.MaxValue }
++        };
++        await using var restarted = Database(); var guard = new AiSpendGuard(restarted, config, new Events());
++        await guard.CompleteAsync(reservation!.Id, usage, default);
++        Assert.Null(await guard.TryReserveAsync(Attempt(1), default));
++        var row = await restarted.AiSpendReservations.AsNoTracking().SingleAsync();
++        Assert.Null(row.SettledAt); Assert.Equal(60, row.ChargedMicroUsd);
++    }
++
++    [Theory]
++    [InlineData("Enabled", "false")]
++    [InlineData("GlobalMicroUsd", "0")]
++    [InlineData("GuestMicroUsd", "-1")]
++    [InlineData("AccountMicroUsd", null)]
++    [InlineData("GlobalMicroUsd", "9223372036854775808")]
++    [InlineData("MaxConcurrentAttempts", "0")]
++    public async Task MissingInvalidAndDisabledConfigurationCannotReserve(string key, string? value)
++    {
++        await ResetAsync(); await using var db = Database(); var config = Config(); config["AiSpend:" + key] = value;
++        Assert.Null(await new AiSpendGuard(db, config, new Events()).TryReserveAsync(Attempt(60), default));
++        Assert.Empty(await db.AiSpendReservations.ToListAsync());
++    }
++
++    [Fact]
++    public async Task OverflowingCostAndForgedUpperBoundAreControlledDenials()
++    {
++        await ResetAsync(); await using var db = Database(); var guard = new AiSpendGuard(db, Config(), new Events());
++        var attempt = Attempt(60);
++        Assert.Null(await guard.TryReserveAsync(attempt with { UpperBoundMicroUsd = 1 }, default));
++        Assert.Null(await guard.TryReserveAsync(attempt with { Profile = attempt.Profile with { MaxInputTokens = long.MaxValue } }, default));
++        Assert.Empty(await db.AiSpendReservations.ToListAsync());
++    }
++
++    [Fact]
++    public async Task CacheComponentsUseAlternativeRatesAndReasoningIsNotAddedTwice()
++    {
++        await ResetAsync(); await using var db = Database(); var guard = new AiSpendGuard(db, Config(10000, 10000, 10000), new Events());
++        var p = new AiCostProfile("synthetic-test", "OpenAI", "gpt-6-luna", 100, 100, 1000, 100, 1250, 2000, 1000, 1000, 1000, 1000);
++        // Reservation: (100 * 1250 + 100 * 2000) / 1000 = 325.
++        var reservation = await guard.TryReserveAsync(new(Guid.NewGuid(), new("guest", "authenticated"), "word-detail", p, 325), default);
++        // 60 ordinary + 30 cached + 10 cache-write inputs; output 10 includes reasoning 7.
++        await guard.CompleteAsync(reservation!.Id, new("gpt-6-luna", "default", 100, 10, 7, 30, 10, 110), default);
++        // ceil((60000 + 3000 + 12500 + 20000) / 1000) = 96.
++        Assert.Equal(96, (await db.AiSpendReservations.SingleAsync()).ChargedMicroUsd);
++    }
++
++    [Theory]
++    [InlineData(60, 1)]
++    [InlineData(40, 2)]
++    public async Task SyntheticHundredBudgetBoundsActualTransportSubmissions(long secondAmount, int submissions)
++    {
++        await ResetAsync(); await using var db = Database();
++        var handler = new FakeHttpMessageHandler(_ => FakeHttpMessageHandler.Json("{}")); using var client = new HttpClient(handler);
++        var transport = AiSpendTestSupport.Transport(client, new AiSpendGuard(db, Config(), new Events()));
++        async Task Send(long amount)
++        {
++            using var request = new HttpRequestMessage(HttpMethod.Post, "https://provider.invalid/test") { Content = new StringContent("{}") };
++            using var response = await transport.SendAsync(Attempt(amount).Profile, "word-detail", request, default);
++        }
++        await Send(60);
++        if (secondAmount == 60) await Assert.ThrowsAsync<AiSpendDeniedException>(() => Send(secondAmount));
++        else { await Send(secondAmount); await Assert.ThrowsAsync<AiSpendDeniedException>(() => Send(1)); }
++        Assert.Equal(submissions, handler.CapturedRequests.Count);
++        Assert.Equal(submissions, await db.AiSpendReservations.CountAsync());
++    }
++
++    [Fact]
++    public async Task StartupAppliesAdditiveMigrationToOldSchemaWithoutLosingExistingRows()
++    {
++        var owned = new PostgresContainerFixture(); await owned.InitializeAsync();
++        try
++        {
++            await using (var old = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(owned.ConnectionString).Options))
++            {
++                var migrator = Microsoft.EntityFrameworkCore.Infrastructure.AccessorExtensions.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>(old);
++                await migrator.MigrateAsync("20260926142908_AddIncrementalAccountSync");
++                old.Users.Add(new Mavrylo.Models.AppUser { Id = "preserved-user", Email = "preserved@example.test" }); await old.SaveChangesAsync();
++            }
++            await using var factory = new ApiFactory(owned.ConnectionString); using var client = factory.CreateClient();
++            Assert.Equal(System.Net.HttpStatusCode.OK, (await client.GetAsync("/health")).StatusCode);
++            await using var upgraded = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(owned.ConnectionString).Options);
++            Assert.True(await upgraded.Users.AnyAsync(x => x.Id == "preserved-user")); Assert.Empty(await upgraded.AiSpendReservations.ToListAsync());
++            Assert.Contains("20260928020241_AddAiSpendReservations", await upgraded.Database.GetAppliedMigrationsAsync());
++        }
++        finally { await owned.DisposeAsync(); }
++    }
++}
+diff --git a/tests/AiSpendRouteTests.cs b/tests/AiSpendRouteTests.cs
+new file mode 100644
+index 0000000..4f43e7d
+--- /dev/null
++++ b/tests/AiSpendRouteTests.cs
+@@ -0,0 +1,173 @@
++using System.Net;
++using System.Net.Http.Json;
++using System.Text.Json;
++using Mavrylo.Data;
++using Mavrylo.Models;
++using Mavrylo.Services;
++using Mavrylo.Tests.TestSupport;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.Extensions.Configuration;
++using Microsoft.Extensions.DependencyInjection;
++using Microsoft.Extensions.DependencyInjection.Extensions;
++using Xunit;
++
++namespace Mavrylo.Tests;
++
++public class AiSpendRouteTests(PostgresContainerFixture postgres) : IClassFixture<PostgresContainerFixture>
++{
++    [Theory]
++    [InlineData("free-device")]
++    [InlineData("paid-device")]
++    [InlineData("account")]
++    public async Task NormalAuthorizationGrantsContextAndEntitlementOrQuotaDenialHasZeroSpend(string kind)
++    {
++        var handler = new FakeHttpMessageHandler(_ => FakeHttpMessageHandler.Json(OpenAiResponse("""{"translation":"Hello"}""")));
++        using var wire = new HttpClient(handler); var alerts = new AiProviderBoundaryTests.NoAlert(); await using var factory = Factory(wire, alerts);
++        using var client = await AuthorizedClient(factory, kind == "account");
++        using var scope = factory.Services.CreateScope(); var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
++        var config = factory.Services.GetRequiredService<IConfiguration>(); config["TestMode:Enabled"] = "false";
++        config["AiProtection:FreeDailyQuota"] = "1"; config["AccountAi:DailyQuota"] = "1"; config["AccountAi:RequestsPerMinute"] = "5";
++        var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().ReadJwtToken(client.DefaultRequestHeaders.Authorization!.Parameter);
++        SubscriptionEntity? subscription = null;
++        if (kind != "free-device")
++        {
++            var account = kind == "account" ? token.Claims.Single(x => x.Type == "sub").Value : null;
++            var key = token.Claims.FirstOrDefault(c => c.Type == "keyId")?.Value;
++            var device = kind == "paid-device" ? await db.Devices.SingleAsync(x => x.KeyId == key) : null;
++            subscription = new SubscriptionEntity { OriginalTransactionId = Guid.NewGuid().ToString("N"), OwnerAccountId = account, DeviceUuid = device?.DeviceUuid ?? "account-purchase-test",
++                ClaimedAt = account == null ? null : DateTime.UtcNow, ProductId = "com.flashcardai.owlai.premium.monthly", Environment = "Production",
++                ExpiresAt = DateTime.UtcNow.AddDays(3), WasEverPaid = true, Status = "premium" };
++            db.Subscriptions.Add(subscription); await db.SaveChangesAsync();
++        }
++        var path = (kind == "account" ? "/owlai/account/ai/" : "/owlai/ai/") + "word-detail";
++        var before = await db.AiSpendReservations.CountAsync();
++        using var allowed = await Post(client, path, "word-detail", Guid.NewGuid().ToString("N"));
++        Assert.Equal(HttpStatusCode.OK, allowed.StatusCode); Assert.Single(handler.CapturedRequests);
++        Assert.Equal(before + 1, await db.AiSpendReservations.CountAsync());
++        if (kind == "paid-device")
++        {
++            subscription!.ExpiresAt = DateTime.UtcNow.AddDays(-1); await db.SaveChangesAsync();
++        }
++        using var denied = await Post(client, path, "word-detail", Guid.NewGuid().ToString("N"));
++        Assert.Equal(kind == "paid-device" ? HttpStatusCode.PaymentRequired : HttpStatusCode.TooManyRequests, denied.StatusCode);
++        Assert.Single(handler.CapturedRequests); Assert.Equal(before + 1, await db.AiSpendReservations.CountAsync()); Assert.Equal(0, alerts.Calls);
++    }
++    [Theory]
++    [InlineData(false, "analyze-word")]
++    [InlineData(true, "analyze-word")]
++    [InlineData(false, "word-detail")]
++    [InlineData(true, "word-detail")]
++    [InlineData(false, "review-translation")]
++    [InlineData(true, "review-translation")]
++    [InlineData(false, "extract-words")]
++    [InlineData(true, "extract-words")]
++    [InlineData(false, "batch")]
++    [InlineData(true, "batch")]
++    public async Task AuthenticatedRoutesUsePersistentGuardAndCacheHitsHaveNoProviderAttempt(bool account, string operation)
++    {
++        var payload = operation switch
++        {
++            "analyze-word" => """{"translations":["Hello"]}""",
++            "word-detail" => """{"translation":"Hello","corrected_word":"hola"}""",
++            "review-translation" => """{"language_code":"fr","translation":"Bonjour","explanation":"Une salutation."}""",
++            "batch" => """{"primary":{"corrected_word":"hola","translation":"Hello","translations":["Hello"]},"secondary_translation":{"language_code":"fr","translation":"Bonjour","explanation":"Une salutation."}}""",
++            _ => """{"words":[{"word":"hola","translation":"Hello"}]}"""
++        };
++        var handler = new FakeHttpMessageHandler(_ => FakeHttpMessageHandler.Json(OpenAiResponse(payload)));
++        using var wire = new HttpClient(handler); var alerts = new AiProviderBoundaryTests.NoAlert();
++        await using var factory = Factory(wire, alerts);
++        using var client = await AuthorizedClient(factory, account);
++        var path = (account ? "/owlai/account/ai/" : "/owlai/ai/") + (operation == "batch" ? "word-detail" : operation);
++        var word = Guid.NewGuid().ToString("N");
++        using var scope = factory.Services.CreateScope(); var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
++        var before = await db.AiSpendReservations.CountAsync();
++        using var response = await Post(client, path, operation, word);
++        Assert.Equal(HttpStatusCode.OK, response.StatusCode); Assert.Single(handler.CapturedRequests);
++        var reservation = await db.AiSpendReservations.AsNoTracking().OrderByDescending(x => x.CreatedAt).FirstAsync();
++        Assert.Equal(account ? "account" : "guest", reservation.Cohort); Assert.NotNull(reservation.SettledAt);
++        Assert.Equal(87, reservation.ChargedMicroUsd); Assert.Equal(before + 1, await db.AiSpendReservations.CountAsync());
++        factory.Services.GetRequiredService<IConfiguration>()["AiSpend:Enabled"] = "false";
++        if (operation != "extract-words")
++        {
++            using var cached = await Post(client, path, operation, word);
++            Assert.Equal(HttpStatusCode.OK, cached.StatusCode); Assert.Single(handler.CapturedRequests);
++        }
++        // Test mode bypasses commercial quotas only; a fresh operation must still fail closed.
++        using var denied = await Post(client, path, operation, Guid.NewGuid().ToString("N"));
++        Assert.Equal(HttpStatusCode.ServiceUnavailable, denied.StatusCode); Assert.Single(handler.CapturedRequests);
++        Assert.Equal(0, alerts.Calls);
++    }
++
++    [Theory]
++    [InlineData(false)]
++    [InlineData(true)]
++    public async Task AuthenticatedTestModeCannotBypassAnExhaustedBudget(bool account)
++    {
++        var handler = new FakeHttpMessageHandler(_ => FakeHttpMessageHandler.Json(OpenAiResponse("{}"))); using var wire = new HttpClient(handler);
++        var alerts = new AiProviderBoundaryTests.NoAlert(); await using var factory = Factory(wire, alerts);
++        using var client = await AuthorizedClient(factory, account);
++        factory.Services.GetRequiredService<IConfiguration>()["AiSpend:GlobalMicroUsd"] = "1"; // synthetic exhausted-for-this-attempt amount
++        using var response = await Post(client, (account ? "/owlai/account/ai/" : "/owlai/ai/") + "word-detail", "word-detail", Guid.NewGuid().ToString("N"));
++        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode); Assert.Empty(handler.CapturedRequests); Assert.Equal(0, alerts.Calls);
++    }
++
++    [Fact]
++    public async Task FallbackHasSeparatePersistentReservationAndRetainsFailedPrimary()
++    {
++        var handler = new FakeHttpMessageHandler(req => req.RequestUri!.Host == "api.openai.com"
++            ? FakeHttpMessageHandler.Json("{}", HttpStatusCode.InternalServerError)
++            : FakeHttpMessageHandler.Json("""{"modelVersion":"gemini-2.5-flash","usageMetadata":{"serviceTier":"standard","promptTokenCount":100,"cachedContentTokenCount":20,"candidatesTokenCount":10,"thoughtsTokenCount":7,"totalTokenCount":117},"candidates":[{"content":{"parts":[{"text":"{\"translation\":\"Hello\"}"}]}}]}"""));
++        using var wire = new HttpClient(handler); var alerts = new AiProviderBoundaryTests.NoAlert(); await using var factory = Factory(wire, alerts);
++        using var client = await AuthorizedClient(factory, false);
++        using var scope = factory.Services.CreateScope(); var db = scope.ServiceProvider.GetRequiredService<AppDbContext>(); var before = await db.AiSpendReservations.CountAsync();
++        using var result = await Post(client, "/owlai/ai/word-detail", "word-detail", Guid.NewGuid().ToString("N"));
++        Assert.Equal(HttpStatusCode.OK, result.StatusCode); Assert.Equal(2, handler.CapturedRequests.Count);
++        Assert.Equal(before + 2, await db.AiSpendReservations.CountAsync());
++        var rows = await db.AiSpendReservations.AsNoTracking().OrderByDescending(x => x.CreatedAt).Take(2).ToListAsync();
++        Assert.Null(rows.Single(x => x.Provider == "OpenAI").SettledAt);
++        Assert.Equal(578345, rows.Single(x => x.Provider == "OpenAI").ChargedMicroUsd);
++        Assert.Equal(121, rows.Single(x => x.Provider == "Gemini").ChargedMicroUsd);
++        Assert.Equal(0, alerts.Calls);
++    }
++
++    private ApiFactory Factory(HttpClient wire, IDevAlertEmailService alerts)
++    {
++        var config = AiSpendTestSupport.Config().AsEnumerable().ToDictionary(x => x.Key, x => x.Value);
++        config["TestMode:Enabled"] = "true"; config["AiProtection:RequireAssertion"] = "false";
++        return new(postgres.ConnectionString, services =>
++        {
++            services.RemoveAll<IHttpClientFactory>(); services.AddSingleton<IHttpClientFactory>(new FakeHttpClientFactory(wire));
++            services.RemoveAll<IDevAlertEmailService>(); services.AddSingleton(alerts);
++        }, config);
++    }
++    private static async Task<HttpClient> AuthorizedClient(ApiFactory factory, bool account)
++    {
++        var client = factory.CreateClient(); using var scope = factory.Services.CreateScope();
++        if (account)
++        {
++            var session = await scope.ServiceProvider.GetRequiredService<AccountService>().SignInAsync(new("spend-" + Guid.NewGuid(), null, "Test"), default, allowCreation: true);
++            client.DefaultRequestHeaders.Authorization = new("Bearer", session.AccessToken);
++        }
++        else
++        {
++            var id = Guid.NewGuid().ToString("N"); var key = "SIMULATOR-" + id;
++            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>(); db.Devices.Add(new DeviceEntity { KeyId = key, DeviceUuid = id, Environment = "production" });
++            await db.SaveChangesAsync();
++            client.DefaultRequestHeaders.Authorization = new("Bearer", scope.ServiceProvider.GetRequiredService<JwtTokenService>().CreateDeviceToken(key, "free").Token);
++        }
++        return client;
++    }
++    private static async Task<HttpResponseMessage> Post(HttpClient client, string path, string operation, string word)
++    {
++        if (operation != "extract-words") return await client.PostAsJsonAsync(path,
++            new { word, native_language = "en", learning_language = "es", secondary_language = operation is "batch" or "review-translation" ? "fr" : null });
++        using var content = new MultipartFormDataContent(); content.Add(new ByteArrayContent([0xff, 0xd8, 0xff, 0xe0, 0]), "image", "image.jpg");
++        return await client.PostAsync(path + "?target_language=es&native_language=en", content);
++    }
++    private static string OpenAiResponse(string text) => JsonSerializer.Serialize(new
++    {
++        model = "gpt-6-luna", service_tier = "default", output_text = text,
++        usage = new { input_tokens = 100, output_tokens = 30, total_tokens = 130,
++            input_tokens_details = new { cached_tokens = 20, cache_write_tokens = 10 }, output_tokens_details = new { reasoning_tokens = 10 } }
++    });
++}
+diff --git a/tests/FallbackAiJsonServiceTests.cs b/tests/FallbackAiJsonServiceTests.cs
+index 41b6e52..e551f64 100644
+--- a/tests/FallbackAiJsonServiceTests.cs
++++ b/tests/FallbackAiJsonServiceTests.cs
+@@ -2,12 +2,63 @@ using System.Text.Json;
+ using Mavrylo.Services;
+ using Microsoft.Extensions.Configuration;
+ using Microsoft.Extensions.Logging.Abstractions;
++using Microsoft.Extensions.Logging;
+ using Xunit;
+ 
+ namespace Mavrylo.Tests;
+ 
+ public class FallbackAiJsonServiceTests
+ {
++    [Fact]
++    public async Task ProviderCancellationIsTerminalEvenBeforeCallerTokenIsMarked()
++    {
++        var primary = new FakeProvider("OpenAI", () => throw new OperationCanceledException());
++        var secondary = FakeProvider.Success("Gemini", "{}"); var alerts = new FakeDevAlertEmailService();
++        await Assert.ThrowsAsync<OperationCanceledException>(() => Service(primary, secondary, alerts).CompleteJsonAsync("word-detail", "prompt"));
++        Assert.Equal(0, secondary.TextCalls); Assert.Equal(0, alerts.Calls);
++    }
++    [Fact]
++    public async Task UnknownPrimaryProviderFailsClosed()
++    {
++        var primary = FakeProvider.Success("OpenAI", "{}"); var fallback = FakeProvider.Success("Gemini", "{}"); var alerts = new FakeDevAlertEmailService();
++        await Assert.ThrowsAsync<AiSpendDeniedException>(() => Service(primary, fallback, alerts, "typo").CompleteJsonAsync("word-detail", "prompt"));
++        Assert.Equal(0, primary.TextCalls); Assert.Equal(0, fallback.TextCalls); Assert.Equal(0, alerts.Calls);
++    }
++    [Fact]
++    public async Task PrivateExceptionTextDoesNotReachLogsOrAlerts()
++    {
++        const string sentinel = "private-card-text-secret-token";
++        var primary = new FakeProvider("OpenAI", () => throw new InvalidOperationException(sentinel));
++        var secondary = new FakeProvider("Gemini", () => throw new AiProviderException("Gemini", sentinel, 500));
++        var logger = new CapturingLogger<FallbackAiJsonService>();
++        var alerts = new FakeDevAlertEmailService();
++        var service = new FallbackAiJsonService([primary, secondary], new ConfigurationBuilder().Build(), alerts, logger);
++        Assert.Null(await service.CompleteJsonAsync("word-detail", "private-input"));
++        Assert.DoesNotContain(sentinel, string.Join("\n", logger.Lines));
++        Assert.DoesNotContain(sentinel, string.Join("\n", alerts.Failures.Select(x => x.ToString())));
++    }
++
++    internal sealed class CapturingLogger<T> : ILogger<T>
++    {
++        public List<string> Lines { get; } = [];
++        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
++        public bool IsEnabled(LogLevel level) => true;
++        public void Log<TState>(LogLevel level, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
++            => Lines.Add(formatter(state, exception) + exception?.ToString());
++    }
++    [Theory]
++    [InlineData(401)]
++    [InlineData(403)]
++    [InlineData(429)]
++    public async Task ProviderAuthorizationOrQuotaFailure_DoesNotFallbackOrAlert(int status)
++    {
++        var primary = new FakeProvider("OpenAI", () => throw new AiProviderException("OpenAI", "Denied", status));
++        var secondary = FakeProvider.Success("Gemini", "{}");
++        var alerts = new FakeDevAlertEmailService();
++        await Assert.ThrowsAsync<AiProviderException>(() => Service(primary, secondary, alerts).CompleteJsonAsync("word-detail", "prompt"));
++        Assert.Equal(0, secondary.TextCalls);
++        Assert.Equal(0, alerts.Calls);
++    }
+     [Fact]
+     public async Task OpenAiSuccessSkipsGemini()
+     {
+diff --git a/tests/TestSupport/AiSpendTestSupport.cs b/tests/TestSupport/AiSpendTestSupport.cs
+new file mode 100644
+index 0000000..5d5270f
+--- /dev/null
++++ b/tests/TestSupport/AiSpendTestSupport.cs
+@@ -0,0 +1,43 @@
++using Mavrylo.Services;
++using Microsoft.AspNetCore.Http;
++using Microsoft.Extensions.Configuration;
++
++namespace Mavrylo.Tests.TestSupport;
++
++internal static class AiSpendTestSupport
++{
++    public static IConfiguration Config(Dictionary<string, string?>? overrides = null)
++    {
++        var values = new Dictionary<string, string?>
++        {
++            ["AiSpend:Enabled"] = "true", ["AiSpend:GlobalMicroUsd"] = "10000000", ["AiSpend:GuestMicroUsd"] = "10000000",
++            ["AiSpend:AccountMicroUsd"] = "10000000", ["AiSpend:MaxConcurrentAttempts"] = "20",
++            ["AiSpend:PriceProfile"] = "2026-09-27-model-ceilings-v1", ["AiSpend:MaxOutputTokens"] = "512",
++            ["AiSpend:MaxPromptBytes"] = "16000", ["AiSpend:MaxImageBytes"] = "1024", ["AiSpend:MaxResponseBytes"] = "16000",
++            ["AiSpend:DeadlineMilliseconds"] = "1000", ["OpenAI:ApiKey"] = "synthetic-key", ["Gemini:ApiKey"] = "synthetic-key"
++        };
++        if (overrides != null) foreach (var item in overrides) values[item.Key] = item.Value;
++        return TestConfig.Create(values);
++    }
++
++    public static AiProviderTransport Transport(HttpClient client, IAiSpendGuard? guard = null, bool trusted = true, IAiSpendEvents? events = null)
++    {
++        var http = new DefaultHttpContext();
++        if (trusted) AiSpendContext.AuthorizeAcceptedRequest(http, null, "server-authenticated-key");
++        return new(new FakeHttpClientFactory(client), guard ?? new RecordingGuard(),
++            new AiSpendContext(new HttpContextAccessor { HttpContext = http }), events ?? new AiSpendGuardTests.Events());
++    }
++
++    internal sealed class RecordingGuard : IAiSpendGuard
++    {
++        public bool Deny { get; set; }
++        public List<AiAttempt> Attempts { get; } = [];
++        public List<AiAttemptUsage?> Completions { get; } = [];
++        public Task<SpendReservation?> TryReserveAsync(AiAttempt attempt, CancellationToken ct)
++        {
++            Attempts.Add(attempt);
++            return Task.FromResult<SpendReservation?>(Deny ? null : new(attempt.AttemptId, attempt.UpperBoundMicroUsd));
++        }
++        public Task CompleteAsync(Guid reservationId, AiAttemptUsage? usage, CancellationToken ct) { Completions.Add(usage); return Task.CompletedTask; }
++    }
++}

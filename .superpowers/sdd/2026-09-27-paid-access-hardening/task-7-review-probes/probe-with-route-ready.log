@@ -1,0 +1,25 @@
+RUNTIME .NET 10.0.12
+POSTGRES 13.23
+OMITTED_ZERO_SUCCESS calls=1 result=Hello charged=568536 settled=False pending=1
+OMITTED_ZERO_NEXT reason=budget_or_concurrency calls=1
+EXPLICIT_ZERO_CONTROL calls=2 eachCharged=99 settled=2 pending=0
+POSTDISPATCH_CANCEL calls=1 charged=568536 settled=False pendingAfterNewContext=1
+LEDGER_UNAVAILABLE reason=ledger_unavailable calls=0
+BODY_DEADLINE calls=1 alerts=0 completionUnknown=True
+PROBE_HARNESS_FAILURE System.InvalidOperationException: Solution root could not be located using application root D:\07 Hobby\FlashcardAI\.superpowers\sdd\2026-09-27-paid-access-hardening\task-7-review-probes\.
+   at Microsoft.AspNetCore.TestHost.WebHostBuilderExtensions.UseSolutionRelativeContentRoot(IWebHostBuilder builder, String solutionRelativePath, String applicationBasePath, ReadOnlySpan`1 solutionNames)
+   at Microsoft.AspNetCore.TestHost.WebHostBuilderExtensions.UseSolutionRelativeContentRoot(IWebHostBuilder builder, String solutionRelativePath)
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.SetContentRoot(IWebHostBuilder builder)
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.<ConfigureHostBuilder>b__36_0(IWebHostBuilder webHostBuilder)
+   at Microsoft.Extensions.Hosting.GenericHostWebHostBuilderExtensions.ConfigureWebHost(IHostBuilder builder, Func`3 createWebHostBuilder, Action`1 configure, Action`1 configureWebHostBuilder)
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.ConfigureHostBuilder(IHostBuilder hostBuilder)
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.StartServer()
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(DelegatingHandler[] handlers)
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(Uri baseAddress, DelegatingHandler[] handlers)
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateClient(WebApplicationFactoryClientOptions options)
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateClient()
+   at Probes.DeadlineRoute(String connection)
+   at Probes.DeadlineRoute(String connection)
+   at Probes.Run()
+   at Probes.Run()
+   at ReviewEntry.Main()

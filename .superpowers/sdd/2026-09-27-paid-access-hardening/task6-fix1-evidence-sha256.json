@@ -1,0 +1,27 @@
+[
+  {
+    "Algorithm": "SHA256",
+    "Hash": "0430CFA299FE723F2B41C6358D0C750B52362030846A2CD9BD2E12B9233344F1",
+    "Path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-6-validation-boundaries-report.md"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "508CE0423379F0BF6BB6C2353D345922C5BED47514117811914CA1098808F05A",
+    "Path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-6-fix1-review.diff.md"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "28B987800BE94D0111A0385A11AC260A2FFD2AF8C1F85F08C15ECF5977FC5384",
+    "Path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task6-i1-red.txt"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "3F02E6A041D4480C85F7CC04763181A5F7C69CC4C276BFA66820B8F61F84998E",
+    "Path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task6-i1-duplicate-red.txt"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "8207BDE9AB93C38E0C00BF26F76046A11AF76F04C941051AF827CBF7606EA232",
+    "Path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task6-i1-final-focused.txt"
+  }
+]

@@ -1,0 +1,79 @@
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-mggc-4xg6-vcxf
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-q939-rpr3-3284
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Mavrylo.Services.csproj : warning NU1510: PackageReference System.Formats.Cbor will not be pruned. This package is automatically available and does not need to be referenced explicitly. Remove the PackageReference item.
+  Mavrylo.Entities -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Entities\bin\Debug\net10.0\Mavrylo.Entities.dll
+  Mavrylo.Data -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Data\bin\Debug\net10.0\Mavrylo.Data.dll
+  Mavrylo.Services -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\bin\Debug\net10.0\Mavrylo.Services.dll
+  Mavrylo -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\bin\Debug\net10.0\Mavrylo.dll
+  Mavrylo.Tests -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Debug\net10.0\Mavrylo.Tests.dll
+Test run for D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Debug\net10.0\Mavrylo.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:00.10]   Discovering: Mavrylo.Tests
+[xUnit.net 00:00:00.20]   Discovered:  Mavrylo.Tests
+[xUnit.net 00:00:00.23]   Starting:    Mavrylo.Tests
+[xUnit.net 00:00:00.30]     Mavrylo.Tests.FallbackAiJsonServiceTests.PrivateExceptionTextDoesNotReachLogsOrAlerts [FAIL]
+[xUnit.net 00:00:00.30]       Assert.DoesNotContain() Failure: Sub-string found
+[xUnit.net 00:00:00.30]                                       ↓ (pos 63)
+[xUnit.net 00:00:00.30]       String: ···"OperationException: private-card-text-sec"···
+[xUnit.net 00:00:00.30]       Found:  "private-card-text-secret-token"
+[xUnit.net 00:00:00.30]       Stack Trace:
+[xUnit.net 00:00:00.30]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\FallbackAiJsonServiceTests.cs(22,0): at Mavrylo.Tests.FallbackAiJsonServiceTests.PrivateExceptionTextDoesNotReachLogsOrAlerts()
+[xUnit.net 00:00:00.30]         --- End of stack trace from previous location ---
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.KnownModelCeilingsRoundUpAndGeminiUsageIncludesThoughtsExactlyOnce [13 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: False, fault: "model") [14 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: True, fault: "model") [1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: True, fault: "image") [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: False, fault: "operation") [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: False, fault: "prompt") [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: True, fault: "profile") [< 1 ms]
+  Failed Mavrylo.Tests.FallbackAiJsonServiceTests.PrivateExceptionTextDoesNotReachLogsOrAlerts [31 ms]
+  Error Message:
+   Assert.DoesNotContain() Failure: Sub-string found
+                                ↓ (pos 63)
+String: ···"OperationException: private-card-text-sec"···
+Found:  "private-card-text-secret-token"
+  Stack Trace:
+     at Mavrylo.Tests.FallbackAiJsonServiceTests.PrivateExceptionTextDoesNotReachLogsOrAlerts() in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\FallbackAiJsonServiceTests.cs:line 22
+--- End of stack trace from previous location ---
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: True, fault: "budget") [43 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: False, fault: "context") [4 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: True, fault: "prompt") [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.UnsafeRequestNeverSubmitsOrFallsBack(gemini: False, fault: "image") [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.KnownAndUnknownLengthOversizeResponsesRemainReserved(gemini: False, knownLength: False) [8 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.KnownAndUnknownLengthOversizeResponsesRemainReserved(gemini: True, knownLength: True) [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.KnownAndUnknownLengthOversizeResponsesRemainReserved(gemini: True, knownLength: False) [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.KnownAndUnknownLengthOversizeResponsesRemainReserved(gemini: False, knownLength: True) [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.MalformedJsonRetainsUnknownReservation(gemini: True) [3 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.MalformedJsonRetainsUnknownReservation(gemini: False) [< 1 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.SlowBodyHonorsFullDeadlineAndCancellationIsTerminal(gemini: True) [94 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.SlowBodyHonorsFullDeadlineAndCancellationIsTerminal(gemini: False) [86 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.MissingInvalidAndDisabledConfigurationCannotReserve(key: "AccountMicroUsd", value: null) [1 s]
+  Passed Mavrylo.Tests.AiSpendGuardTests.MissingInvalidAndDisabledConfigurationCannotReserve(key: "GuestMicroUsd", value: "-1") [91 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.MissingInvalidAndDisabledConfigurationCannotReserve(key: "Enabled", value: "false") [46 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.MissingInvalidAndDisabledConfigurationCannotReserve(key: "GlobalMicroUsd", value: "9223372036854775808") [20 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.MissingInvalidAndDisabledConfigurationCannotReserve(key: "MaxConcurrentAttempts", value: "0") [22 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.MissingInvalidAndDisabledConfigurationCannotReserve(key: "GlobalMicroUsd", value: "0") [21 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "missing") [223 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "model") [32 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "total") [34 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "negative") [29 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "reasoning") [31 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "input") [29 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "output") [31 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "overflow") [31 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "cache") [28 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "tier") [25 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.UsageSettlementIsIdempotentAcrossReplicasAndReleasesOnlyValidatedDifference [70 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.ReplicasCannotReserveSixtyTwice_AndRestartRetainsUnknownSpend [55 ms]
+[xUnit.net 00:00:03.75]   Finished:    Mavrylo.Tests
+  Passed Mavrylo.Tests.AiSpendGuardTests.CacheComponentsUseAlternativeRatesAndReasoningIsNotAddedTwice [37 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.OverflowingCostAndForgedUpperBoundAreControlledDenials [22 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GuestAndAccountPoolsAreIndependentButShareGlobalBudget [42 ms]
+
+Test Run Failed.
+Total tests: 41
+     Passed: 40
+     Failed: 1
+ Total time: 4.1935 Seconds

@@ -1,0 +1,11 @@
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-mggc-4xg6-vcxf
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-q939-rpr3-3284
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Mavrylo.Services.csproj : warning NU1510: PackageReference System.Formats.Cbor will not be pruned. This package is automatically available and does not need to be referenced explicitly. Remove the PackageReference item.
+Test run for D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:05.41]     Mavrylo.Tests.PaidAccessAuditRegressionTests.B1_NewAttestedKeyCannotInheritPurchaseBySupplyingOwnerUuid [FAIL]
+[xUnit.net 00:00:05.92]     Mavrylo.Tests.PaidAccessAuditRegressionTests.B2_CopiedReceiptCannotFirstClaimDesktopOwnershipWithoutPriorOwnerProof [FAIL]
+[xUnit.net 00:00:08.45]     Mavrylo.Tests.PaidAccessAuditRegressionTests.B2_CopiedReceiptCannotTransferExistingGuestPurchaseToUnrelatedDevice [FAIL]
+
+Failed!  - Failed:     3, Passed:   462, Skipped:     1, Total:   466, Duration: 1 m 5 s - Mavrylo.Tests.dll (net10.0)

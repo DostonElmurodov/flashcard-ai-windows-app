@@ -1,0 +1,308 @@
+diff --git a/App/DependencyInjection/AppComposition.swift b/App/DependencyInjection/AppComposition.swift
+index f5358e5..a37fb49 100644
+--- a/App/DependencyInjection/AppComposition.swift
++++ b/App/DependencyInjection/AppComposition.swift
+@@ -11,6 +11,7 @@ struct AppComposition {
+     let fsrsSettings: FSRSSettingsStore
+     let appSettings: AppSettingsStore
+     let accountSession: AccountSessionController
++    let accountProfile: AccountProfileModel
+     let apiClient: APIClient
+     let secondaryReview: SecondaryReviewService
+     let storeKit: StoreKitService
+@@ -22,21 +23,26 @@ struct AppComposition {
+         calendar: Calendar,
+         now: @escaping () -> Date,
+         storeKitTransactionUpdates: StoreKitTransactionUpdates =
+-            StoreKitTransactionUpdateSource.defaultUpdates()
++            StoreKitTransactionUpdateSource.defaultUpdates(),
++        suppliedAPI: APIClient? = nil,
++        suppliedAccountSession: AccountSessionController? = nil,
++        suppliedAccountProfile: AccountProfileModel? = nil,
++        suppliedEntitlements: EntitlementStore? = nil,
++        suppliedStoreKit: StoreKitService? = nil
+     ) throws -> AppComposition {
+         // AppSettingsStore canonicalizes both legacy remote values and final
+         // raw values synchronously in its initializer. It must run before the
+         // SQLite connection is opened so migration sees the real setting.
+         let appSettings = AppSettingsStore(defaults: defaults)
+-        _ = EntitlementStore.shared
++        _ = suppliedEntitlements ?? EntitlementStore.shared
+         let migrationNow = now()
+         let database = try LocalDatabase(
+             url: databaseURL,
+             primaryDirection: appSettings.reviewDirection,
+             now: migrationNow
+         )
+-        let apiClient = APIClient()
+-        let storeKit = StoreKitService(
++        let apiClient = suppliedAPI ?? APIClient()
++        let storeKit = suppliedStoreKit ?? StoreKitService(
+             api: apiClient,
+             transactionUpdates: storeKitTransactionUpdates
+         )
+@@ -72,7 +78,8 @@ struct AppComposition {
+             queue: queue,
+             fsrsSettings: fsrsSettings,
+             appSettings: appSettings,
+-            accountSession: AccountSessionController(),
++            accountSession: suppliedAccountSession ?? AccountSessionController(),
++            accountProfile: suppliedAccountProfile ?? .shared,
+             apiClient: apiClient,
+             secondaryReview: SecondaryReviewService(api: apiClient, workspace: databaseURL, defaults: defaults),
+             storeKit: storeKit,
+diff --git a/FlashCardAI.xcodeproj/project.pbxproj b/FlashCardAI.xcodeproj/project.pbxproj
+index fcd1976..b147a73 100644
+--- a/FlashCardAI.xcodeproj/project.pbxproj
++++ b/FlashCardAI.xcodeproj/project.pbxproj
+@@ -7,6 +7,8 @@
+ 	objects = {
+ 
+ /* Begin PBXBuildFile section */
++		B71100000000000000000001 /* UILaunchFixtureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B71100000000000000000002 /* UILaunchFixtureTests.swift */; };
++		B71100000000000000000003 /* UIAutomationFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = B71100000000000000000004 /* UIAutomationFixture.swift */; };
+ 		FA0800000000000000000001 /* EntitlementMutationBoundaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0800000000000000000002 /* EntitlementMutationBoundaryTests.swift */; };
+ 		AE1800000000000000000011 /* EnglishIrregularVerbForms.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1800000000000000000012 /* EnglishIrregularVerbForms.swift */; };
+ 		A10000000000000000000001 /* FlashCardAIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* FlashCardAIApp.swift */; };
+@@ -115,6 +117,13 @@
+ /* End PBXBuildFile section */
+ 
+ /* Begin PBXContainerItemProxy section */
++		B7110000000000000000000B /* PBXContainerItemProxy */ = {
++			isa = PBXContainerItemProxy;
++			containerPortal = A1000000000000000000002D /* Project object */;
++			proxyType = 1;
++			remoteGlobalIDString = A10000000000000000000029;
++			remoteInfo = FlashCardAI;
++		};
+ 		D3110000000000000000000B /* PBXContainerItemProxy */ = {
+ 			isa = PBXContainerItemProxy;
+ 			containerPortal = A1000000000000000000002D /* Project object */;
+@@ -125,6 +134,9 @@
+ /* End PBXContainerItemProxy section */
+ 
+ /* Begin PBXFileReference section */
++		B71100000000000000000002 /* UILaunchFixtureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UILaunchFixtureTests.swift; sourceTree = "<group>"; };
++		B71100000000000000000004 /* UIAutomationFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIAutomationFixture.swift; sourceTree = "<group>"; };
++		B71100000000000000000005 /* FlashCardAIUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FlashCardAIUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+ 		FA0800000000000000000002 /* EntitlementMutationBoundaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntitlementMutationBoundaryTests.swift; sourceTree = "<group>"; };
+ 		AE1800000000000000000012 /* EnglishIrregularVerbForms.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnglishIrregularVerbForms.swift; sourceTree = "<group>"; };
+ 		A10000000000000000000002 /* FlashCardAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlashCardAIApp.swift; sourceTree = "<group>"; };
+@@ -234,6 +246,13 @@
+ /* End PBXFileReference section */
+ 
+ /* Begin PBXFrameworksBuildPhase section */
++		B71100000000000000000006 /* Frameworks */ = {
++			isa = PBXFrameworksBuildPhase;
++			buildActionMask = 2147483647;
++			files = (
++			);
++			runOnlyForDeploymentPostprocessing = 0;
++		};
+ 		A1000000000000000000001E /* Frameworks */ = {
+ 			isa = PBXFrameworksBuildPhase;
+ 			buildActionMask = 2147483647;
+@@ -279,6 +298,7 @@
+ 				A10000000000000000000060 /* Shared */,
+ 				A10000000000000000000024 /* Resources */,
+ 				D31100000000000000000005 /* FlashCardAITests */,
++				B71100000000000000000007 /* FlashCardAIUITests */,
+ 				A10000000000000000000025 /* Products */,
+ 				0483CD492FE4BDFA00023BA0 /* Recovered References */,
+ 			);
+@@ -288,6 +308,7 @@
+ 			isa = PBXGroup;
+ 			children = (
+ 				A10000000000000000000002 /* FlashCardAIApp.swift */,
++				B71100000000000000000004 /* UIAutomationFixture.swift */,
+ 				F1A000000000000000000002 /* AppDelegate.swift */,
+ 				C1A00000000000000000000E /* Session */,
+ 				A10000000000000000000070 /* Root */,
+@@ -312,6 +333,7 @@
+ 			children = (
+ 				A1000000000000000000001D /* FlashCardAI.app */,
+ 				D31100000000000000000003 /* FlashCardAITests.xctest */,
++				B71100000000000000000005 /* FlashCardAIUITests.xctest */,
+ 			);
+ 			name = Products;
+ 			sourceTree = "<group>";
+@@ -716,6 +738,14 @@
+ 			path = FlashCardAITests;
+ 			sourceTree = "<group>";
+ 		};
++		B71100000000000000000007 /* FlashCardAIUITests */ = {
++			isa = PBXGroup;
++			children = (
++				B71100000000000000000002 /* UILaunchFixtureTests.swift */,
++			);
++			path = FlashCardAIUITests;
++			sourceTree = "<group>";
++		};
+ 		E2B000000000000000000005 /* Auth */ = {
+ 			isa = PBXGroup;
+ 			children = (
+@@ -818,6 +848,23 @@
+ 			productReference = D31100000000000000000003 /* FlashCardAITests.xctest */;
+ 			productType = "com.apple.product-type.bundle.unit-test";
+ 		};
++		B71100000000000000000008 /* FlashCardAIUITests */ = {
++			isa = PBXNativeTarget;
++			buildConfigurationList = B71100000000000000000009 /* Build configuration list for PBXNativeTarget "FlashCardAIUITests" */;
++			buildPhases = (
++				B7110000000000000000000C /* Sources */,
++				B71100000000000000000006 /* Frameworks */,
++			);
++			buildRules = (
++			);
++			dependencies = (
++				B7110000000000000000000D /* PBXTargetDependency */,
++			);
++			name = FlashCardAIUITests;
++			productName = FlashCardAIUITests;
++			productReference = B71100000000000000000005 /* FlashCardAIUITests.xctest */;
++			productType = "com.apple.product-type.bundle.ui-testing";
++		};
+ /* End PBXNativeTarget section */
+ 
+ /* Begin PBXProject section */
+@@ -835,6 +882,10 @@
+ 						CreatedOnToolsVersion = 15.0;
+ 						TestTargetID = A10000000000000000000029;
+ 					};
++					B71100000000000000000008 = {
++						CreatedOnToolsVersion = 15.0;
++						TestTargetID = A10000000000000000000029;
++					};
+ 				};
+ 			};
+ 			buildConfigurationList = A1000000000000000000002E /* Build configuration list for PBXProject "FlashCardAI" */;
+@@ -856,6 +907,7 @@
+ 			targets = (
+ 				A10000000000000000000029 /* FlashCardAI */,
+ 				D31100000000000000000006 /* FlashCardAITests */,
++				B71100000000000000000008 /* FlashCardAIUITests */,
+ 			);
+ 		};
+ /* End PBXProject section */
+@@ -880,6 +932,14 @@
+ /* End PBXResourcesBuildPhase section */
+ 
+ /* Begin PBXSourcesBuildPhase section */
++		B7110000000000000000000C /* Sources */ = {
++			isa = PBXSourcesBuildPhase;
++			buildActionMask = 2147483647;
++			files = (
++				B71100000000000000000001 /* UILaunchFixtureTests.swift in Sources */,
++			);
++			runOnlyForDeploymentPostprocessing = 0;
++		};
+ 		A1000000000000000000002B /* Sources */ = {
+ 			isa = PBXSourcesBuildPhase;
+ 			buildActionMask = 2147483647;
+@@ -895,6 +955,7 @@
+ 				13C3782571EB7B7F00569064 /* AccountCredentialStore.swift in Sources */,
+ 				A29B4C8E22E416826820DF69 /* AccountModels.swift in Sources */,
+ 				A10000000000000000000001 /* FlashCardAIApp.swift in Sources */,
++				B71100000000000000000003 /* UIAutomationFixture.swift in Sources */,
+ 				F1A000000000000000000001 /* AppDelegate.swift in Sources */,
+ 				A10000000000000000000003 /* AppRootModel.swift in Sources */,
+ 				A10000000000000000000005 /* WordCacheNormalizer.swift in Sources */,
+@@ -996,6 +1057,11 @@
+ /* End PBXSourcesBuildPhase section */
+ 
+ /* Begin PBXTargetDependency section */
++		B7110000000000000000000D /* PBXTargetDependency */ = {
++			isa = PBXTargetDependency;
++			target = A10000000000000000000029 /* FlashCardAI */;
++			targetProxy = B7110000000000000000000B /* PBXContainerItemProxy */;
++		};
+ 		D3110000000000000000000A /* PBXTargetDependency */ = {
+ 			isa = PBXTargetDependency;
+ 			target = A10000000000000000000029 /* FlashCardAI */;
+@@ -1167,7 +1233,8 @@
+ 					"@executable_path/Frameworks",
+ 				);
+ 				MARKETING_VERSION = 1.0;
+-				PRODUCT_BUNDLE_IDENTIFIER = com.mavrylo.owlai;
++				OWL_DEBUG_BUNDLE_ID = com.mavrylo.owlai;
++				PRODUCT_BUNDLE_IDENTIFIER = "$(OWL_DEBUG_BUNDLE_ID)";
+ 				PRODUCT_NAME = "$(TARGET_NAME)";
+ 				SWIFT_EMIT_LOC_STRINGS = YES;
+ 				SWIFT_VERSION = 5.0;
+@@ -1253,6 +1320,38 @@
+ 			};
+ 			name = Release;
+ 		};
++		B7110000000000000000000E /* Debug */ = {
++			isa = XCBuildConfiguration;
++			buildSettings = {
++				CODE_SIGN_STYLE = Automatic;
++				GENERATE_INFOPLIST_FILE = YES;
++				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
++				MARKETING_VERSION = 1.0;
++				PRODUCT_BUNDLE_IDENTIFIER = com.flashcardai.FlashCardAIUITests;
++				PRODUCT_NAME = "$(TARGET_NAME)";
++				SDKROOT = iphoneos;
++				SWIFT_VERSION = 5.0;
++				TARGETED_DEVICE_FAMILY = "1,2";
++				TEST_TARGET_NAME = FlashCardAI;
++			};
++			name = Debug;
++		};
++		B7110000000000000000000F /* Release */ = {
++			isa = XCBuildConfiguration;
++			buildSettings = {
++				CODE_SIGN_STYLE = Automatic;
++				GENERATE_INFOPLIST_FILE = YES;
++				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
++				MARKETING_VERSION = 1.0;
++				PRODUCT_BUNDLE_IDENTIFIER = com.flashcardai.FlashCardAIUITests;
++				PRODUCT_NAME = "$(TARGET_NAME)";
++				SDKROOT = iphoneos;
++				SWIFT_VERSION = 5.0;
++				TARGETED_DEVICE_FAMILY = "1,2";
++				TEST_TARGET_NAME = FlashCardAI;
++			};
++			name = Release;
++		};
+ /* End XCBuildConfiguration section */
+ 
+ /* Begin XCConfigurationList section */
+@@ -1283,6 +1382,15 @@
+ 			defaultConfigurationIsVisible = 0;
+ 			defaultConfigurationName = Release;
+ 		};
++		B71100000000000000000009 /* Build configuration list for PBXNativeTarget "FlashCardAIUITests" */ = {
++			isa = XCConfigurationList;
++			buildConfigurations = (
++				B7110000000000000000000E /* Debug */,
++				B7110000000000000000000F /* Release */,
++			);
++			defaultConfigurationIsVisible = 0;
++			defaultConfigurationName = Release;
++		};
+ /* End XCConfigurationList section */
+ 	};
+ 	rootObject = A1000000000000000000002D /* Project object */;
+diff --git a/FlashCardAI.xcodeproj/xcshareddata/xcschemes/FlashCardAI.xcscheme b/FlashCardAI.xcodeproj/xcshareddata/xcschemes/FlashCardAI.xcscheme
+index 5e4b7b2..e406a5f 100644
+--- a/FlashCardAI.xcodeproj/xcshareddata/xcschemes/FlashCardAI.xcscheme
++++ b/FlashCardAI.xcodeproj/xcshareddata/xcschemes/FlashCardAI.xcscheme
+@@ -54,6 +54,17 @@
+                ReferencedContainer = "container:FlashCardAI.xcodeproj">
+             </BuildableReference>
+          </TestableReference>
++         <TestableReference
++            skipped = "NO"
++            parallelizable = "NO">
++            <BuildableReference
++               BuildableIdentifier = "primary"
++               BlueprintIdentifier = "B71100000000000000000008"
++               BuildableName = "FlashCardAIUITests.xctest"
++               BlueprintName = "FlashCardAIUITests"
++               ReferencedContainer = "container:FlashCardAI.xcodeproj">
++            </BuildableReference>
++         </TestableReference>
+       </Testables>
+    </TestAction>
+    <LaunchAction

@@ -1,0 +1,62 @@
+---
+description: High-risk rules for data, auth, sync, AI, and contract-sensitive files
+globs:
+  - "Data/**"
+  - "Models/**"
+  - "Mapping/**"
+  - "Services/**"
+  - "Controllers/**/AuthController.cs"
+  - "Controllers/**/SyncController.cs"
+  - "Controllers/**/AiController.cs"
+  - "Program.cs"
+  - "contracts/openapi/**/*.yaml"
+  - "contracts/openapi/**/*.yml"
+---
+
+You are editing the highest-risk area of FlashCard AI.
+
+DATA LAYER TRUTH
+- Current repo uses EF Core with SQLite by default and PostgreSQL optionally.
+- Do not assume SQL Server types, syntax, packages, or migration behavior.
+- Do not introduce SQL Server-specific guidance unless I explicitly say the project is migrating to SQL Server.
+
+SCHEMA / DATA RULES
+- Be very careful with entity changes.
+- Check impact on:
+  - EF Core model
+  - existing database files
+  - future migrations
+  - sync payloads
+  - client DTO decoding
+  - OpenAPI
+- Do not change EnsureCreated / migration behavior casually.
+- Prefer a staged, explicit migration strategy for production-facing data changes.
+- Avoid destructive schema changes unless explicitly requested.
+- Avoid raw SQL unless clearly justified.
+- Never build SQL from string concatenation with user input.
+
+SYNC RULES
+- Preserve user isolation and ownership checks.
+- Preserve soft-delete and updated_at semantics.
+- Do not silently change merge behavior.
+- Call out conflict-resolution behavior explicitly.
+- Guest mode must block user-owned push/sync writes.
+- Registration/login flow may later require controlled local-to-server migration.
+
+AI / CACHE RULES
+- Do not log OpenAI keys, prompt bodies, or user-sensitive content.
+- Keep response contracts stable.
+- Preferred future direction:
+  - server-side translation/audio cache
+  - cache key based on normalized text + source language + target language
+  - repeated requests should reuse cached translation/audio when appropriate
+- Do not break current API shape while adding cache behavior.
+
+AUTH RULES
+- Treat JWT, Apple auth, Google auth, and token storage as security-critical.
+- Do not rename token fields or storage keys casually.
+- Do not add insecure fallback behavior.
+
+OPENAPI RULES
+- contracts/openapi/openapi.yaml is a contract artifact.
+- When endpoints or DTOs change, update OpenAPI or explicitly state why not.

@@ -1,0 +1,315 @@
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-mggc-4xg6-vcxf
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-q939-rpr3-3284
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Mavrylo.Services.csproj : warning NU1510: PackageReference System.Formats.Cbor will not be pruned. This package is automatically available and does not need to be referenced explicitly. Remove the PackageReference item.
+  Mavrylo.Entities -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Entities\bin\Debug\net10.0\Mavrylo.Entities.dll
+  Mavrylo.Data -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Data\bin\Debug\net10.0\Mavrylo.Data.dll
+  Mavrylo.Services -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\bin\Debug\net10.0\Mavrylo.Services.dll
+  Mavrylo -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\bin\Debug\net10.0\Mavrylo.dll
+  Mavrylo.Tests -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Debug\net10.0\Mavrylo.Tests.dll
+Test run for D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Debug\net10.0\Mavrylo.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:00.15]   Discovering: Mavrylo.Tests
+[xUnit.net 00:00:00.29]   Discovered:  Mavrylo.Tests
+[xUnit.net 00:00:00.34]   Starting:    Mavrylo.Tests
+[xUnit.net 00:00:02.01]     Mavrylo.Tests.DeviceWordsControllerTests.Upsert_EleventhWord_OnlyTestModeCanBypass(environment: "development", testMode: "true", accepted: True) [FAIL]
+[xUnit.net 00:00:02.02]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:02.02]       Expected: 200
+[xUnit.net 00:00:02.02]       Actual:   402
+[xUnit.net 00:00:02.02]       Stack Trace:
+[xUnit.net 00:00:02.02]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\DeviceWordsControllerTests.cs(46,0): at Mavrylo.Tests.DeviceWordsControllerTests.Upsert_EleventhWord_OnlyTestModeCanBypass(String environment, String testMode, Boolean accepted)
+[xUnit.net 00:00:02.02]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:02.09]     Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(entitlement: "expired_trial", testMode: "true", accepted: True) [FAIL]
+[xUnit.net 00:00:02.09]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:02.09]       Expected: True
+[xUnit.net 00:00:02.09]       Actual:   False
+[xUnit.net 00:00:02.09]       Stack Trace:
+[xUnit.net 00:00:02.09]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\DeviceWordServiceTests.cs(59,0): at Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(String entitlement, String testMode, Boolean accepted)
+[xUnit.net 00:00:02.09]         --- End of stack trace from previous location ---
+  Passed Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(entitlement: "expired_paid", testMode: "false", accepted: False) [1 s]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.DevelopmentDevice_StillRequiresTokenAndAssertion(includeToken: True, expectedStatus: 403) [1 s]
+  Failed Mavrylo.Tests.DeviceWordsControllerTests.Upsert_EleventhWord_OnlyTestModeCanBypass(environment: "development", testMode: "true", accepted: True) [1 s]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 200
+Actual:   402
+  Stack Trace:
+     at Mavrylo.Tests.DeviceWordsControllerTests.Upsert_EleventhWord_OnlyTestModeCanBypass(String environment, String testMode, Boolean accepted) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\DeviceWordsControllerTests.cs:line 46
+--- End of stack trace from previous location ---
+  Passed Mavrylo.Tests.AiProtectionFilterTests.DevelopmentDevice_StillRequiresTokenAndAssertion(includeToken: False, expectedStatus: 401) [56 ms]
+  Passed Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(entitlement: "unknown", testMode: "false", accepted: False) [143 ms]
+  Passed Mavrylo.Tests.DeviceWordsControllerTests.Upsert_EleventhWord_OnlyTestModeCanBypass(environment: "production", testMode: "false", accepted: False) [73 ms]
+  Failed Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(entitlement: "expired_trial", testMode: "true", accepted: True) [29 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: True
+Actual:   False
+  Stack Trace:
+     at Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(String entitlement, String testMode, Boolean accepted) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\DeviceWordServiceTests.cs:line 59
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:02.11]     Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(entitlement: "unknown", testMode: "true", accepted: True) [FAIL]
+[xUnit.net 00:00:02.11]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:02.11]       Expected: True
+[xUnit.net 00:00:02.11]       Actual:   False
+[xUnit.net 00:00:02.11]       Stack Trace:
+[xUnit.net 00:00:02.11]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\DeviceWordServiceTests.cs(59,0): at Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(String entitlement, String testMode, Boolean accepted)
+[xUnit.net 00:00:02.11]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:02.13]     Mavrylo.Tests.DeviceWordsControllerTests.Upsert_EleventhWord_OnlyTestModeCanBypass(environment: "production", testMode: "true", accepted: True) [FAIL]
+[xUnit.net 00:00:02.13]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:02.13]       Expected: 200
+[xUnit.net 00:00:02.13]       Actual:   402
+[xUnit.net 00:00:02.13]       Stack Trace:
+[xUnit.net 00:00:02.13]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\DeviceWordsControllerTests.cs(46,0): at Mavrylo.Tests.DeviceWordsControllerTests.Upsert_EleventhWord_OnlyTestModeCanBypass(String environment, String testMode, Boolean accepted)
+[xUnit.net 00:00:02.13]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:02.18]     Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(entitlement: "revoked", testMode: "true", accepted: True) [FAIL]
+[xUnit.net 00:00:02.18]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:02.18]       Expected: True
+[xUnit.net 00:00:02.18]       Actual:   False
+[xUnit.net 00:00:02.18]       Stack Trace:
+[xUnit.net 00:00:02.18]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\DeviceWordServiceTests.cs(59,0): at Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(String entitlement, String testMode, Boolean accepted)
+[xUnit.net 00:00:02.18]         --- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(entitlement: "unknown", testMode: "true", accepted: True) [19 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: True
+Actual:   False
+  Stack Trace:
+     at Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(String entitlement, String testMode, Boolean accepted) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\DeviceWordServiceTests.cs:line 59
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.DeviceWordsControllerTests.Upsert_EleventhWord_OnlyTestModeCanBypass(environment: "production", testMode: "true", accepted: True) [42 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 200
+Actual:   402
+  Stack Trace:
+     at Mavrylo.Tests.DeviceWordsControllerTests.Upsert_EleventhWord_OnlyTestModeCanBypass(String environment, String testMode, Boolean accepted) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\DeviceWordsControllerTests.cs:line 46
+--- End of stack trace from previous location ---
+  Passed Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(entitlement: "expired_trial", testMode: "false", accepted: False) [24 ms]
+  Passed Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(entitlement: "revoked", testMode: "false", accepted: False) [17 ms]
+  Passed Mavrylo.Tests.DeviceWordsControllerTests.Upsert_EleventhWord_OnlyTestModeCanBypass(environment: "development", testMode: "false", accepted: False) [38 ms]
+  Failed Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(entitlement: "revoked", testMode: "true", accepted: True) [25 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: True
+Actual:   False
+  Stack Trace:
+     at Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(String entitlement, String testMode, Boolean accepted) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\DeviceWordServiceTests.cs:line 59
+--- End of stack trace from previous location ---
+  Passed Mavrylo.Tests.AiProtectionFilterTests.ReviewTranslation_DoesNotReserveMissingOrInactiveWord(inactive: False) [127 ms]
+[xUnit.net 00:00:02.20]     Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(entitlement: "expired_paid", testMode: "true", accepted: True) [FAIL]
+[xUnit.net 00:00:02.20]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:02.20]       Expected: True
+[xUnit.net 00:00:02.20]       Actual:   False
+[xUnit.net 00:00:02.20]       Stack Trace:
+[xUnit.net 00:00:02.20]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\DeviceWordServiceTests.cs(59,0): at Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(String entitlement, String testMode, Boolean accepted)
+[xUnit.net 00:00:02.20]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:02.26]     Mavrylo.Tests.AiProtectionFilterTests.EleventhAiWord_OnlyTestModeCanBypass(environment: "development", testMode: "true", protectionEnabled: False, expectedStatus: 0) [FAIL]
+[xUnit.net 00:00:02.26]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:02.26]       Expected: True
+[xUnit.net 00:00:02.26]       Actual:   False
+[xUnit.net 00:00:02.26]       Stack Trace:
+[xUnit.net 00:00:02.26]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProtectionFilterTests.cs(220,0): at Mavrylo.Tests.AiProtectionFilterTests.EleventhAiWord_OnlyTestModeCanBypass(String environment, String testMode, Boolean protectionEnabled, Int32 expectedStatus)
+[xUnit.net 00:00:02.26]         --- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(entitlement: "expired_paid", testMode: "true", accepted: True) [26 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: True
+Actual:   False
+  Stack Trace:
+     at Mavrylo.Tests.DeviceWordServiceTests.InactiveEntitlement_OnlyTestModeAllowsNewWords(String entitlement, String testMode, Boolean accepted) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\DeviceWordServiceTests.cs:line 59
+--- End of stack trace from previous location ---
+  Passed Mavrylo.Tests.DeviceWordsControllerTests.Upsert_EleventhWord_OnlyTestModeCanBypass(environment: "development", testMode: null, accepted: False) [42 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.ReviewTranslation_DoesNotReserveMissingOrInactiveWord(inactive: True) [38 ms]
+  Passed Mavrylo.Tests.DeviceWordServiceTests.TestModeFalse_PreservesRealActiveEntitlements(entitlement: "grace") [29 ms]
+  Failed Mavrylo.Tests.AiProtectionFilterTests.EleventhAiWord_OnlyTestModeCanBypass(environment: "development", testMode: "true", protectionEnabled: False, expectedStatus: 0) [36 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: True
+Actual:   False
+  Stack Trace:
+     at Mavrylo.Tests.AiProtectionFilterTests.EleventhAiWord_OnlyTestModeCanBypass(String environment, String testMode, Boolean protectionEnabled, Int32 expectedStatus) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProtectionFilterTests.cs:line 220
+--- End of stack trace from previous location ---
+  Passed Mavrylo.Tests.DeviceWordServiceTests.TestModeFalse_PreservesRealActiveEntitlements(entitlement: "trial") [28 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.EleventhAiWord_OnlyTestModeCanBypass(environment: "production", testMode: "false", protectionEnabled: True, expectedStatus: 402) [20 ms]
+  Passed Mavrylo.Tests.DeviceWordServiceTests.TestModeFalse_PreservesRealActiveEntitlements(entitlement: "premium") [27 ms]
+[xUnit.net 00:00:02.34]     Mavrylo.Tests.AiProtectionFilterTests.EleventhAiWord_OnlyTestModeCanBypass(environment: "development", testMode: "true", protectionEnabled: True, expectedStatus: 0) [FAIL]
+[xUnit.net 00:00:02.34]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:02.34]       Expected: True
+[xUnit.net 00:00:02.34]       Actual:   False
+[xUnit.net 00:00:02.34]       Stack Trace:
+[xUnit.net 00:00:02.34]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProtectionFilterTests.cs(220,0): at Mavrylo.Tests.AiProtectionFilterTests.EleventhAiWord_OnlyTestModeCanBypass(String environment, String testMode, Boolean protectionEnabled, Int32 expectedStatus)
+[xUnit.net 00:00:02.34]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:02.39]     Mavrylo.Tests.AiProtectionFilterTests.EleventhAiWord_OnlyTestModeCanBypass(environment: "production", testMode: "true", protectionEnabled: True, expectedStatus: 0) [FAIL]
+[xUnit.net 00:00:02.39]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:02.39]       Expected: True
+[xUnit.net 00:00:02.39]       Actual:   False
+[xUnit.net 00:00:02.39]       Stack Trace:
+[xUnit.net 00:00:02.39]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProtectionFilterTests.cs(220,0): at Mavrylo.Tests.AiProtectionFilterTests.EleventhAiWord_OnlyTestModeCanBypass(String environment, String testMode, Boolean protectionEnabled, Int32 expectedStatus)
+[xUnit.net 00:00:02.39]         --- End of stack trace from previous location ---
+  Passed Mavrylo.Tests.AiProtectionFilterTests.EleventhAiWord_OnlyTestModeCanBypass(environment: "development", testMode: "false", protectionEnabled: False, expectedStatus: 402) [20 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.EleventhAiWord_OnlyTestModeCanBypass(environment: "development", testMode: null, protectionEnabled: True, expectedStatus: 402) [23 ms]
+  Passed Mavrylo.Tests.DeviceWordServiceTests.TestModeFalse_PreservesUpdatesToExistingWords(entitlement: "free") [42 ms]
+  Failed Mavrylo.Tests.AiProtectionFilterTests.EleventhAiWord_OnlyTestModeCanBypass(environment: "development", testMode: "true", protectionEnabled: True, expectedStatus: 0) [18 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: True
+Actual:   False
+  Stack Trace:
+     at Mavrylo.Tests.AiProtectionFilterTests.EleventhAiWord_OnlyTestModeCanBypass(String environment, String testMode, Boolean protectionEnabled, Int32 expectedStatus) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProtectionFilterTests.cs:line 220
+--- End of stack trace from previous location ---
+  Passed Mavrylo.Tests.DeviceWordServiceTests.TestModeFalse_PreservesUpdatesToExistingWords(entitlement: "expired_trial") [31 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.EleventhAiWord_OnlyTestModeCanBypass(environment: "development", testMode: "false", protectionEnabled: True, expectedStatus: 402) [20 ms]
+  Passed Mavrylo.Tests.DeviceWordServiceTests.TestModeFalse_PreservesUpdatesToExistingWords(entitlement: "revoked") [26 ms]
+  Failed Mavrylo.Tests.AiProtectionFilterTests.EleventhAiWord_OnlyTestModeCanBypass(environment: "production", testMode: "true", protectionEnabled: True, expectedStatus: 0) [29 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: True
+Actual:   False
+  Stack Trace:
+     at Mavrylo.Tests.AiProtectionFilterTests.EleventhAiWord_OnlyTestModeCanBypass(String environment, String testMode, Boolean protectionEnabled, Int32 expectedStatus) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProtectionFilterTests.cs:line 220
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:02.43]     Mavrylo.Tests.AiProtectionFilterTests.TestMode_SkipsExhaustedAiQuota(testMode: "true", expectedStatus: 0) [FAIL]
+[xUnit.net 00:00:02.43]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:02.43]       Expected: 0
+[xUnit.net 00:00:02.43]       Actual:   429
+[xUnit.net 00:00:02.43]       Stack Trace:
+[xUnit.net 00:00:02.43]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProtectionFilterTests.cs(55,0): at Mavrylo.Tests.AiProtectionFilterTests.TestMode_SkipsExhaustedAiQuota(String testMode, Int32 expectedStatus)
+[xUnit.net 00:00:02.43]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:02.62]     Mavrylo.Tests.AiProtectionFilterTests.ExpiredDatabaseEntitlement_OnlyTestModeCanBypass(environment: "development", testMode: "true", protectionEnabled: True, expectedStatus: 0) [FAIL]
+[xUnit.net 00:00:02.62]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:02.62]       Expected: 0
+[xUnit.net 00:00:02.62]       Actual:   402
+[xUnit.net 00:00:02.62]       Stack Trace:
+[xUnit.net 00:00:02.62]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProtectionFilterTests.cs(133,0): at Mavrylo.Tests.AiProtectionFilterTests.ExpiredDatabaseEntitlement_OnlyTestModeCanBypass(String environment, String testMode, Boolean protectionEnabled, Int32 expectedStatus)
+[xUnit.net 00:00:02.62]         --- End of stack trace from previous location ---
+  Passed Mavrylo.Tests.DeviceWordServiceTests.TestModeFalse_PreservesUpdatesToExistingWords(entitlement: "expired_paid") [34 ms]
+  Failed Mavrylo.Tests.AiProtectionFilterTests.TestMode_SkipsExhaustedAiQuota(testMode: "true", expectedStatus: 0) [31 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 0
+Actual:   429
+  Stack Trace:
+     at Mavrylo.Tests.AiProtectionFilterTests.TestMode_SkipsExhaustedAiQuota(String testMode, Int32 expectedStatus) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProtectionFilterTests.cs:line 55
+--- End of stack trace from previous location ---
+  Passed Mavrylo.Tests.AiProtectionFilterTests.TestMode_SkipsExhaustedAiQuota(testMode: "false", expectedStatus: 429) [20 ms]
+  Passed Mavrylo.Tests.DeviceWordServiceTests.Delete_RemovesMatchingWord [70 ms]
+  Failed Mavrylo.Tests.AiProtectionFilterTests.ExpiredDatabaseEntitlement_OnlyTestModeCanBypass(environment: "development", testMode: "true", protectionEnabled: True, expectedStatus: 0) [170 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 0
+Actual:   402
+  Stack Trace:
+     at Mavrylo.Tests.AiProtectionFilterTests.ExpiredDatabaseEntitlement_OnlyTestModeCanBypass(String environment, String testMode, Boolean protectionEnabled, Int32 expectedStatus) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProtectionFilterTests.cs:line 133
+--- End of stack trace from previous location ---
+  Passed Mavrylo.Tests.DeviceWordServiceTests.FreeUser_CanCreateTenWords_AndEleventhIsRejected [181 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.ExpiredDatabaseEntitlement_OnlyTestModeCanBypass(environment: "production", testMode: "false", protectionEnabled: True, expectedStatus: 402) [134 ms]
+  Passed Mavrylo.Tests.DeviceWordServiceTests.PremiumUser_CanExceedFreeLimit [152 ms]
+[xUnit.net 00:00:03.24]     Mavrylo.Tests.AiProtectionFilterTests.ExpiredDatabaseEntitlement_OnlyTestModeCanBypass(environment: "production", testMode: "true", protectionEnabled: True, expectedStatus: 0) [FAIL]
+[xUnit.net 00:00:03.24]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:03.24]       Expected: 0
+[xUnit.net 00:00:03.24]       Actual:   402
+[xUnit.net 00:00:03.25]       Stack Trace:
+[xUnit.net 00:00:03.25]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProtectionFilterTests.cs(133,0): at Mavrylo.Tests.AiProtectionFilterTests.ExpiredDatabaseEntitlement_OnlyTestModeCanBypass(String environment, String testMode, Boolean protectionEnabled, Int32 expectedStatus)
+[xUnit.net 00:00:03.25]         --- End of stack trace from previous location ---
+  Passed Mavrylo.Tests.AiProtectionFilterTests.ExpiredDatabaseEntitlement_OnlyTestModeCanBypass(environment: "development", testMode: "false", protectionEnabled: False, expectedStatus: 402) [220 ms]
+  Passed Mavrylo.Tests.DeviceWordServiceTests.AiReservation_ReservesSlot_AndAllowsExistingWord [240 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.ExpiredDatabaseEntitlement_OnlyTestModeCanBypass(environment: "development", testMode: null, protectionEnabled: True, expectedStatus: 402) [142 ms]
+  Failed Mavrylo.Tests.AiProtectionFilterTests.ExpiredDatabaseEntitlement_OnlyTestModeCanBypass(environment: "production", testMode: "true", protectionEnabled: True, expectedStatus: 0) [126 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 0
+Actual:   402
+  Stack Trace:
+     at Mavrylo.Tests.AiProtectionFilterTests.ExpiredDatabaseEntitlement_OnlyTestModeCanBypass(String environment, String testMode, Boolean protectionEnabled, Int32 expectedStatus) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProtectionFilterTests.cs:line 133
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:03.37]     Mavrylo.Tests.AiProtectionFilterTests.ExpiredDatabaseEntitlement_OnlyTestModeCanBypass(environment: "development", testMode: "true", protectionEnabled: False, expectedStatus: 0) [FAIL]
+[xUnit.net 00:00:03.38]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:03.38]       Expected: 0
+[xUnit.net 00:00:03.38]       Actual:   402
+[xUnit.net 00:00:03.38]       Stack Trace:
+[xUnit.net 00:00:03.38]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProtectionFilterTests.cs(133,0): at Mavrylo.Tests.AiProtectionFilterTests.ExpiredDatabaseEntitlement_OnlyTestModeCanBypass(String environment, String testMode, Boolean protectionEnabled, Int32 expectedStatus)
+[xUnit.net 00:00:03.38]         --- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.AiProtectionFilterTests.ExpiredDatabaseEntitlement_OnlyTestModeCanBypass(environment: "development", testMode: "true", protectionEnabled: False, expectedStatus: 0) [125 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 0
+Actual:   402
+  Stack Trace:
+     at Mavrylo.Tests.AiProtectionFilterTests.ExpiredDatabaseEntitlement_OnlyTestModeCanBypass(String environment, String testMode, Boolean protectionEnabled, Int32 expectedStatus) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProtectionFilterTests.cs:line 133
+--- End of stack trace from previous location ---
+  Passed Mavrylo.Tests.AiProtectionFilterTests.ExpiredDatabaseEntitlement_OnlyTestModeCanBypass(environment: "development", testMode: "false", protectionEnabled: True, expectedStatus: 402) [151 ms]
+  Passed Mavrylo.Tests.TestModeHostBoundaryTests.NonDevelopmentTrueFailsSpecificallyBeforeMigration(host: "Staging") [245 ms]
+  Passed Mavrylo.Tests.TestModeHostBoundaryTests.NonDevelopmentTrueFailsSpecificallyBeforeMigration(host: "Production") [15 ms]
+  Passed Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: "", products: "product.one") [550 ms]
+  Passed Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: "LocalTesting", products: "product.one") [75 ms]
+  Passed Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: "Production", products: "") [68 ms]
+  Passed Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: "Production ", products: "product.one") [34 ms]
+  Passed Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: "Wrong", products: "product.one") [28 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.DevelopmentDevice_OnlyVerifiedAssertionReachesAction(assertionValid: True, expectedStatus: 0) [628 ms]
+  Passed Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: "Production", products: "product.one,") [28 ms]
+  Passed Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: null, products: null) [25 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.DevelopmentDevice_OnlyVerifiedAssertionReachesAction(assertionValid: False, expectedStatus: 403) [126 ms]
+  Passed Mavrylo.Tests.SubscriptionInventorySqlTests.EmptyTableStillValidatesSettingsAndReportsZero [151 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.TestMode_AllowsMoreWordsWithoutChangingEntitlement(testMode: "false", expectedStatus: 402) [181 ms]
+[xUnit.net 00:00:04.94]     Mavrylo.Tests.AiProtectionFilterTests.TestMode_AllowsMoreWordsWithoutChangingEntitlement(testMode: "true", expectedStatus: 0) [FAIL]
+[xUnit.net 00:00:04.94]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:04.94]       Expected: True
+[xUnit.net 00:00:04.94]       Actual:   False
+[xUnit.net 00:00:04.94]       Stack Trace:
+[xUnit.net 00:00:04.94]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProtectionFilterTests.cs(40,0): at Mavrylo.Tests.AiProtectionFilterTests.TestMode_AllowsMoreWordsWithoutChangingEntitlement(String testMode, Int32 expectedStatus)
+[xUnit.net 00:00:04.94]         --- End of stack trace from previous location ---
+  Passed Mavrylo.Tests.SubscriptionInventorySqlTests.AggregateIsExactSafeAndRepeatableInReadOnlyTransaction [150 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.TestMode_AllowsMoreWordsWithoutChangingEntitlement(testMode: null, expectedStatus: 402) [196 ms]
+  Failed Mavrylo.Tests.AiProtectionFilterTests.TestMode_AllowsMoreWordsWithoutChangingEntitlement(testMode: "true", expectedStatus: 0) [274 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: True
+Actual:   False
+  Stack Trace:
+     at Mavrylo.Tests.AiProtectionFilterTests.TestMode_AllowsMoreWordsWithoutChangingEntitlement(String testMode, Int32 expectedStatus) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProtectionFilterTests.cs:line 40
+--- End of stack trace from previous location ---
+  Passed Mavrylo.Tests.AiProtectionFilterTests.DisabledProtection_StillRequiresDeviceAuthenticationAndAssertion(testMode: null, token: False, expectedStatus: 401) [131 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.DisabledProtection_StillRequiresDeviceAuthenticationAndAssertion(testMode: "false", token: True, expectedStatus: 403) [116 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.DisabledProtection_StillRequiresDeviceAuthenticationAndAssertion(testMode: "false", token: False, expectedStatus: 401) [134 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.DisabledProtection_StillRequiresDeviceAuthenticationAndAssertion(testMode: "true", token: False, expectedStatus: 401) [117 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.DisabledProtection_StillRequiresDeviceAuthenticationAndAssertion(testMode: "true", token: True, expectedStatus: 403) [138 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.TestMode_StillRequiresDeviceAuthenticationAndAssertion(token: False, expectedStatus: 401) [159 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.TestMode_StillRequiresDeviceAuthenticationAndAssertion(token: True, expectedStatus: 403) [149 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.FreeRequest_Returns429WhenDailyQuotaReached(environment: "development") [181 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.FreeRequest_Returns429WhenDailyQuotaReached(environment: "production") [127 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.ReviewTranslation_RequiresDeviceTokenAndAssertion(token: True, expectedStatus: 403) [202 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.ReviewTranslation_RequiresDeviceTokenAndAssertion(token: False, expectedStatus: 401) [154 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.ReviewTranslation_RejectsNonObjectBodyWithoutReservations(body: "null") [177 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.ReviewTranslation_RejectsNonObjectBodyWithoutReservations(body: "42") [181 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.ReviewTranslation_RejectsNonObjectBodyWithoutReservations(body: "[]") [205 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.EnabledProtection_Returns401WhenDeviceTokenMissing [170 ms]
+  Passed Mavrylo.Tests.AiProtectionFilterTests.FreeSuccessfulRequest_RewindsBodyForAction_ReservesWord_AndIncrementsUsage [217 ms]
+  Passed Mavrylo.Tests.SharedSubscriptionPostgresTests.ConcurrentAccountAiReservationsCannotExceedMinuteLimit [4 s]
+  Passed Mavrylo.Tests.TestModeHostBoundaryTests.DevelopmentCanEnableAfterStartup [4 s]
+  Passed Mavrylo.Tests.ReviewTranslationTests.RequiresAuthenticationEvenInTestMode(path: "/owlai/ai/review-translation") [4 s]
+  Passed Mavrylo.Tests.DeviceWordConcurrencyTests.LastSlotAcrossSeparateContextsHasOneWinnerAndPredictableDenial(firstUpsert: False, secondUpsert: True) [4 s]
+  Passed Mavrylo.Tests.ReviewTranslationTests.RequiresAuthenticationEvenInTestMode(path: "/owlai/account/ai/review-translation") [608 ms]
+  Passed Mavrylo.Tests.DeviceWordConcurrencyTests.LastSlotAcrossSeparateContextsHasOneWinnerAndPredictableDenial(firstUpsert: False, secondUpsert: False) [744 ms]
+  Passed Mavrylo.Tests.TestModeHostBoundaryTests.SignedSandboxFalseRemainsUsableAndReloadCannotEnableTestMode [891 ms]
+  Passed Mavrylo.Tests.TestModeRouteTests.DevelopmentDeviceCannotRetainTestAccessWhenServerTurnsItOff(expired: False) [5 s]
+  Passed Mavrylo.Tests.DeviceWordConcurrencyTests.LastSlotAcrossSeparateContextsHasOneWinnerAndPredictableDenial(firstUpsert: True, secondUpsert: True) [659 ms]
+  Passed Mavrylo.Tests.DeviceWordConcurrencyTests.InactiveWordCannotReactivatePastFreeLimit [225 ms]
+  Passed Mavrylo.Tests.DeviceWordConcurrencyTests.AiReservationOfInactiveWordRespectsRemainingSlot(activeWords: 9, allowed: True) [166 ms]
+  Passed Mavrylo.Tests.DeviceWordConcurrencyTests.AiReservationOfInactiveWordRespectsRemainingSlot(activeWords: 10, allowed: False) [161 ms]
+  Passed Mavrylo.Tests.TestModeRouteTests.DevelopmentDeviceCannotRetainTestAccessWhenServerTurnsItOff(expired: True) [986 ms]
+  Passed Mavrylo.Tests.TestModeRouteTests.PublicFlagReflectsServerConfigurationWithoutCaching(value: "not-a-boolean", expected: False) [391 ms]
+  Passed Mavrylo.Tests.TestModeRouteTests.PublicFlagReflectsServerConfigurationWithoutCaching(value: "false", expected: False) [281 ms]
+  Passed Mavrylo.Tests.TestModeRouteTests.PublicFlagReflectsServerConfigurationWithoutCaching(value: "true", expected: True) [308 ms]
+  Passed Mavrylo.Tests.TestModeRouteTests.PublicFlagReflectsServerConfigurationWithoutCaching(value: null, expected: False) [338 ms]
+  Passed Mavrylo.Tests.TestModeRouteTests.TestModeAllowsDeviceWordsAndAiBeyondQuotaWithoutGrantingAPurchase [1 s]
+  Passed Mavrylo.Tests.TestModeRouteTests.TestModeDoesNotAuthorizeAnonymousOrRevokedAccounts [651 ms]
+  Passed Mavrylo.Tests.TestModeRouteTests.TestModeRemovesAccountSubscriptionAndRequestLimitsAndCanBeTurnedOff [1 s]
+[xUnit.net 00:00:21.55]   Finished:    Mavrylo.Tests
+  Passed Mavrylo.Tests.TestModeRouteTests.TestModeAllowsRepeatedAssertionChallengesButKeepsPasswordAttemptThrottle [5 s]
+
+Test Run Failed.
+Total tests: 97
+     Passed: 83
+     Failed: 14
+ Total time: 22.3311 Seconds

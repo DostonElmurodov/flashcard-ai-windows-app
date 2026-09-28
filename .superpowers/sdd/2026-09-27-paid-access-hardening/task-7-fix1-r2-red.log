@@ -1,0 +1,223 @@
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-mggc-4xg6-vcxf
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-q939-rpr3-3284
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Mavrylo.Services.csproj : warning NU1510: PackageReference System.Formats.Cbor will not be pruned. This package is automatically available and does not need to be referenced explicitly. Remove the PackageReference item.
+  Mavrylo.Entities -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Entities\bin\Release\net10.0\Mavrylo.Entities.dll
+  Mavrylo.Data -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Data\bin\Release\net10.0\Mavrylo.Data.dll
+  Mavrylo.Services -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\bin\Release\net10.0\Mavrylo.Services.dll
+  Mavrylo -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\bin\Release\net10.0\Mavrylo.dll
+  Mavrylo.Tests -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll
+Test run for D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:00.09]   Discovering: Mavrylo.Tests
+[xUnit.net 00:00:00.19]   Discovered:  Mavrylo.Tests
+[xUnit.net 00:00:00.23]   Starting:    Mavrylo.Tests
+[xUnit.net 00:00:00.42]     Mavrylo.Tests.AiProviderBoundaryTests.ReservationDeadlineIsTerminalBeforeHttp [FAIL]
+[xUnit.net 00:00:00.42]       Assert.Throws() Failure: Exception type was not an exact match
+[xUnit.net 00:00:00.42]       Expected: typeof(Mavrylo.Services.AiSpendDeniedException)
+[xUnit.net 00:00:00.42]       Actual:   typeof(System.Threading.Tasks.TaskCanceledException)
+[xUnit.net 00:00:00.42]       ---- System.Threading.Tasks.TaskCanceledException : A task was canceled.
+[xUnit.net 00:00:00.42]       Stack Trace:
+[xUnit.net 00:00:00.42]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderBoundaryTests.cs(110,0): at Mavrylo.Tests.AiProviderBoundaryTests.ReservationDeadlineIsTerminalBeforeHttp()
+[xUnit.net 00:00:00.42]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.42]         ----- Inner Stack Trace -----
+[xUnit.net 00:00:00.42]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderBoundaryTests.cs(161,0): at Mavrylo.Tests.AiProviderBoundaryTests.StalledGuard.TryReserveAsync(AiAttempt attempt, CancellationToken ct)
+[xUnit.net 00:00:00.42]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\AiProviderTransport.cs(33,0): at Mavrylo.Services.AiProviderTransport.SendAsync(AiCostProfile profile, String operation, HttpRequestMessage request, CancellationToken ct)
+[xUnit.net 00:00:00.42]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\OpenAiJsonService.cs(73,0): at Mavrylo.Services.OpenAiJsonService.SendResponsesRequestAsync(AiCostProfile profile, String operationName, Object body, CancellationToken ct)
+[xUnit.net 00:00:00.42]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\OpenAiJsonService.cs(33,0): at Mavrylo.Services.OpenAiJsonService.CompleteJsonAsync(String operationName, String userPrompt, CancellationToken ct)
+[xUnit.net 00:00:00.42]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\FallbackAiJsonService.cs(41,0): at Mavrylo.Services.FallbackAiJsonService.CompleteWithFallbackAsync(String operationName, Func`2 complete, CancellationToken ct)
+[xUnit.net 00:00:00.54]       Assert.Throws() Failure: Exception type was not an exact match
+[xUnit.net 00:00:00.54]       Expected: typeof(Mavrylo.Services.AiSpendDeniedException)
+[xUnit.net 00:00:00.54]     Mavrylo.Tests.AiProviderBoundaryTests.SlowBodyHonorsFullDeadlineAsTerminalUnavailable(gemini: True) [FAIL]
+[xUnit.net 00:00:00.54]       Actual:   typeof(System.Threading.Tasks.TaskCanceledException)
+[xUnit.net 00:00:00.54]       ---- System.Threading.Tasks.TaskCanceledException : A task was canceled.
+[xUnit.net 00:00:00.54]       Stack Trace:
+[xUnit.net 00:00:00.54]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderBoundaryTests.cs(98,0): at Mavrylo.Tests.AiProviderBoundaryTests.SlowBodyHonorsFullDeadlineAsTerminalUnavailable(Boolean gemini)
+[xUnit.net 00:00:00.54]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.54]         ----- Inner Stack Trace -----
+[xUnit.net 00:00:00.54]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderBoundaryTests.cs(156,0): at Mavrylo.Tests.AiProviderBoundaryTests.SlowStream.ReadAsync(Memory`1 buffer, CancellationToken ct)
+[xUnit.net 00:00:00.54]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\AiProviderTransport.cs(52,0): at Mavrylo.Services.AiProviderTransport.SendAsync(AiCostProfile profile, String operation, HttpRequestMessage request, CancellationToken ct)
+[xUnit.net 00:00:00.54]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\AiProviderTransport.cs(60,0): at Mavrylo.Services.AiProviderTransport.SendAsync(AiCostProfile profile, String operation, HttpRequestMessage request, CancellationToken ct)
+[xUnit.net 00:00:00.54]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\AiProviderTransport.cs(68,0): at Mavrylo.Services.AiProviderTransport.SendAsync(AiCostProfile profile, String operation, HttpRequestMessage request, CancellationToken ct)
+[xUnit.net 00:00:00.54]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\GeminiJsonService.cs(88,0): at Mavrylo.Services.GeminiJsonService.GenerateJsonAsync(AiCostProfile profile, String operationName, Object body, CancellationToken ct)
+[xUnit.net 00:00:00.54]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\FallbackAiJsonService.cs(41,0): at Mavrylo.Services.FallbackAiJsonService.CompleteWithFallbackAsync(String operationName, Func`2 complete, CancellationToken ct)
+[xUnit.net 00:00:00.64]     Mavrylo.Tests.AiProviderBoundaryTests.SlowBodyHonorsFullDeadlineAsTerminalUnavailable(gemini: False) [FAIL]
+[xUnit.net 00:00:00.64]       Assert.Throws() Failure: Exception type was not an exact match
+[xUnit.net 00:00:00.64]       Expected: typeof(Mavrylo.Services.AiSpendDeniedException)
+[xUnit.net 00:00:00.64]       Actual:   typeof(System.Threading.Tasks.TaskCanceledException)
+[xUnit.net 00:00:00.64]       ---- System.Threading.Tasks.TaskCanceledException : A task was canceled.
+[xUnit.net 00:00:00.64]       Stack Trace:
+[xUnit.net 00:00:00.64]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderBoundaryTests.cs(98,0): at Mavrylo.Tests.AiProviderBoundaryTests.SlowBodyHonorsFullDeadlineAsTerminalUnavailable(Boolean gemini)
+[xUnit.net 00:00:00.64]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.64]         ----- Inner Stack Trace -----
+[xUnit.net 00:00:00.64]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderBoundaryTests.cs(156,0): at Mavrylo.Tests.AiProviderBoundaryTests.SlowStream.ReadAsync(Memory`1 buffer, CancellationToken ct)
+[xUnit.net 00:00:00.64]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\AiProviderTransport.cs(52,0): at Mavrylo.Services.AiProviderTransport.SendAsync(AiCostProfile profile, String operation, HttpRequestMessage request, CancellationToken ct)
+[xUnit.net 00:00:00.64]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\AiProviderTransport.cs(60,0): at Mavrylo.Services.AiProviderTransport.SendAsync(AiCostProfile profile, String operation, HttpRequestMessage request, CancellationToken ct)
+[xUnit.net 00:00:00.64]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\AiProviderTransport.cs(68,0): at Mavrylo.Services.AiProviderTransport.SendAsync(AiCostProfile profile, String operation, HttpRequestMessage request, CancellationToken ct)
+[xUnit.net 00:00:00.64]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\OpenAiJsonService.cs(73,0): at Mavrylo.Services.OpenAiJsonService.SendResponsesRequestAsync(AiCostProfile profile, String operationName, Object body, CancellationToken ct)
+[xUnit.net 00:00:00.64]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\OpenAiJsonService.cs(33,0): at Mavrylo.Services.OpenAiJsonService.CompleteJsonAsync(String operationName, String userPrompt, CancellationToken ct)
+[xUnit.net 00:00:00.64]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\FallbackAiJsonService.cs(41,0): at Mavrylo.Services.FallbackAiJsonService.CompleteWithFallbackAsync(String operationName, Func`2 complete, CancellationToken ct)
+  Failed Mavrylo.Tests.AiProviderBoundaryTests.ReservationDeadlineIsTerminalBeforeHttp [132 ms]
+  Error Message:
+   Assert.Throws() Failure: Exception type was not an exact match
+Expected: typeof(Mavrylo.Services.AiSpendDeniedException)
+Actual:   typeof(System.Threading.Tasks.TaskCanceledException)
+---- System.Threading.Tasks.TaskCanceledException : A task was canceled.
+  Stack Trace:
+     at Mavrylo.Tests.AiProviderBoundaryTests.ReservationDeadlineIsTerminalBeforeHttp() in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderBoundaryTests.cs:line 110
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+   at Mavrylo.Tests.AiProviderBoundaryTests.StalledGuard.TryReserveAsync(AiAttempt attempt, CancellationToken ct) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderBoundaryTests.cs:line 161
+   at Mavrylo.Services.AiProviderTransport.SendAsync(AiCostProfile profile, String operation, HttpRequestMessage request, CancellationToken ct) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\AiProviderTransport.cs:line 33
+   at Mavrylo.Services.OpenAiJsonService.SendResponsesRequestAsync(AiCostProfile profile, String operationName, Object body, CancellationToken ct) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\OpenAiJsonService.cs:line 73
+   at Mavrylo.Services.OpenAiJsonService.CompleteJsonAsync(String operationName, String userPrompt, CancellationToken ct) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\OpenAiJsonService.cs:line 33
+   at Mavrylo.Services.FallbackAiJsonService.CompleteWithFallbackAsync(String operationName, Func`2 complete, CancellationToken ct) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\FallbackAiJsonService.cs:line 41
+  Failed Mavrylo.Tests.AiProviderBoundaryTests.SlowBodyHonorsFullDeadlineAsTerminalUnavailable(gemini: True) [114 ms]
+  Error Message:
+   Assert.Throws() Failure: Exception type was not an exact match
+Expected: typeof(Mavrylo.Services.AiSpendDeniedException)
+Actual:   typeof(System.Threading.Tasks.TaskCanceledException)
+---- System.Threading.Tasks.TaskCanceledException : A task was canceled.
+  Stack Trace:
+     at Mavrylo.Tests.AiProviderBoundaryTests.SlowBodyHonorsFullDeadlineAsTerminalUnavailable(Boolean gemini) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderBoundaryTests.cs:line 98
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+   at Mavrylo.Tests.AiProviderBoundaryTests.SlowStream.ReadAsync(Memory`1 buffer, CancellationToken ct) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderBoundaryTests.cs:line 156
+   at Mavrylo.Services.AiProviderTransport.SendAsync(AiCostProfile profile, String operation, HttpRequestMessage request, CancellationToken ct) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\AiProviderTransport.cs:line 52
+   at Mavrylo.Services.AiProviderTransport.SendAsync(AiCostProfile profile, String operation, HttpRequestMessage request, CancellationToken ct) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\AiProviderTransport.cs:line 60
+   at Mavrylo.Services.AiProviderTransport.SendAsync(AiCostProfile profile, String operation, HttpRequestMessage request, CancellationToken ct) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\AiProviderTransport.cs:line 68
+   at Mavrylo.Services.GeminiJsonService.GenerateJsonAsync(AiCostProfile profile, String operationName, Object body, CancellationToken ct) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\GeminiJsonService.cs:line 88
+   at Mavrylo.Services.FallbackAiJsonService.CompleteWithFallbackAsync(String operationName, Func`2 complete, CancellationToken ct) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\FallbackAiJsonService.cs:line 41
+  Failed Mavrylo.Tests.AiProviderBoundaryTests.SlowBodyHonorsFullDeadlineAsTerminalUnavailable(gemini: False) [98 ms]
+  Error Message:
+   Assert.Throws() Failure: Exception type was not an exact match
+Expected: typeof(Mavrylo.Services.AiSpendDeniedException)
+Actual:   typeof(System.Threading.Tasks.TaskCanceledException)
+---- System.Threading.Tasks.TaskCanceledException : A task was canceled.
+  Stack Trace:
+     at Mavrylo.Tests.AiProviderBoundaryTests.SlowBodyHonorsFullDeadlineAsTerminalUnavailable(Boolean gemini) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderBoundaryTests.cs:line 98
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+   at Mavrylo.Tests.AiProviderBoundaryTests.SlowStream.ReadAsync(Memory`1 buffer, CancellationToken ct) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderBoundaryTests.cs:line 156
+   at Mavrylo.Services.AiProviderTransport.SendAsync(AiCostProfile profile, String operation, HttpRequestMessage request, CancellationToken ct) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\AiProviderTransport.cs:line 52
+   at Mavrylo.Services.AiProviderTransport.SendAsync(AiCostProfile profile, String operation, HttpRequestMessage request, CancellationToken ct) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\AiProviderTransport.cs:line 60
+   at Mavrylo.Services.AiProviderTransport.SendAsync(AiCostProfile profile, String operation, HttpRequestMessage request, CancellationToken ct) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\AiProviderTransport.cs:line 68
+   at Mavrylo.Services.OpenAiJsonService.SendResponsesRequestAsync(AiCostProfile profile, String operationName, Object body, CancellationToken ct) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\OpenAiJsonService.cs:line 73
+   at Mavrylo.Services.OpenAiJsonService.CompleteJsonAsync(String operationName, String userPrompt, CancellationToken ct) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\OpenAiJsonService.cs:line 33
+   at Mavrylo.Services.FallbackAiJsonService.CompleteWithFallbackAsync(String operationName, Func`2 complete, CancellationToken ct) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Services\FallbackAiJsonService.cs:line 41
+  Passed Mavrylo.Tests.AiProviderTransportTests.RegisteredHandlerSubmitsExactlyOneBoundedPost(mode: "redirect") [1 s]
+  Passed Mavrylo.Tests.AiProviderTransportTests.RegisteredHandlerSubmitsExactlyOneBoundedPost(mode: "chunked") [257 ms]
+[xUnit.net 00:00:05.33]     Mavrylo.Tests.AiProviderTransportTests.RegisteredHandlerSubmitsExactlyOneBoundedPost(mode: "slow") [FAIL]
+[xUnit.net 00:00:05.33]       Assert.IsType() Failure: Value is not the exact type
+[xUnit.net 00:00:05.33]       Expected: typeof(Mavrylo.Services.AiSpendDeniedException)
+[xUnit.net 00:00:05.33]       Actual:   typeof(System.Threading.Tasks.TaskCanceledException)
+[xUnit.net 00:00:05.33]       Stack Trace:
+[xUnit.net 00:00:05.33]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderTransportTests.cs(34,0): at Mavrylo.Tests.AiProviderTransportTests.RegisteredHandlerSubmitsExactlyOneBoundedPost(String mode)
+[xUnit.net 00:00:05.33]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderTransportTests.cs(40,0): at Mavrylo.Tests.AiProviderTransportTests.RegisteredHandlerSubmitsExactlyOneBoundedPost(String mode)
+[xUnit.net 00:00:05.33]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:05.41]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:05.41]     Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "OpenAI", operation: "review-translation") [FAIL]
+[xUnit.net 00:00:05.41]       Expected: ServiceUnavailable
+[xUnit.net 00:00:05.41]       Actual:   InternalServerError
+[xUnit.net 00:00:05.41]       Stack Trace:
+[xUnit.net 00:00:05.41]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs(37,0): at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation)
+[xUnit.net 00:00:05.41]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs(45,0): at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation)
+[xUnit.net 00:00:05.41]         --- End of stack trace from previous location ---
+  Passed Mavrylo.Tests.AiSpendGuardTests.CallerCancellationAfterDispatchPropagatesAndRetainsMoneyAfterRestart(gemini: False) [2 s]
+  Passed Mavrylo.Tests.AiProviderTransportTests.RegisteredHandlerSubmitsExactlyOneBoundedPost(mode: "disconnect") [251 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.CallerCancellationAfterDispatchPropagatesAndRetainsMoneyAfterRestart(gemini: True) [103 ms]
+  Failed Mavrylo.Tests.AiProviderTransportTests.RegisteredHandlerSubmitsExactlyOneBoundedPost(mode: "slow") [679 ms]
+  Error Message:
+   Assert.IsType() Failure: Value is not the exact type
+Expected: typeof(Mavrylo.Services.AiSpendDeniedException)
+Actual:   typeof(System.Threading.Tasks.TaskCanceledException)
+  Stack Trace:
+     at Mavrylo.Tests.AiProviderTransportTests.RegisteredHandlerSubmitsExactlyOneBoundedPost(String mode) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderTransportTests.cs:line 34
+   at Mavrylo.Tests.AiProviderTransportTests.RegisteredHandlerSubmitsExactlyOneBoundedPost(String mode) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiProviderTransportTests.cs:line 40
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "OpenAI", operation: "review-translation") [3 s]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: ServiceUnavailable
+Actual:   InternalServerError
+  Stack Trace:
+     at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs:line 37
+   at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs:line 45
+--- End of stack trace from previous location ---
+  Passed Mavrylo.Tests.AiProviderTransportTests.PooledConnectionDisconnectAfterPostDoesNotResubmit [279 ms]
+[xUnit.net 00:00:06.13]     Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "OpenAI", operation: "batch") [FAIL]
+[xUnit.net 00:00:06.13]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:06.13]       Expected: ServiceUnavailable
+[xUnit.net 00:00:06.13]       Actual:   InternalServerError
+[xUnit.net 00:00:06.13]       Stack Trace:
+[xUnit.net 00:00:06.13]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs(37,0): at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation)
+[xUnit.net 00:00:06.13]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs(45,0): at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation)
+[xUnit.net 00:00:06.13]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:06.78]     Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "Gemini", operation: "word-detail") [FAIL]
+[xUnit.net 00:00:06.78]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:06.78]       Expected: ServiceUnavailable
+[xUnit.net 00:00:06.78]       Actual:   InternalServerError
+[xUnit.net 00:00:06.78]       Stack Trace:
+[xUnit.net 00:00:06.78]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs(37,0): at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation)
+[xUnit.net 00:00:06.78]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs(45,0): at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation)
+[xUnit.net 00:00:06.78]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:07.42]     Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "OpenAI", operation: "analyze-word") [FAIL]
+[xUnit.net 00:00:07.42]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:07.42]       Expected: ServiceUnavailable
+[xUnit.net 00:00:07.42]       Actual:   InternalServerError
+[xUnit.net 00:00:07.42]       Stack Trace:
+[xUnit.net 00:00:07.42]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs(37,0): at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation)
+[xUnit.net 00:00:07.42]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs(45,0): at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation)
+[xUnit.net 00:00:07.42]         --- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "OpenAI", operation: "batch") [720 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: ServiceUnavailable
+Actual:   InternalServerError
+  Stack Trace:
+     at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs:line 37
+   at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs:line 45
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "Gemini", operation: "word-detail") [642 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: ServiceUnavailable
+Actual:   InternalServerError
+  Stack Trace:
+     at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs:line 37
+   at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs:line 45
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "OpenAI", operation: "analyze-word") [638 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: ServiceUnavailable
+Actual:   InternalServerError
+  Stack Trace:
+     at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs:line 37
+   at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs:line 45
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:08.07]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:08.07]     Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "Gemini", operation: "extract-words") [FAIL]
+[xUnit.net 00:00:08.07]       Expected: ServiceUnavailable
+[xUnit.net 00:00:08.07]       Actual:   InternalServerError
+[xUnit.net 00:00:08.07]       Stack Trace:
+[xUnit.net 00:00:08.07]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs(37,0): at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation)
+[xUnit.net 00:00:08.07]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs(45,0): at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation)
+[xUnit.net 00:00:08.07]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:08.24]   Finished:    Mavrylo.Tests
+  Failed Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "Gemini", operation: "extract-words") [649 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: ServiceUnavailable
+Actual:   InternalServerError
+  Stack Trace:
+     at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs:line 37
+   at Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(String provider, String operation) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\AiSpendRouteTests.cs:line 45
+--- End of stack trace from previous location ---
+
+Test Run Failed.
+Total tests: 15
+     Passed: 6
+     Failed: 9
+ Total time: 8.7111 Seconds

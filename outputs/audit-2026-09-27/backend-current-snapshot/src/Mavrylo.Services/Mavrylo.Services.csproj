@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Mavrylo</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup><!-- replicate the Web SDK implicit usings the moved files rely on -->
+    <Using Include="System.Net.Http.Json" />
+    <Using Include="Microsoft.AspNetCore.Builder" />
+    <Using Include="Microsoft.AspNetCore.Hosting" />
+    <Using Include="Microsoft.AspNetCore.Http" />
+    <Using Include="Microsoft.AspNetCore.Routing" />
+    <Using Include="Microsoft.Extensions.Configuration" />
+    <Using Include="Microsoft.Extensions.DependencyInjection" />
+    <Using Include="Microsoft.Extensions.Hosting" />
+    <Using Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.19.1" />
+    <PackageReference Include="System.Formats.Cbor" Version="10.0.9" />
+    <PackageReference Include="MailKit" Version="4.17.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Mavrylo.Data/Mavrylo.Data.csproj" />
+    <ProjectReference Include="../Mavrylo.Entities/Mavrylo.Entities.csproj" />
+  </ItemGroup>
+  <ItemGroup><!-- EXPLICIT LogicalName guarantees the names the cert loaders expect -->
+    <EmbeddedResource Include="Resources/Certificates/Apple_App_Attestation_Root_CA.pem">
+      <LogicalName>Mavrylo.Resources.Certificates.Apple_App_Attestation_Root_CA.pem</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources/Certificates/AppleRootCA-G3.pem">
+      <LogicalName>Mavrylo.Resources.Certificates.AppleRootCA-G3.pem</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+</Project>

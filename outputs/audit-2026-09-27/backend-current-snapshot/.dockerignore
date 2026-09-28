@@ -1,0 +1,24 @@
+# Build artifacts
+**/bin/
+**/obj/
+publish/
+
+# Tests are not part of the runtime image
+tests/
+
+# VCS / IDE / local
+.git/
+.github/
+.vs/
+.vscode/
+.cursor/
+.claude/
+
+# Local secrets / settings that must never enter the image
+appsettings.Development.json
+**/*.user
+ops/
+
+# Docs
+docs/
+*.md

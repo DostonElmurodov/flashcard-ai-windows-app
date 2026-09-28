@@ -1,0 +1,27 @@
+✖ large sync batches retain iOS metadata and detect conflicts on unsent records (3551.6366ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4529.4858
+
+✖ failing tests:
+
+test at tests\account-sync.test.ts:2:5825
+✖ large sync batches retain iOS metadata and detect conflicts on unsent records (3551.6366ms)
+  Error: EPERM: operation not permitted, rename 'D:\07 Hobby\FlashcardAI\outputs\audit-2026-09-27\windows\temp\owl-batch-n20zns\db.tmp' -> 'D:\07 Hobby\FlashcardAI\outputs\audit-2026-09-27\windows\temp\owl-batch-n20zns\db'
+      at renameSync (node:fs:1013:11)
+      at Store.persist (D:\07 Hobby\FlashcardAI\electron\store.ts:29:96)
+      at Store.close (D:\07 Hobby\FlashcardAI\electron\store.ts:124:15)
+      at TestContext.<anonymous> (D:\07 Hobby\FlashcardAI\tests\account-sync.test.ts:82:17)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    errno: -4048,
+    code: 'EPERM',
+    syscall: 'rename',
+    path: 'D:\\07 Hobby\\FlashcardAI\\outputs\\audit-2026-09-27\\windows\\temp\\owl-batch-n20zns\\db.tmp',
+    dest: 'D:\\07 Hobby\\FlashcardAI\\outputs\\audit-2026-09-27\\windows\\temp\\owl-batch-n20zns\\db'
+  }

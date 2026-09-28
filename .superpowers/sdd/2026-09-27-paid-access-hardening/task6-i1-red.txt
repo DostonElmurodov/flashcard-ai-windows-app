@@ -1,0 +1,191 @@
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-mggc-4xg6-vcxf
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\Mavrylo.Tests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-q939-rpr3-3284
+D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\Mavrylo.Services.csproj : warning NU1510: PackageReference System.Formats.Cbor will not be pruned. This package is automatically available and does not need to be referenced explicitly. Remove the PackageReference item.
+  Mavrylo.Entities -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Entities\bin\Release\net10.0\Mavrylo.Entities.dll
+  Mavrylo.Data -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Data\bin\Release\net10.0\Mavrylo.Data.dll
+  Mavrylo.Services -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\src\Mavrylo.Services\bin\Release\net10.0\Mavrylo.Services.dll
+  Mavrylo -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\bin\Release\net10.0\Mavrylo.dll
+  Mavrylo.Tests -> D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll
+Test run for D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:00.48]   Discovering: Mavrylo.Tests
+[xUnit.net 00:00:00.60]   Discovered:  Mavrylo.Tests
+[xUnit.net 00:00:00.63]   Starting:    Mavrylo.Tests
+[xUnit.net 00:00:04.26]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: True, variant: "target-alias") [FAIL]
+[xUnit.net 00:00:04.26]       Assert.False() Failure
+[xUnit.net 00:00:04.26]       Expected: False
+[xUnit.net 00:00:04.26]       Actual:   True
+[xUnit.net 00:00:04.26]       Stack Trace:
+[xUnit.net 00:00:04.26]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(92,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:04.26]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(93,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:04.26]         --- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: True, variant: "target-alias") [2 s]
+  Error Message:
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 92
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 93
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:04.58]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:04.58]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: False, variant: "target-duplicate-alias") [FAIL]
+[xUnit.net 00:00:04.58]       Expected: BadRequest
+[xUnit.net 00:00:04.58]       Actual:   OK
+[xUnit.net 00:00:04.58]       Stack Trace:
+[xUnit.net 00:00:04.58]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(89,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:04.58]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(93,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:04.58]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:04.69]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: True, variant: "target-mixed") [FAIL]
+[xUnit.net 00:00:04.69]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:04.69]       Expected: BadRequest
+[xUnit.net 00:00:04.69]       Actual:   OK
+[xUnit.net 00:00:04.69]       Stack Trace:
+[xUnit.net 00:00:04.69]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(89,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:04.69]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(93,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:04.69]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:04.77]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: True, variant: "target-duplicate-alias") [FAIL]
+[xUnit.net 00:00:04.77]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:04.77]       Expected: BadRequest
+[xUnit.net 00:00:04.77]       Actual:   OK
+[xUnit.net 00:00:04.77]       Stack Trace:
+[xUnit.net 00:00:04.77]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(89,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:04.77]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(93,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:04.77]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:04.91]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:04.91]       Expected: BadRequest
+[xUnit.net 00:00:04.91]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: False, variant: "target-mixed") [FAIL]
+[xUnit.net 00:00:04.91]       Actual:   OK
+[xUnit.net 00:00:04.91]       Stack Trace:
+[xUnit.net 00:00:04.91]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(89,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:04.91]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(93,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:04.91]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:05.03]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: False, variant: "target-alias") [FAIL]
+[xUnit.net 00:00:05.03]       Assert.False() Failure
+[xUnit.net 00:00:05.03]       Expected: False
+[xUnit.net 00:00:05.03]       Actual:   True
+[xUnit.net 00:00:05.03]       Stack Trace:
+[xUnit.net 00:00:05.03]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(92,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:05.03]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(93,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:05.03]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:05.14]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:05.14]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: True, variant: "native-mixed") [FAIL]
+[xUnit.net 00:00:05.14]       Expected: BadRequest
+[xUnit.net 00:00:05.14]       Actual:   OK
+[xUnit.net 00:00:05.14]       Stack Trace:
+[xUnit.net 00:00:05.14]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(89,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:05.14]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(93,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:05.14]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:05.26]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: True, variant: "native-alias") [FAIL]
+[xUnit.net 00:00:05.26]       Assert.False() Failure
+[xUnit.net 00:00:05.26]       Expected: False
+[xUnit.net 00:00:05.26]       Actual:   True
+[xUnit.net 00:00:05.26]       Stack Trace:
+[xUnit.net 00:00:05.26]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(92,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:05.26]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(93,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:05.26]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:05.34]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:05.34]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: False, variant: "native-mixed") [FAIL]
+[xUnit.net 00:00:05.34]       Expected: BadRequest
+[xUnit.net 00:00:05.34]       Actual:   OK
+[xUnit.net 00:00:05.34]       Stack Trace:
+[xUnit.net 00:00:05.34]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(89,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:05.34]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(93,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:05.34]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:05.41]     Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: False, variant: "native-alias") [FAIL]
+[xUnit.net 00:00:05.41]       Assert.False() Failure
+[xUnit.net 00:00:05.41]       Expected: False
+[xUnit.net 00:00:05.41]       Actual:   True
+[xUnit.net 00:00:05.41]       Stack Trace:
+[xUnit.net 00:00:05.41]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(92,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:05.41]         D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs(93,0): at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant)
+[xUnit.net 00:00:05.41]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:05.63]   Finished:    Mavrylo.Tests
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: False, variant: "target-duplicate-alias") [317 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: BadRequest
+Actual:   OK
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 89
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 93
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: True, variant: "target-mixed") [114 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: BadRequest
+Actual:   OK
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 89
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 93
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: True, variant: "target-duplicate-alias") [82 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: BadRequest
+Actual:   OK
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 89
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 93
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: False, variant: "target-mixed") [136 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: BadRequest
+Actual:   OK
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 89
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 93
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: False, variant: "target-alias") [113 ms]
+  Error Message:
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 92
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 93
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: True, variant: "native-mixed") [110 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: BadRequest
+Actual:   OK
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 89
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 93
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: True, variant: "native-alias") [124 ms]
+  Error Message:
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 92
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 93
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: False, variant: "native-mixed") [73 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: BadRequest
+Actual:   OK
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 89
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 93
+--- End of stack trace from previous location ---
+  Failed Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(accountRoute: False, variant: "native-alias") [75 ms]
+  Error Message:
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Stack Trace:
+     at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 92
+   at Mavrylo.Tests.PaidAccessBoundaryHttpTests.MvcLanguageAliasesAreRejectedBeforeUsageOrProvider(Boolean accountRoute, String variant) in D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\PaidAccessBoundaryHttpTests.cs:line 93
+--- End of stack trace from previous location ---
+
+Test Run Failed.
+Total tests: 10
+     Failed: 10
+ Total time: 6.1690 Seconds

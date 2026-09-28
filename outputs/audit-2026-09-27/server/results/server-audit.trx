@@ -1,0 +1,116 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="eccd887c-f7c8-4647-be58-a781653857c1" name="ForDo@LIFEBOX 2026-09-27 08:41:27" runUser="LIFEBOX\ForDo" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-09-27T08:41:27.0275074-05:00" queuing="2026-09-27T08:41:27.0275077-05:00" start="2026-09-27T08:41:15.1499873-05:00" finish="2026-09-27T08:41:33.1721079-05:00" />
+  <TestSettings name="default" id="49c32e98-66d4-477f-8de7-0ec6418f30cf">
+    <Deployment runDeploymentRoot="ForDo_LIFEBOX_2026-09-27_08_41_27" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="49de9707-4ed6-4ad9-a87d-1215febd7c8d" testId="51b15e06-150d-e93d-1093-c8d2090de0d8" testName="ServerAuditTests.NegativeControlsBlockExpiredRevokedAndExhaustedFree(state: &quot;expired&quot;, expected: 402)" computerName="LIFEBOX" duration="00:00:00.0225970" startTime="2026-09-27T08:41:27.2083255-05:00" endTime="2026-09-27T08:41:27.2304864-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="49de9707-4ed6-4ad9-a87d-1215febd7c8d" />
+    <UnitTestResult executionId="de1f4606-e5fa-4a94-9345-a6d603644533" testId="28f3540d-6f86-c37e-7f7a-2ffa55a3c40b" testName="ServerAuditTests.ActiveTrialGraceAndCachedSandboxHaveNoFreeDailyQuota(trial: True, grace: False, environment: &quot;Production&quot;, expected: 200)" computerName="LIFEBOX" duration="00:00:00.0158073" startTime="2026-09-27T08:41:27.3754000-05:00" endTime="2026-09-27T08:41:27.3911359-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="de1f4606-e5fa-4a94-9345-a6d603644533" />
+    <UnitTestResult executionId="749adacb-a51f-48c9-a81b-4bbf43e8a614" testId="d7adbdf6-2d3b-24eb-572d-f71e1f64d0ec" testName="ServerAuditTests.ActiveTrialGraceAndCachedSandboxHaveNoFreeDailyQuota(trial: False, grace: False, environment: &quot;Sandbox&quot;, expected: 200)" computerName="LIFEBOX" duration="00:00:00.0209275" startTime="2026-09-27T08:41:27.3544310-05:00" endTime="2026-09-27T08:41:27.3752996-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="749adacb-a51f-48c9-a81b-4bbf43e8a614" />
+    <UnitTestResult executionId="6dcead88-8d15-4b9a-aeac-0da86eb5c72a" testId="4818fd67-2e21-4d00-2a9b-6f917194c758" testName="ServerAuditTests.NegativeControlsBlockExpiredRevokedAndExhaustedFree(state: &quot;free&quot;, expected: 429)" computerName="LIFEBOX" duration="00:00:00.0320487" startTime="2026-09-27T08:41:27.2307511-05:00" endTime="2026-09-27T08:41:27.2626711-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6dcead88-8d15-4b9a-aeac-0da86eb5c72a" />
+    <UnitTestResult executionId="12c041fb-1dad-47d1-9eb9-1fec03db4dbe" testId="df6264b8-6a40-5a18-9032-835382590b87" testName="ServerAuditTests.FreeQuotaIsPerAttestationKeyRatherThanDeviceUuid" computerName="LIFEBOX" duration="00:00:00.1641849" startTime="2026-09-27T08:41:27.0449114-05:00" endTime="2026-09-27T08:41:27.2078749-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="12c041fb-1dad-47d1-9eb9-1fec03db4dbe" />
+    <UnitTestResult executionId="a3395a8c-b294-4b56-83e3-db5b8ea32a26" testId="6b005e09-9c6e-0c81-6517-5eccffd547c1" testName="ServerAuditTests.RegistrationWithExistingUuidUsesExistingSubscription(claimed: False, expected: &quot;premium&quot;)" computerName="LIFEBOX" duration="00:00:00.0550433" startTime="2026-09-27T08:41:27.0170800-05:00" endTime="2026-09-27T08:41:27.0431162-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a3395a8c-b294-4b56-83e3-db5b8ea32a26" />
+    <UnitTestResult executionId="d381fd82-57b0-40a8-a3ab-ce988fe88bef" testId="94f6e582-c624-a82f-b85a-63e762f6b441" testName="JsonBindingAudit.WordPropertyCaseChangesFreeReservation(property: &quot;word&quot;, expectedProviderCalls: 10, expectedReservations: 10)" computerName="LIFEBOX" duration="00:00:00.4541596" startTime="2026-09-27T08:41:32.2298613-05:00" endTime="2026-09-27T08:41:32.6838883-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d381fd82-57b0-40a8-a3ab-ce988fe88bef" />
+    <UnitTestResult executionId="6579db1b-e0ba-45ae-9243-62808138fd53" testId="7c421a6a-2b3a-e52f-2b14-976c42ca495e" testName="JsonBindingAudit.WordPropertyCaseChangesFreeReservation(property: &quot;Word&quot;, expectedProviderCalls: 11, expectedReservations: 0)" computerName="LIFEBOX" duration="00:00:02.9773875" startTime="2026-09-27T08:41:29.2494036-05:00" endTime="2026-09-27T08:41:32.2287660-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6579db1b-e0ba-45ae-9243-62808138fd53" />
+    <UnitTestResult executionId="ea0bb738-1a2a-43af-9136-593843bd1cc4" testId="68669089-65d7-6ac5-b216-ff1bb3e6d224" testName="ServerAuditTests.ActiveTrialGraceAndCachedSandboxHaveNoFreeDailyQuota(trial: False, grace: True, environment: &quot;Production&quot;, expected: 200)" computerName="LIFEBOX" duration="00:00:00.0578593" startTime="2026-09-27T08:41:27.2965866-05:00" endTime="2026-09-27T08:41:27.3542147-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ea0bb738-1a2a-43af-9136-593843bd1cc4" />
+    <UnitTestResult executionId="4de4275b-9169-450b-af48-925caa9286d9" testId="87e4a785-06eb-39f8-385e-5e3ce656a74b" testName="ServerAuditTests.NegativeControlsBlockExpiredRevokedAndExhaustedFree(state: &quot;revoked&quot;, expected: 402)" computerName="LIFEBOX" duration="00:00:00.0335278" startTime="2026-09-27T08:41:27.2628975-05:00" endTime="2026-09-27T08:41:27.2963341-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4de4275b-9169-450b-af48-925caa9286d9" />
+    <UnitTestResult executionId="20b5f8ce-6db3-4415-b3ba-53257e8eee49" testId="593b57fa-2c55-32d4-368b-7b0435ad486b" testName="ServerAuditTests.RegistrationWithExistingUuidUsesExistingSubscription(claimed: True, expected: &quot;account_required&quot;)" computerName="LIFEBOX" duration="00:00:07.2892393" startTime="2026-09-27T08:41:19.6966986-05:00" endTime="2026-09-27T08:41:26.9877062-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="20b5f8ce-6db3-4415-b3ba-53257e8eee49" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="ServerAuditTests.NegativeControlsBlockExpiredRevokedAndExhaustedFree(state: &quot;revoked&quot;, expected: 402)" storage="d:\07 hobby\flashcardai\outputs\audit-2026-09-27\server\bin\debug\net10.0\serveraudit.dll" id="87e4a785-06eb-39f8-385e-5e3ce656a74b">
+      <Execution id="4de4275b-9169-450b-af48-925caa9286d9" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\outputs\audit-2026-09-27\server\bin\Debug\net10.0\ServerAudit.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="ServerAuditTests" name="NegativeControlsBlockExpiredRevokedAndExhaustedFree" />
+    </UnitTest>
+    <UnitTest name="ServerAuditTests.ActiveTrialGraceAndCachedSandboxHaveNoFreeDailyQuota(trial: False, grace: True, environment: &quot;Production&quot;, expected: 200)" storage="d:\07 hobby\flashcardai\outputs\audit-2026-09-27\server\bin\debug\net10.0\serveraudit.dll" id="68669089-65d7-6ac5-b216-ff1bb3e6d224">
+      <Execution id="ea0bb738-1a2a-43af-9136-593843bd1cc4" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\outputs\audit-2026-09-27\server\bin\Debug\net10.0\ServerAudit.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="ServerAuditTests" name="ActiveTrialGraceAndCachedSandboxHaveNoFreeDailyQuota" />
+    </UnitTest>
+    <UnitTest name="ServerAuditTests.NegativeControlsBlockExpiredRevokedAndExhaustedFree(state: &quot;expired&quot;, expected: 402)" storage="d:\07 hobby\flashcardai\outputs\audit-2026-09-27\server\bin\debug\net10.0\serveraudit.dll" id="51b15e06-150d-e93d-1093-c8d2090de0d8">
+      <Execution id="49de9707-4ed6-4ad9-a87d-1215febd7c8d" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\outputs\audit-2026-09-27\server\bin\Debug\net10.0\ServerAudit.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="ServerAuditTests" name="NegativeControlsBlockExpiredRevokedAndExhaustedFree" />
+    </UnitTest>
+    <UnitTest name="ServerAuditTests.RegistrationWithExistingUuidUsesExistingSubscription(claimed: False, expected: &quot;premium&quot;)" storage="d:\07 hobby\flashcardai\outputs\audit-2026-09-27\server\bin\debug\net10.0\serveraudit.dll" id="6b005e09-9c6e-0c81-6517-5eccffd547c1">
+      <Execution id="a3395a8c-b294-4b56-83e3-db5b8ea32a26" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\outputs\audit-2026-09-27\server\bin\Debug\net10.0\ServerAudit.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="ServerAuditTests" name="RegistrationWithExistingUuidUsesExistingSubscription" />
+    </UnitTest>
+    <UnitTest name="ServerAuditTests.RegistrationWithExistingUuidUsesExistingSubscription(claimed: True, expected: &quot;account_required&quot;)" storage="d:\07 hobby\flashcardai\outputs\audit-2026-09-27\server\bin\debug\net10.0\serveraudit.dll" id="593b57fa-2c55-32d4-368b-7b0435ad486b">
+      <Execution id="20b5f8ce-6db3-4415-b3ba-53257e8eee49" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\outputs\audit-2026-09-27\server\bin\Debug\net10.0\ServerAudit.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="ServerAuditTests" name="RegistrationWithExistingUuidUsesExistingSubscription" />
+    </UnitTest>
+    <UnitTest name="JsonBindingAudit.WordPropertyCaseChangesFreeReservation(property: &quot;word&quot;, expectedProviderCalls: 10, expectedReservations: 10)" storage="d:\07 hobby\flashcardai\outputs\audit-2026-09-27\server\bin\debug\net10.0\serveraudit.dll" id="94f6e582-c624-a82f-b85a-63e762f6b441">
+      <Execution id="d381fd82-57b0-40a8-a3ab-ce988fe88bef" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\outputs\audit-2026-09-27\server\bin\Debug\net10.0\ServerAudit.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="JsonBindingAudit" name="WordPropertyCaseChangesFreeReservation" />
+    </UnitTest>
+    <UnitTest name="ServerAuditTests.ActiveTrialGraceAndCachedSandboxHaveNoFreeDailyQuota(trial: True, grace: False, environment: &quot;Production&quot;, expected: 200)" storage="d:\07 hobby\flashcardai\outputs\audit-2026-09-27\server\bin\debug\net10.0\serveraudit.dll" id="28f3540d-6f86-c37e-7f7a-2ffa55a3c40b">
+      <Execution id="de1f4606-e5fa-4a94-9345-a6d603644533" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\outputs\audit-2026-09-27\server\bin\Debug\net10.0\ServerAudit.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="ServerAuditTests" name="ActiveTrialGraceAndCachedSandboxHaveNoFreeDailyQuota" />
+    </UnitTest>
+    <UnitTest name="ServerAuditTests.ActiveTrialGraceAndCachedSandboxHaveNoFreeDailyQuota(trial: False, grace: False, environment: &quot;Sandbox&quot;, expected: 200)" storage="d:\07 hobby\flashcardai\outputs\audit-2026-09-27\server\bin\debug\net10.0\serveraudit.dll" id="d7adbdf6-2d3b-24eb-572d-f71e1f64d0ec">
+      <Execution id="749adacb-a51f-48c9-a81b-4bbf43e8a614" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\outputs\audit-2026-09-27\server\bin\Debug\net10.0\ServerAudit.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="ServerAuditTests" name="ActiveTrialGraceAndCachedSandboxHaveNoFreeDailyQuota" />
+    </UnitTest>
+    <UnitTest name="ServerAuditTests.NegativeControlsBlockExpiredRevokedAndExhaustedFree(state: &quot;free&quot;, expected: 429)" storage="d:\07 hobby\flashcardai\outputs\audit-2026-09-27\server\bin\debug\net10.0\serveraudit.dll" id="4818fd67-2e21-4d00-2a9b-6f917194c758">
+      <Execution id="6dcead88-8d15-4b9a-aeac-0da86eb5c72a" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\outputs\audit-2026-09-27\server\bin\Debug\net10.0\ServerAudit.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="ServerAuditTests" name="NegativeControlsBlockExpiredRevokedAndExhaustedFree" />
+    </UnitTest>
+    <UnitTest name="ServerAuditTests.FreeQuotaIsPerAttestationKeyRatherThanDeviceUuid" storage="d:\07 hobby\flashcardai\outputs\audit-2026-09-27\server\bin\debug\net10.0\serveraudit.dll" id="df6264b8-6a40-5a18-9032-835382590b87">
+      <Execution id="12c041fb-1dad-47d1-9eb9-1fec03db4dbe" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\outputs\audit-2026-09-27\server\bin\Debug\net10.0\ServerAudit.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="ServerAuditTests" name="FreeQuotaIsPerAttestationKeyRatherThanDeviceUuid" />
+    </UnitTest>
+    <UnitTest name="JsonBindingAudit.WordPropertyCaseChangesFreeReservation(property: &quot;Word&quot;, expectedProviderCalls: 11, expectedReservations: 0)" storage="d:\07 hobby\flashcardai\outputs\audit-2026-09-27\server\bin\debug\net10.0\serveraudit.dll" id="7c421a6a-2b3a-e52f-2b14-976c42ca495e">
+      <Execution id="6579db1b-e0ba-45ae-9243-62808138fd53" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\outputs\audit-2026-09-27\server\bin\Debug\net10.0\ServerAudit.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="JsonBindingAudit" name="WordPropertyCaseChangesFreeReservation" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="51b15e06-150d-e93d-1093-c8d2090de0d8" executionId="49de9707-4ed6-4ad9-a87d-1215febd7c8d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="28f3540d-6f86-c37e-7f7a-2ffa55a3c40b" executionId="de1f4606-e5fa-4a94-9345-a6d603644533" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d7adbdf6-2d3b-24eb-572d-f71e1f64d0ec" executionId="749adacb-a51f-48c9-a81b-4bbf43e8a614" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4818fd67-2e21-4d00-2a9b-6f917194c758" executionId="6dcead88-8d15-4b9a-aeac-0da86eb5c72a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="df6264b8-6a40-5a18-9032-835382590b87" executionId="12c041fb-1dad-47d1-9eb9-1fec03db4dbe" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6b005e09-9c6e-0c81-6517-5eccffd547c1" executionId="a3395a8c-b294-4b56-83e3-db5b8ea32a26" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="94f6e582-c624-a82f-b85a-63e762f6b441" executionId="d381fd82-57b0-40a8-a3ab-ce988fe88bef" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7c421a6a-2b3a-e52f-2b14-976c42ca495e" executionId="6579db1b-e0ba-45ae-9243-62808138fd53" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="68669089-65d7-6ac5-b216-ff1bb3e6d224" executionId="ea0bb738-1a2a-43af-9136-593843bd1cc4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="87e4a785-06eb-39f8-385e-5e3ce656a74b" executionId="4de4275b-9169-450b-af48-925caa9286d9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="593b57fa-2c55-32d4-368b-7b0435ad486b" executionId="20b5f8ce-6db3-4415-b3ba-53257e8eee49" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="11" executed="11" passed="11" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)&#xD;
+[xUnit.net 00:00:01.19]   Discovering: ServerAudit&#xD;
+[xUnit.net 00:00:01.22]   Discovered:  ServerAudit&#xD;
+[xUnit.net 00:00:01.24]   Starting:    ServerAudit&#xD;
+[testcontainers.org 00:00:00.20] Connected to Docker:&#xD;
+  Host: npipe://./pipe/docker_engine&#xD;
+  Server Version: 29.6.2&#xD;
+  Kernel Version: 6.6.87.2-microsoft-standard-WSL2&#xD;
+  API Version: 1.55&#xD;
+  Operating System: Docker Desktop&#xD;
+  Total Memory: 31.18 GB&#xD;
+  Labels: &#xD;
+    com.docker.desktop.address=npipe://\\.\pipe\docker_cli&#xD;
+[testcontainers.org 00:00:00.46] Docker container 159063c9618c created&#xD;
+[testcontainers.org 00:00:00.52] Start Docker container 159063c9618c&#xD;
+[testcontainers.org 00:00:00.84] Wait for Docker container 159063c9618c to complete readiness checks&#xD;
+[testcontainers.org 00:00:01.93] Docker container 159063c9618c ready&#xD;
+[testcontainers.org 00:00:02.12] Docker container be937deed434 created&#xD;
+[testcontainers.org 00:00:02.13] Start Docker container be937deed434&#xD;
+[testcontainers.org 00:00:02.37] Wait for Docker container be937deed434 to complete readiness checks&#xD;
+[testcontainers.org 00:00:02.38] Execute "pg_isready --host localhost --dbname owl_ai_tests --username owl_ai" at Docker container be937deed434&#xD;
+[testcontainers.org 00:00:03.49] Execute "pg_isready --host localhost --dbname owl_ai_tests --username owl_ai" at Docker container be937deed434&#xD;
+[testcontainers.org 00:00:04.60] Execute "pg_isready --host localhost --dbname owl_ai_tests --username owl_ai" at Docker container be937deed434&#xD;
+[testcontainers.org 00:00:05.69] Execute "pg_isready --host localhost --dbname owl_ai_tests --username owl_ai" at Docker container be937deed434&#xD;
+[testcontainers.org 00:00:05.78] Docker container be937deed434 ready&#xD;
+[testcontainers.org 00:00:09.23] Delete Docker container be937deed434&#xD;
+[xUnit.net 00:00:14.65]   Finished:    ServerAudit&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

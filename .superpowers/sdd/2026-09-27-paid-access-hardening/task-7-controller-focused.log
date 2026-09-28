@@ -1,0 +1,5 @@
+Test run for D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+Results File: D:\07 Hobby\FlashcardAI\.superpowers\sdd\2026-09-27-paid-access-hardening\task-7-controller-results\task7-controller.trx
+
+Passed!  - Failed:     0, Passed:    95, Skipped:     0, Total:    95, Duration: 6 s - Mavrylo.Tests.dll (net10.0)

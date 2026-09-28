@@ -1,0 +1,885 @@
+{
+  "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/compare/547dcb32b07c07291811c4a7e386ccb05344e4c2...9096c1e3b20fb920726bd471ed4a092783ee3cc7",
+  "html_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/compare/547dcb32b07c07291811c4a7e386ccb05344e4c2...9096c1e3b20fb920726bd471ed4a092783ee3cc7",
+  "permalink_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/compare/DostonElmurodov:547dcb3...DostonElmurodov:9096c1e",
+  "diff_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/compare/547dcb32b07c07291811c4a7e386ccb05344e4c2...9096c1e3b20fb920726bd471ed4a092783ee3cc7.diff",
+  "patch_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/compare/547dcb32b07c07291811c4a7e386ccb05344e4c2...9096c1e3b20fb920726bd471ed4a092783ee3cc7.patch",
+  "base_commit": {
+    "sha": "547dcb32b07c07291811c4a7e386ccb05344e4c2",
+    "node_id": "C_kwDOStTbk9oAKDU0N2RjYjMyYjA3YzA3MjkxODExYzRhN2UzODZjY2IwNTM0NGU0YzI",
+    "commit": {
+      "author": {
+        "name": "DostonElmurodov",
+        "email": "dostone2100@gmail.com",
+        "date": "2026-09-26T16:31:28Z"
+      },
+      "committer": {
+        "name": "DostonElmurodov",
+        "email": "dostone2100@gmail.com",
+        "date": "2026-09-26T16:31:28Z"
+      },
+      "message": "Sync word part of speech with desktop clients",
+      "tree": {
+        "sha": "3311283f755f7ae8c385eb1acb84ddaeef9f15d4",
+        "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/git/trees/3311283f755f7ae8c385eb1acb84ddaeef9f15d4"
+      },
+      "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/git/commits/547dcb32b07c07291811c4a7e386ccb05344e4c2",
+      "comment_count": 0,
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      }
+    },
+    "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/547dcb32b07c07291811c4a7e386ccb05344e4c2",
+    "html_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/commit/547dcb32b07c07291811c4a7e386ccb05344e4c2",
+    "comments_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/547dcb32b07c07291811c4a7e386ccb05344e4c2/comments",
+    "author": {
+      "login": "DostonElmurodov",
+      "id": 289276300,
+      "node_id": "U_kgDOET4BjA",
+      "avatar_url": "https://avatars.githubusercontent.com/u/289276300?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/DostonElmurodov",
+      "html_url": "https://github.com/DostonElmurodov",
+      "followers_url": "https://api.github.com/users/DostonElmurodov/followers",
+      "following_url": "https://api.github.com/users/DostonElmurodov/following{/other_user}",
+      "gists_url": "https://api.github.com/users/DostonElmurodov/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/DostonElmurodov/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/DostonElmurodov/subscriptions",
+      "organizations_url": "https://api.github.com/users/DostonElmurodov/orgs",
+      "repos_url": "https://api.github.com/users/DostonElmurodov/repos",
+      "events_url": "https://api.github.com/users/DostonElmurodov/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/DostonElmurodov/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "DostonElmurodov",
+      "id": 289276300,
+      "node_id": "U_kgDOET4BjA",
+      "avatar_url": "https://avatars.githubusercontent.com/u/289276300?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/DostonElmurodov",
+      "html_url": "https://github.com/DostonElmurodov",
+      "followers_url": "https://api.github.com/users/DostonElmurodov/followers",
+      "following_url": "https://api.github.com/users/DostonElmurodov/following{/other_user}",
+      "gists_url": "https://api.github.com/users/DostonElmurodov/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/DostonElmurodov/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/DostonElmurodov/subscriptions",
+      "organizations_url": "https://api.github.com/users/DostonElmurodov/orgs",
+      "repos_url": "https://api.github.com/users/DostonElmurodov/repos",
+      "events_url": "https://api.github.com/users/DostonElmurodov/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/DostonElmurodov/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "af0129ed3d39f29427d783f9702f905b31858e1f",
+        "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/af0129ed3d39f29427d783f9702f905b31858e1f",
+        "html_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/commit/af0129ed3d39f29427d783f9702f905b31858e1f"
+      }
+    ]
+  },
+  "merge_base_commit": {
+    "sha": "547dcb32b07c07291811c4a7e386ccb05344e4c2",
+    "node_id": "C_kwDOStTbk9oAKDU0N2RjYjMyYjA3YzA3MjkxODExYzRhN2UzODZjY2IwNTM0NGU0YzI",
+    "commit": {
+      "author": {
+        "name": "DostonElmurodov",
+        "email": "dostone2100@gmail.com",
+        "date": "2026-09-26T16:31:28Z"
+      },
+      "committer": {
+        "name": "DostonElmurodov",
+        "email": "dostone2100@gmail.com",
+        "date": "2026-09-26T16:31:28Z"
+      },
+      "message": "Sync word part of speech with desktop clients",
+      "tree": {
+        "sha": "3311283f755f7ae8c385eb1acb84ddaeef9f15d4",
+        "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/git/trees/3311283f755f7ae8c385eb1acb84ddaeef9f15d4"
+      },
+      "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/git/commits/547dcb32b07c07291811c4a7e386ccb05344e4c2",
+      "comment_count": 0,
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      }
+    },
+    "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/547dcb32b07c07291811c4a7e386ccb05344e4c2",
+    "html_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/commit/547dcb32b07c07291811c4a7e386ccb05344e4c2",
+    "comments_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/547dcb32b07c07291811c4a7e386ccb05344e4c2/comments",
+    "author": {
+      "login": "DostonElmurodov",
+      "id": 289276300,
+      "node_id": "U_kgDOET4BjA",
+      "avatar_url": "https://avatars.githubusercontent.com/u/289276300?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/DostonElmurodov",
+      "html_url": "https://github.com/DostonElmurodov",
+      "followers_url": "https://api.github.com/users/DostonElmurodov/followers",
+      "following_url": "https://api.github.com/users/DostonElmurodov/following{/other_user}",
+      "gists_url": "https://api.github.com/users/DostonElmurodov/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/DostonElmurodov/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/DostonElmurodov/subscriptions",
+      "organizations_url": "https://api.github.com/users/DostonElmurodov/orgs",
+      "repos_url": "https://api.github.com/users/DostonElmurodov/repos",
+      "events_url": "https://api.github.com/users/DostonElmurodov/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/DostonElmurodov/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "DostonElmurodov",
+      "id": 289276300,
+      "node_id": "U_kgDOET4BjA",
+      "avatar_url": "https://avatars.githubusercontent.com/u/289276300?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/DostonElmurodov",
+      "html_url": "https://github.com/DostonElmurodov",
+      "followers_url": "https://api.github.com/users/DostonElmurodov/followers",
+      "following_url": "https://api.github.com/users/DostonElmurodov/following{/other_user}",
+      "gists_url": "https://api.github.com/users/DostonElmurodov/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/DostonElmurodov/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/DostonElmurodov/subscriptions",
+      "organizations_url": "https://api.github.com/users/DostonElmurodov/orgs",
+      "repos_url": "https://api.github.com/users/DostonElmurodov/repos",
+      "events_url": "https://api.github.com/users/DostonElmurodov/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/DostonElmurodov/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "af0129ed3d39f29427d783f9702f905b31858e1f",
+        "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/af0129ed3d39f29427d783f9702f905b31858e1f",
+        "html_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/commit/af0129ed3d39f29427d783f9702f905b31858e1f"
+      }
+    ]
+  },
+  "status": "ahead",
+  "ahead_by": 7,
+  "behind_by": 0,
+  "total_commits": 7,
+  "commits": [
+    {
+      "sha": "79b081c90b199a95432a25a05ee7d667a56a2ae1",
+      "node_id": "C_kwDOStTbk9oAKDc5YjA4MWM5MGIxOTlhOTU0MzJhMjVhMDVlZTdkNjY3YTU2YTJhZTE",
+      "commit": {
+        "author": {
+          "name": "Doston Elmurodov",
+          "email": "OneDoston@gmail.com",
+          "date": "2026-09-26T17:58:58Z"
+        },
+        "committer": {
+          "name": "Doston Elmurodov",
+          "email": "OneDoston@gmail.com",
+          "date": "2026-09-26T17:59:30Z"
+        },
+        "message": "Dismiss keyboard when AI translation appears",
+        "tree": {
+          "sha": "74dade3dca3ec67617deb7809b12642034e94a38",
+          "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/git/trees/74dade3dca3ec67617deb7809b12642034e94a38"
+        },
+        "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/git/commits/79b081c90b199a95432a25a05ee7d667a56a2ae1",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/79b081c90b199a95432a25a05ee7d667a56a2ae1",
+      "html_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/commit/79b081c90b199a95432a25a05ee7d667a56a2ae1",
+      "comments_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/79b081c90b199a95432a25a05ee7d667a56a2ae1/comments",
+      "author": {
+        "login": "EDoston",
+        "id": 8424568,
+        "node_id": "MDQ6VXNlcjg0MjQ1Njg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/8424568?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/EDoston",
+        "html_url": "https://github.com/EDoston",
+        "followers_url": "https://api.github.com/users/EDoston/followers",
+        "following_url": "https://api.github.com/users/EDoston/following{/other_user}",
+        "gists_url": "https://api.github.com/users/EDoston/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/EDoston/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/EDoston/subscriptions",
+        "organizations_url": "https://api.github.com/users/EDoston/orgs",
+        "repos_url": "https://api.github.com/users/EDoston/repos",
+        "events_url": "https://api.github.com/users/EDoston/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/EDoston/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "EDoston",
+        "id": 8424568,
+        "node_id": "MDQ6VXNlcjg0MjQ1Njg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/8424568?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/EDoston",
+        "html_url": "https://github.com/EDoston",
+        "followers_url": "https://api.github.com/users/EDoston/followers",
+        "following_url": "https://api.github.com/users/EDoston/following{/other_user}",
+        "gists_url": "https://api.github.com/users/EDoston/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/EDoston/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/EDoston/subscriptions",
+        "organizations_url": "https://api.github.com/users/EDoston/orgs",
+        "repos_url": "https://api.github.com/users/EDoston/repos",
+        "events_url": "https://api.github.com/users/EDoston/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/EDoston/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "547dcb32b07c07291811c4a7e386ccb05344e4c2",
+          "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/547dcb32b07c07291811c4a7e386ccb05344e4c2",
+          "html_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/commit/547dcb32b07c07291811c4a7e386ccb05344e4c2"
+        }
+      ]
+    },
+    {
+      "sha": "c7e41c403d2145645650f6ac0ceba93c62d08c23",
+      "node_id": "C_kwDOStTbk9oAKGM3ZTQxYzQwM2QyMTQ1NjQ1NjUwZjZhYzBjZWJhOTNjNjJkMDhjMjM",
+      "commit": {
+        "author": {
+          "name": "Doston Elmurodov",
+          "email": "OneDoston@gmail.com",
+          "date": "2026-09-26T18:23:35Z"
+        },
+        "committer": {
+          "name": "Doston Elmurodov",
+          "email": "OneDoston@gmail.com",
+          "date": "2026-09-26T18:23:35Z"
+        },
+        "message": "Add review action to Learn word cards",
+        "tree": {
+          "sha": "c696f626d0bcb0bfa82fd15bdf5ceee4818e0ecb",
+          "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/git/trees/c696f626d0bcb0bfa82fd15bdf5ceee4818e0ecb"
+        },
+        "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/git/commits/c7e41c403d2145645650f6ac0ceba93c62d08c23",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/c7e41c403d2145645650f6ac0ceba93c62d08c23",
+      "html_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/commit/c7e41c403d2145645650f6ac0ceba93c62d08c23",
+      "comments_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/c7e41c403d2145645650f6ac0ceba93c62d08c23/comments",
+      "author": {
+        "login": "EDoston",
+        "id": 8424568,
+        "node_id": "MDQ6VXNlcjg0MjQ1Njg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/8424568?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/EDoston",
+        "html_url": "https://github.com/EDoston",
+        "followers_url": "https://api.github.com/users/EDoston/followers",
+        "following_url": "https://api.github.com/users/EDoston/following{/other_user}",
+        "gists_url": "https://api.github.com/users/EDoston/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/EDoston/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/EDoston/subscriptions",
+        "organizations_url": "https://api.github.com/users/EDoston/orgs",
+        "repos_url": "https://api.github.com/users/EDoston/repos",
+        "events_url": "https://api.github.com/users/EDoston/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/EDoston/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "EDoston",
+        "id": 8424568,
+        "node_id": "MDQ6VXNlcjg0MjQ1Njg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/8424568?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/EDoston",
+        "html_url": "https://github.com/EDoston",
+        "followers_url": "https://api.github.com/users/EDoston/followers",
+        "following_url": "https://api.github.com/users/EDoston/following{/other_user}",
+        "gists_url": "https://api.github.com/users/EDoston/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/EDoston/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/EDoston/subscriptions",
+        "organizations_url": "https://api.github.com/users/EDoston/orgs",
+        "repos_url": "https://api.github.com/users/EDoston/repos",
+        "events_url": "https://api.github.com/users/EDoston/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/EDoston/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "79b081c90b199a95432a25a05ee7d667a56a2ae1",
+          "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/79b081c90b199a95432a25a05ee7d667a56a2ae1",
+          "html_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/commit/79b081c90b199a95432a25a05ee7d667a56a2ae1"
+        }
+      ]
+    },
+    {
+      "sha": "634371b3d3edcc0ee9de395c6e791142da714e7e",
+      "node_id": "C_kwDOStTbk9oAKDYzNDM3MWIzZDNlZGNjMGVlOWRlMzk1YzZlNzkxMTQyZGE3MTRlN2U",
+      "commit": {
+        "author": {
+          "name": "Doston Elmurodov",
+          "email": "OneDoston@gmail.com",
+          "date": "2026-09-26T18:29:44Z"
+        },
+        "committer": {
+          "name": "Doston Elmurodov",
+          "email": "OneDoston@gmail.com",
+          "date": "2026-09-26T18:29:44Z"
+        },
+        "message": "Use an icon-only Review button on Learn cards",
+        "tree": {
+          "sha": "54fadaa479aefb1371ecaec59f26e781afd49199",
+          "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/git/trees/54fadaa479aefb1371ecaec59f26e781afd49199"
+        },
+        "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/git/commits/634371b3d3edcc0ee9de395c6e791142da714e7e",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/634371b3d3edcc0ee9de395c6e791142da714e7e",
+      "html_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/commit/634371b3d3edcc0ee9de395c6e791142da714e7e",
+      "comments_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/634371b3d3edcc0ee9de395c6e791142da714e7e/comments",
+      "author": {
+        "login": "EDoston",
+        "id": 8424568,
+        "node_id": "MDQ6VXNlcjg0MjQ1Njg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/8424568?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/EDoston",
+        "html_url": "https://github.com/EDoston",
+        "followers_url": "https://api.github.com/users/EDoston/followers",
+        "following_url": "https://api.github.com/users/EDoston/following{/other_user}",
+        "gists_url": "https://api.github.com/users/EDoston/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/EDoston/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/EDoston/subscriptions",
+        "organizations_url": "https://api.github.com/users/EDoston/orgs",
+        "repos_url": "https://api.github.com/users/EDoston/repos",
+        "events_url": "https://api.github.com/users/EDoston/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/EDoston/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "EDoston",
+        "id": 8424568,
+        "node_id": "MDQ6VXNlcjg0MjQ1Njg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/8424568?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/EDoston",
+        "html_url": "https://github.com/EDoston",
+        "followers_url": "https://api.github.com/users/EDoston/followers",
+        "following_url": "https://api.github.com/users/EDoston/following{/other_user}",
+        "gists_url": "https://api.github.com/users/EDoston/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/EDoston/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/EDoston/subscriptions",
+        "organizations_url": "https://api.github.com/users/EDoston/orgs",
+        "repos_url": "https://api.github.com/users/EDoston/repos",
+        "events_url": "https://api.github.com/users/EDoston/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/EDoston/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "c7e41c403d2145645650f6ac0ceba93c62d08c23",
+          "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/c7e41c403d2145645650f6ac0ceba93c62d08c23",
+          "html_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/commit/c7e41c403d2145645650f6ac0ceba93c62d08c23"
+        }
+      ]
+    },
+    {
+      "sha": "4ff999e60f876cfcf6cf6c5b5623a08f41114dc9",
+      "node_id": "C_kwDOStTbk9oAKDRmZjk5OWU2MGY4NzZjZmNmNmNmNmM1YjU2MjNhMDhmNDExMTRkYzk",
+      "commit": {
+        "author": {
+          "name": "Doston Elmurodov",
+          "email": "OneDoston@gmail.com",
+          "date": "2026-09-26T18:41:41Z"
+        },
+        "committer": {
+          "name": "Doston Elmurodov",
+          "email": "OneDoston@gmail.com",
+          "date": "2026-09-26T18:41:41Z"
+        },
+        "message": "Make the floating navigation background transparent",
+        "tree": {
+          "sha": "454556762e3bff696328fb012f3e56fad2845c63",
+          "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/git/trees/454556762e3bff696328fb012f3e56fad2845c63"
+        },
+        "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/git/commits/4ff999e60f876cfcf6cf6c5b5623a08f41114dc9",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/4ff999e60f876cfcf6cf6c5b5623a08f41114dc9",
+      "html_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/commit/4ff999e60f876cfcf6cf6c5b5623a08f41114dc9",
+      "comments_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/4ff999e60f876cfcf6cf6c5b5623a08f41114dc9/comments",
+      "author": {
+        "login": "EDoston",
+        "id": 8424568,
+        "node_id": "MDQ6VXNlcjg0MjQ1Njg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/8424568?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/EDoston",
+        "html_url": "https://github.com/EDoston",
+        "followers_url": "https://api.github.com/users/EDoston/followers",
+        "following_url": "https://api.github.com/users/EDoston/following{/other_user}",
+        "gists_url": "https://api.github.com/users/EDoston/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/EDoston/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/EDoston/subscriptions",
+        "organizations_url": "https://api.github.com/users/EDoston/orgs",
+        "repos_url": "https://api.github.com/users/EDoston/repos",
+        "events_url": "https://api.github.com/users/EDoston/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/EDoston/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "EDoston",
+        "id": 8424568,
+        "node_id": "MDQ6VXNlcjg0MjQ1Njg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/8424568?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/EDoston",
+        "html_url": "https://github.com/EDoston",
+        "followers_url": "https://api.github.com/users/EDoston/followers",
+        "following_url": "https://api.github.com/users/EDoston/following{/other_user}",
+        "gists_url": "https://api.github.com/users/EDoston/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/EDoston/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/EDoston/subscriptions",
+        "organizations_url": "https://api.github.com/users/EDoston/orgs",
+        "repos_url": "https://api.github.com/users/EDoston/repos",
+        "events_url": "https://api.github.com/users/EDoston/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/EDoston/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "634371b3d3edcc0ee9de395c6e791142da714e7e",
+          "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/634371b3d3edcc0ee9de395c6e791142da714e7e",
+          "html_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/commit/634371b3d3edcc0ee9de395c6e791142da714e7e"
+        }
+      ]
+    },
+    {
+      "sha": "c01f90843158b8304f8342dd61ebcc2e56dd5779",
+      "node_id": "C_kwDOStTbk9oAKGMwMWY5MDg0MzE1OGI4MzA0ZjgzNDJkZDYxZWJjYzJlNTZkZDU3Nzk",
+      "commit": {
+        "author": {
+          "name": "Doston Elmurodov",
+          "email": "OneDoston@gmail.com",
+          "date": "2026-09-26T18:44:04Z"
+        },
+        "committer": {
+          "name": "Doston Elmurodov",
+          "email": "OneDoston@gmail.com",
+          "date": "2026-09-26T18:44:04Z"
+        },
+        "message": "Let review cards scroll behind floating controls",
+        "tree": {
+          "sha": "5705aa6cb669445c8bf2882df5116d6955f5bf98",
+          "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/git/trees/5705aa6cb669445c8bf2882df5116d6955f5bf98"
+        },
+        "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/git/commits/c01f90843158b8304f8342dd61ebcc2e56dd5779",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/c01f90843158b8304f8342dd61ebcc2e56dd5779",
+      "html_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/commit/c01f90843158b8304f8342dd61ebcc2e56dd5779",
+      "comments_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/c01f90843158b8304f8342dd61ebcc2e56dd5779/comments",
+      "author": {
+        "login": "EDoston",
+        "id": 8424568,
+        "node_id": "MDQ6VXNlcjg0MjQ1Njg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/8424568?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/EDoston",
+        "html_url": "https://github.com/EDoston",
+        "followers_url": "https://api.github.com/users/EDoston/followers",
+        "following_url": "https://api.github.com/users/EDoston/following{/other_user}",
+        "gists_url": "https://api.github.com/users/EDoston/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/EDoston/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/EDoston/subscriptions",
+        "organizations_url": "https://api.github.com/users/EDoston/orgs",
+        "repos_url": "https://api.github.com/users/EDoston/repos",
+        "events_url": "https://api.github.com/users/EDoston/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/EDoston/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "EDoston",
+        "id": 8424568,
+        "node_id": "MDQ6VXNlcjg0MjQ1Njg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/8424568?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/EDoston",
+        "html_url": "https://github.com/EDoston",
+        "followers_url": "https://api.github.com/users/EDoston/followers",
+        "following_url": "https://api.github.com/users/EDoston/following{/other_user}",
+        "gists_url": "https://api.github.com/users/EDoston/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/EDoston/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/EDoston/subscriptions",
+        "organizations_url": "https://api.github.com/users/EDoston/orgs",
+        "repos_url": "https://api.github.com/users/EDoston/repos",
+        "events_url": "https://api.github.com/users/EDoston/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/EDoston/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "4ff999e60f876cfcf6cf6c5b5623a08f41114dc9",
+          "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/4ff999e60f876cfcf6cf6c5b5623a08f41114dc9",
+          "html_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/commit/4ff999e60f876cfcf6cf6c5b5623a08f41114dc9"
+        }
+      ]
+    },
+    {
+      "sha": "75b80c91671f50278fc81f8b6850788f40941c12",
+      "node_id": "C_kwDOStTbk9oAKDc1YjgwYzkxNjcxZjUwMjc4ZmM4MWY4YjY4NTA3ODhmNDA5NDFjMTI",
+      "commit": {
+        "author": {
+          "name": "Doston Elmurodov",
+          "email": "OneDoston@gmail.com",
+          "date": "2026-09-26T18:54:45Z"
+        },
+        "committer": {
+          "name": "Doston Elmurodov",
+          "email": "OneDoston@gmail.com",
+          "date": "2026-09-26T18:54:45Z"
+        },
+        "message": "Add translucent backgrounds behind floating controls",
+        "tree": {
+          "sha": "7b99948127e7d1bb57caf5c14b02eea599a2a5f9",
+          "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/git/trees/7b99948127e7d1bb57caf5c14b02eea599a2a5f9"
+        },
+        "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/git/commits/75b80c91671f50278fc81f8b6850788f40941c12",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/75b80c91671f50278fc81f8b6850788f40941c12",
+      "html_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/commit/75b80c91671f50278fc81f8b6850788f40941c12",
+      "comments_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/75b80c91671f50278fc81f8b6850788f40941c12/comments",
+      "author": {
+        "login": "EDoston",
+        "id": 8424568,
+        "node_id": "MDQ6VXNlcjg0MjQ1Njg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/8424568?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/EDoston",
+        "html_url": "https://github.com/EDoston",
+        "followers_url": "https://api.github.com/users/EDoston/followers",
+        "following_url": "https://api.github.com/users/EDoston/following{/other_user}",
+        "gists_url": "https://api.github.com/users/EDoston/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/EDoston/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/EDoston/subscriptions",
+        "organizations_url": "https://api.github.com/users/EDoston/orgs",
+        "repos_url": "https://api.github.com/users/EDoston/repos",
+        "events_url": "https://api.github.com/users/EDoston/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/EDoston/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "EDoston",
+        "id": 8424568,
+        "node_id": "MDQ6VXNlcjg0MjQ1Njg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/8424568?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/EDoston",
+        "html_url": "https://github.com/EDoston",
+        "followers_url": "https://api.github.com/users/EDoston/followers",
+        "following_url": "https://api.github.com/users/EDoston/following{/other_user}",
+        "gists_url": "https://api.github.com/users/EDoston/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/EDoston/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/EDoston/subscriptions",
+        "organizations_url": "https://api.github.com/users/EDoston/orgs",
+        "repos_url": "https://api.github.com/users/EDoston/repos",
+        "events_url": "https://api.github.com/users/EDoston/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/EDoston/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "c01f90843158b8304f8342dd61ebcc2e56dd5779",
+          "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/c01f90843158b8304f8342dd61ebcc2e56dd5779",
+          "html_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/commit/c01f90843158b8304f8342dd61ebcc2e56dd5779"
+        }
+      ]
+    },
+    {
+      "sha": "9096c1e3b20fb920726bd471ed4a092783ee3cc7",
+      "node_id": "C_kwDOStTbk9oAKDkwOTZjMWUzYjIwZmI5MjA3MjZiZDQ3MWVkNGEwOTI3ODNlZTNjYzc",
+      "commit": {
+        "author": {
+          "name": "Doston Elmurodov",
+          "email": "OneDoston@gmail.com",
+          "date": "2026-09-26T18:57:00Z"
+        },
+        "committer": {
+          "name": "Doston Elmurodov",
+          "email": "OneDoston@gmail.com",
+          "date": "2026-09-26T18:57:00Z"
+        },
+        "message": "Increase floating control backgrounds to 45 percent opacity",
+        "tree": {
+          "sha": "4852b7ca647759de5d18abb1a0213ed2d28b8d3d",
+          "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/git/trees/4852b7ca647759de5d18abb1a0213ed2d28b8d3d"
+        },
+        "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/git/commits/9096c1e3b20fb920726bd471ed4a092783ee3cc7",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/9096c1e3b20fb920726bd471ed4a092783ee3cc7",
+      "html_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/commit/9096c1e3b20fb920726bd471ed4a092783ee3cc7",
+      "comments_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/9096c1e3b20fb920726bd471ed4a092783ee3cc7/comments",
+      "author": {
+        "login": "EDoston",
+        "id": 8424568,
+        "node_id": "MDQ6VXNlcjg0MjQ1Njg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/8424568?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/EDoston",
+        "html_url": "https://github.com/EDoston",
+        "followers_url": "https://api.github.com/users/EDoston/followers",
+        "following_url": "https://api.github.com/users/EDoston/following{/other_user}",
+        "gists_url": "https://api.github.com/users/EDoston/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/EDoston/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/EDoston/subscriptions",
+        "organizations_url": "https://api.github.com/users/EDoston/orgs",
+        "repos_url": "https://api.github.com/users/EDoston/repos",
+        "events_url": "https://api.github.com/users/EDoston/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/EDoston/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "EDoston",
+        "id": 8424568,
+        "node_id": "MDQ6VXNlcjg0MjQ1Njg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/8424568?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/EDoston",
+        "html_url": "https://github.com/EDoston",
+        "followers_url": "https://api.github.com/users/EDoston/followers",
+        "following_url": "https://api.github.com/users/EDoston/following{/other_user}",
+        "gists_url": "https://api.github.com/users/EDoston/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/EDoston/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/EDoston/subscriptions",
+        "organizations_url": "https://api.github.com/users/EDoston/orgs",
+        "repos_url": "https://api.github.com/users/EDoston/repos",
+        "events_url": "https://api.github.com/users/EDoston/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/EDoston/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "75b80c91671f50278fc81f8b6850788f40941c12",
+          "url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/commits/75b80c91671f50278fc81f8b6850788f40941c12",
+          "html_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/commit/75b80c91671f50278fc81f8b6850788f40941c12"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "sha": "686546953e5177f33f3938661417082db53b4b41",
+      "filename": "App/Navigation/RootTabShell.swift",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/blob/9096c1e3b20fb920726bd471ed4a092783ee3cc7/App%2FNavigation%2FRootTabShell.swift",
+      "raw_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/raw/9096c1e3b20fb920726bd471ed4a092783ee3cc7/App%2FNavigation%2FRootTabShell.swift",
+      "contents_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/contents/App%2FNavigation%2FRootTabShell.swift?ref=9096c1e3b20fb920726bd471ed4a092783ee3cc7",
+      "patch": "@@ -1,6 +1,6 @@\n import SwiftUI\n \n-/// Top-level shell hosting the floating \"Liquid Glass\" tab bar.\n+/// Top-level shell hosting the floating tab bar with a translucent container.\n ///\n /// Tabs:\n ///  1. Learn   → `DashboardView` (switchable tab)"
+    },
+    {
+      "sha": "d9901cfad9a2cc604bb4a2f9112c076716bb427a",
+      "filename": "Domain/SpacedRepetition/ReviewQueueService.swift",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 4,
+      "changes": 7,
+      "blob_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/blob/9096c1e3b20fb920726bd471ed4a092783ee3cc7/Domain%2FSpacedRepetition%2FReviewQueueService.swift",
+      "raw_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/raw/9096c1e3b20fb920726bd471ed4a092783ee3cc7/Domain%2FSpacedRepetition%2FReviewQueueService.swift",
+      "contents_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/contents/Domain%2FSpacedRepetition%2FReviewQueueService.swift?ref=9096c1e3b20fb920726bd471ed4a092783ee3cc7",
+      "patch": "@@ -117,10 +117,9 @@ struct ReviewQueueService {\n         }\n \n         switch candidate.card.state {\n-        case .learning, .relearning:\n-            return candidate.card.due <= queueRequest.now ? candidate : nil\n-        case .review:\n-            return candidate.card.due < queueRequest.studyDay.end ? candidate : nil\n+        case .learning, .relearning, .review:\n+            // An explicitly selected word can be practiced before its due date.\n+            return candidate\n         case .new:\n             if candidate.card.introducedAt != nil {\n                 return candidate"
+    },
+    {
+      "sha": "a744e730ceab51f0849ccf8fbe6f35b7cefaa757",
+      "filename": "FlashCardAITests/ReviewQueueServiceTests.swift",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "blob_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/blob/9096c1e3b20fb920726bd471ed4a092783ee3cc7/FlashCardAITests%2FReviewQueueServiceTests.swift",
+      "raw_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/raw/9096c1e3b20fb920726bd471ed4a092783ee3cc7/FlashCardAITests%2FReviewQueueServiceTests.swift",
+      "contents_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/contents/FlashCardAITests%2FReviewQueueServiceTests.swift?ref=9096c1e3b20fb920726bd471ed4a092783ee3cc7",
+      "patch": "@@ -562,7 +562,7 @@ final class ReviewQueueServiceTests: XCTestCase {\n                 expectedID: nil\n             ),\n             Case(\n-                name: \"future review is rejected\",\n+                name: \"explicitly selected future review is admitted\",\n                 candidate: makeCandidate(\n                     id: \"target\",\n                     state: .review,\n@@ -571,7 +571,7 @@ final class ReviewQueueServiceTests: XCTestCase {\n                 introducedPrimary: [],\n                 introducedReverse: 0,\n                 limit: 1,\n-                expectedID: nil\n+                expectedID: \"target\"\n             ),\n             Case(\n                 name: \"inactive-only target is rejected\","
+    },
+    {
+      "sha": "a155f4f9aefae4ee3137552c674134610b56a309",
+      "filename": "FlashCardAITests/ReviewSessionViewModelTests.swift",
+      "status": "modified",
+      "additions": 40,
+      "deletions": 1,
+      "changes": 41,
+      "blob_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/blob/9096c1e3b20fb920726bd471ed4a092783ee3cc7/FlashCardAITests%2FReviewSessionViewModelTests.swift",
+      "raw_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/raw/9096c1e3b20fb920726bd471ed4a092783ee3cc7/FlashCardAITests%2FReviewSessionViewModelTests.swift",
+      "contents_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/contents/FlashCardAITests%2FReviewSessionViewModelTests.swift?ref=9096c1e3b20fb920726bd471ed4a092783ee3cc7",
+      "patch": "@@ -114,6 +114,42 @@ final class ReviewSessionViewModelTests: XCTestCase {\n         XCTAssertEqual(admitted.viewModel.queue.counts.review, 1)\n     }\n \n+    func testFocusedReviewOpensFutureCardAndFinishesAfterOneGrade() {\n+        let future = Self.studyDay.end.addingTimeInterval(86_400)\n+        let target = makeCandidate(id: \"target\", state: .review, due: future)\n+        let unrelated = makeCandidate(id: \"unrelated\", state: .review)\n+        let candidates = snapshot([target, unrelated])\n+        let repository = RepositoryFake(snapshots: [candidates, candidates, candidates])\n+        let sut = makeViewModel(repository: repository)\n+\n+        sut.viewModel.load(nativeLanguage: \"en-us\", learningLanguage: \"es\", cardID: \"target\")\n+        XCTAssertEqual(sut.viewModel.current?.card.id, \"target\")\n+        XCTAssertEqual(sut.viewModel.queue.items.map(\\.card.id), [\"target\"])\n+        XCTAssertTrue(repository.applyCalls.isEmpty)\n+        XCTAssertTrue(repository.markCalls.isEmpty)\n+\n+        sut.viewModel.revealAnswer()\n+        sut.viewModel.rate(.good)\n+        XCTAssertEqual(repository.applyCalls.count, 1)\n+        XCTAssertEqual(sut.viewModel.completedCount, 1)\n+        XCTAssertNil(sut.viewModel.current)\n+\n+        sut.viewModel.refresh(nativeLanguage: \"en-us\", learningLanguage: \"es\", cardID: \"target\")\n+        XCTAssertNil(sut.viewModel.current, \"A background refresh must not reopen a completed focused card.\")\n+        XCTAssertEqual(sut.viewModel.completedCount, 1)\n+    }\n+\n+    func testFocusedReviewOpensFutureLearningCardWithoutResettingProgress() {\n+        let target = makeCandidate(id: \"target\", state: .learning,\n+                                   due: Self.now.addingTimeInterval(600))\n+        let repository = RepositoryFake(snapshots: [snapshot([target])])\n+        let sut = makeViewModel(repository: repository)\n+        sut.viewModel.load(nativeLanguage: \"en-us\", learningLanguage: \"es\", cardID: \"target\")\n+        XCTAssertEqual(sut.viewModel.current?.card, target.card)\n+        XCTAssertTrue(repository.applyCalls.isEmpty)\n+        XCTAssertTrue(repository.markCalls.isEmpty)\n+    }\n+\n     func testNewCardIsMarkedIntroducedBeforePreviewAndPublication() {\n         let unseen = makeCandidate(id: \"new-card\", state: .new)\n         let repository = RepositoryFake(snapshots: [snapshot([unseen])])\n@@ -310,9 +346,12 @@ final class ReviewSessionViewModelTests: XCTestCase {\n         let first = makeCandidate(id: \"first\", state: .review, due: future)\n         let second = makeCandidate(id: \"second\", state: .review, due: future)\n         let candidates = snapshot([first, second])\n-        let repository = RepositoryFake(snapshots: [candidates, candidates])\n+        let repository = RepositoryFake(snapshots: [candidates, candidates, candidates])\n         let sut = makeViewModel(repository: repository)\n         sut.viewModel.load(nativeLanguage: \"en-us\", learningLanguage: \"es\", cardID: \"second\")\n+        XCTAssertEqual(sut.viewModel.current?.card.id, \"second\")\n+        sut.viewModel.revealAnswer()\n+        sut.viewModel.rate(.good)\n         XCTAssertNil(sut.viewModel.current)\n \n         sut.viewModel.restart()"
+    },
+    {
+      "sha": "92d20c412970ca487aadebfd308a227c82cd966e",
+      "filename": "Presentation/Features/Home/Components/DashboardWordCard.swift",
+      "status": "modified",
+      "additions": 36,
+      "deletions": 20,
+      "changes": 56,
+      "blob_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/blob/9096c1e3b20fb920726bd471ed4a092783ee3cc7/Presentation%2FFeatures%2FHome%2FComponents%2FDashboardWordCard.swift",
+      "raw_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/raw/9096c1e3b20fb920726bd471ed4a092783ee3cc7/Presentation%2FFeatures%2FHome%2FComponents%2FDashboardWordCard.swift",
+      "contents_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/contents/Presentation%2FFeatures%2FHome%2FComponents%2FDashboardWordCard.swift?ref=9096c1e3b20fb920726bd471ed4a092783ee3cc7",
+      "patch": "@@ -16,6 +16,7 @@ struct DashboardWordCard: View {\n     var expansion: Binding<String?>?\n     var onEdit: ((WordDashboardRow) -> Void)?\n     var onDelete: ((WordDashboardRow) -> Void)?\n+    var onReview: ((WordDashboardRow) -> Void)?\n \n     private var homeInk: Color { appSettings.currentInk }\n     private var homeMuted: Color { appSettings.currentMuted }\n@@ -100,35 +101,50 @@ struct DashboardWordCard: View {\n \n     private var homeListBody: some View {\n         VStack(alignment: .leading, spacing: 0) {\n-            ZStack(alignment: .trailing) {\n-                HStack(spacing: 10) {\n-                    VStack(alignment: .leading, spacing: 6) {\n-                        homeWordTitle\n-\n-                        HStack(spacing: 7) {\n-                            let nativeText = previewTranslations.joined(separator: \", \")\n-                            if !nativeText.isEmpty {\n-                                LanguageFlagIcon(bcp47Code: row.nativeLanguageBcp47, size: 18)\n-                                Text(nativeText)\n-                                    .font(.system(size: 17, weight: .semibold))\n-                                    .foregroundStyle(homeMuted)\n-                                    .lineLimit(2)\n-                                    .minimumScaleFactor(0.72)\n-                            }\n+            HStack(alignment: .top, spacing: 10) {\n+                VStack(alignment: .leading, spacing: 6) {\n+                    homeWordTitle\n+\n+                    HStack(spacing: 7) {\n+                        let nativeText = previewTranslations.joined(separator: \", \")\n+                        if !nativeText.isEmpty {\n+                            LanguageFlagIcon(bcp47Code: row.nativeLanguageBcp47, size: 18)\n+                            Text(nativeText)\n+                                .font(.system(size: 17, weight: .semibold))\n+                                .foregroundStyle(homeMuted)\n+                                .lineLimit(2)\n+                                .minimumScaleFactor(0.72)\n                         }\n                     }\n-                    .padding(.trailing, 80)\n-                    .frame(maxWidth: .infinity, alignment: .leading)\n                 }\n+                .frame(maxWidth: .infinity, alignment: .leading)\n \n-                VStack(alignment: .trailing, spacing: 10) {\n+                VStack(alignment: .trailing, spacing: 2) {\n                     homePartOfSpeechLabel\n-                    Spacer(minLength: 16)\n+                    if let onReview {\n+                        Button {\n+                            onReview(row)\n+                        } label: {\n+                            Label(\"Review\", systemImage: \"play.fill\")\n+                                .labelStyle(.iconOnly)\n+                                .font(.system(size: 12, weight: .bold))\n+                                .foregroundStyle(appSettings.currentAccent)\n+                                .padding(.horizontal, 10)\n+                                .padding(.vertical, 7)\n+                                .background(homeSoft, in: Capsule())\n+                                .frame(minWidth: 44, minHeight: 44)\n+                                .contentShape(Rectangle())\n+                        }\n+                        .buttonStyle(.plain)\n+                        .disabled(isLocked)\n+                        .accessibilityLabel(\"Review \\(row.displayWord)\")\n+                        .accessibilityIdentifier(\"learn.reviewWord.\\(row.id)\")\n+                    }\n                     if isLocked {\n                         lockedChip\n                     }\n                 }\n-                .frame(maxHeight: .infinity, alignment: .trailing)\n+                .frame(width: 96, alignment: .trailing)\n             }\n             .frame(minHeight: 74)\n             .opacity(isLocked ? 0.55 : 1)"
+    },
+    {
+      "sha": "9370ba7ddc31b1c3bf0b51529349a2c86a689cfc",
+      "filename": "Presentation/Features/Home/ViewModels/ReviewSessionViewModel.swift",
+      "status": "modified",
+      "additions": 10,
+      "deletions": 4,
+      "changes": 14,
+      "blob_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/blob/9096c1e3b20fb920726bd471ed4a092783ee3cc7/Presentation%2FFeatures%2FHome%2FViewModels%2FReviewSessionViewModel.swift",
+      "raw_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/raw/9096c1e3b20fb920726bd471ed4a092783ee3cc7/Presentation%2FFeatures%2FHome%2FViewModels%2FReviewSessionViewModel.swift",
+      "contents_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/contents/Presentation%2FFeatures%2FHome%2FViewModels%2FReviewSessionViewModel.swift?ref=9096c1e3b20fb920726bd471ed4a092783ee3cc7",
+      "patch": "@@ -65,6 +65,7 @@ final class ReviewSessionViewModel: ObservableObject {\n \n     private enum Selection {\n         case scheduled\n+        case focused\n         case replay([String])\n     }\n \n@@ -96,7 +97,7 @@ final class ReviewSessionViewModel: ObservableObject {\n             nativeLanguage: nativeLanguage,\n             learningLanguage: learningLanguage,\n             cardID: cardID,\n-            selection: .scheduled\n+            selection: cardID == nil ? .scheduled : .focused\n         ))\n     }\n \n@@ -161,12 +162,16 @@ final class ReviewSessionViewModel: ObservableObject {\n         guard let request,\n               request.nativeLanguage == nativeLanguage,\n               request.learningLanguage == learningLanguage,\n-              request.cardID == cardID,\n-              case .replay = request.selection else {\n+              request.cardID == cardID else {\n             load(nativeLanguage: nativeLanguage, learningLanguage: learningLanguage, cardID: cardID)\n             return\n         }\n-        loadSession(request, preservingProgress: true)\n+        switch request.selection {\n+        case .scheduled:\n+            load(nativeLanguage: nativeLanguage, learningLanguage: learningLanguage, cardID: cardID)\n+        case .focused, .replay:\n+            loadSession(request, preservingProgress: true)\n+        }\n     }\n \n     func retryLoad() {\n@@ -341,6 +346,7 @@ final class ReviewSessionViewModel: ObservableObject {\n                 isCurrent(generation)\n             }\n         }\n+        guard !reviewedCardIDs.contains(cardID) else { return .empty }\n         let candidate = try dependencies.queue.focused(\n             FocusedReviewRequest(cardID: cardID, queueRequest: queueRequest)\n         )"
+    },
+    {
+      "sha": "a682d6fe497e698a8c186b5e79dc5e62c7ee72ac",
+      "filename": "Presentation/Features/Home/Views/DashboardView.swift",
+      "status": "modified",
+      "additions": 22,
+      "deletions": 9,
+      "changes": 31,
+      "blob_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/blob/9096c1e3b20fb920726bd471ed4a092783ee3cc7/Presentation%2FFeatures%2FHome%2FViews%2FDashboardView.swift",
+      "raw_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/raw/9096c1e3b20fb920726bd471ed4a092783ee3cc7/Presentation%2FFeatures%2FHome%2FViews%2FDashboardView.swift",
+      "contents_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/contents/Presentation%2FFeatures%2FHome%2FViews%2FDashboardView.swift?ref=9096c1e3b20fb920726bd471ed4a092783ee3cc7",
+      "patch": "@@ -10,6 +10,11 @@ enum DashboardEmptyStatePolicy {\n \n /// Main home screen after onboarding (web dashboard–inspired layout).\n struct DashboardView: View {\n+    private struct ReviewPresentation: Identifiable {\n+        let id = UUID()\n+        let row: WordDashboardRow?\n+    }\n+\n     let repository: WordRepository\n     let reviewDependencies: ReviewSessionDependencies\n     @Binding private var openSettingsOnAppear: Bool\n@@ -24,7 +29,7 @@ struct DashboardView: View {\n     @State private var showSettings = false\n     @State private var isInitialSettingsSetup = false\n     @State private var addFlowState = DashboardAddFlowState()\n-    @State private var showReviewSession = false\n+    @State private var reviewSession: ReviewPresentation?\n     @State private var openAddMenuAfterReview = false\n     @State private var reviewOpenedFromNotification = false\n     @State private var showThemeChooser = false\n@@ -113,7 +118,8 @@ struct DashboardView: View {\n                                 style: .homeList,\n                                 expansion: $viewModel.expandedCardId,\n                                 onEdit: { rowToEdit = $0 },\n-                                onDelete: { rowPendingDelete = $0 }\n+                                onDelete: { rowPendingDelete = $0 },\n+                                onReview: { openReview(word: $0) }\n                             )\n                         }\n                     }\n@@ -179,26 +185,27 @@ struct DashboardView: View {\n             .environmentObject(appSettings)\n             .presentationDetents([.medium, .large])\n         }\n-        .fullScreenCover(isPresented: $showReviewSession, onDismiss: {\n+        .fullScreenCover(item: $reviewSession, onDismiss: {\n             guard openAddMenuAfterReview else { return }\n             openAddMenuAfterReview = false\n             if !addFlowState.menuState.isExpanded {\n                 toggleAddMenu()\n             }\n-        }) {\n+        }) { presentation in\n             NavigationStack {\n                 ReviewSessionView(\n                     dependencies: reviewDependencies,\n+                    focusedRow: presentation.row,\n                     onAddWords: {\n                         openAddMenuAfterReview = true\n-                        showReviewSession = false\n+                        reviewSession = nil\n                     }\n                 )\n                     .environmentObject(theme)\n                     .environmentObject(appSettings)\n             }\n         }\n-        .onChange(of: showReviewSession) { _, isOn in\n+        .onChange(of: reviewSession != nil) { _, isOn in\n             if !isOn {\n                 reviewOpenedFromNotification = false\n                 reloadDashboard()\n@@ -421,7 +428,7 @@ struct DashboardView: View {\n             .buttonStyle(.plain)\n \n             Button {\n-                showReviewSession = true\n+                openReview()\n             } label: {\n                 metricValue(value: \"\\(viewModel.reviewToday)\", label: \"DUE\")\n             }\n@@ -455,7 +462,7 @@ struct DashboardView: View {\n                 emptyReviewBannerContent\n             } else {\n                 Button {\n-                    showReviewSession = true\n+                    openReview()\n                 } label: {\n                 activeReviewBannerContent\n                 }\n@@ -794,10 +801,16 @@ struct DashboardView: View {\n         }\n     }\n \n+    private func openReview(word: WordDashboardRow? = nil) {\n+        guard word?.isLocked != true else { return }\n+        searchFocused = false\n+        reviewSession = ReviewPresentation(row: word)\n+    }\n+\n     private func openReviewIfRequestedByNotification() {\n         guard notificationRouter.consumePendingReviewOpen() else { return }\n         reviewOpenedFromNotification = true\n-        showReviewSession = true\n+        openReview()\n     }\n \n     private var selectedSetId: String {"
+    },
+    {
+      "sha": "302f0e0e197d61e788992ceab5dde3c8e34352bf",
+      "filename": "Presentation/Features/Home/Views/ReviewSessionView.swift",
+      "status": "modified",
+      "additions": 32,
+      "deletions": 23,
+      "changes": 55,
+      "blob_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/blob/9096c1e3b20fb920726bd471ed4a092783ee3cc7/Presentation%2FFeatures%2FHome%2FViews%2FReviewSessionView.swift",
+      "raw_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/raw/9096c1e3b20fb920726bd471ed4a092783ee3cc7/Presentation%2FFeatures%2FHome%2FViews%2FReviewSessionView.swift",
+      "contents_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/contents/Presentation%2FFeatures%2FHome%2FViews%2FReviewSessionView.swift?ref=9096c1e3b20fb920726bd471ed4a092783ee3cc7",
+      "patch": "@@ -36,34 +36,22 @@ struct ReviewSessionView: View {\n     @State private var spelling = SpellingPractice()\n     @State private var spellingFlip = false\n \n-    private let focusedWordID: String?\n+    private let focusedRow: WordDashboardRow?\n     private let onAddWords: () -> Void\n \n     init(\n         dependencies: ReviewSessionDependencies,\n-        focusedWordID: String? = nil,\n+        focusedRow: WordDashboardRow? = nil,\n         onAddWords: @escaping () -> Void\n     ) {\n-        self.focusedWordID = focusedWordID\n+        self.focusedRow = focusedRow\n         self.onAddWords = onAddWords\n         _secondaryReview = StateObject(wrappedValue: SecondaryReviewModel(service: dependencies.secondaryReview))\n         _viewModel = StateObject(\n             wrappedValue: ReviewSessionViewModel(dependencies: dependencies)\n         )\n     }\n \n-    init(\n-        dependencies: ReviewSessionDependencies,\n-        focusedRow: WordDashboardRow,\n-        onAddWords: @escaping () -> Void\n-    ) {\n-        self.init(\n-            dependencies: dependencies,\n-            focusedWordID: focusedRow.id,\n-            onAddWords: onAddWords\n-        )\n-    }\n-\n     var body: some View {\n         Group {\n             if !hasLoaded {\n@@ -111,8 +99,8 @@ struct ReviewSessionView: View {\n             guard hasLoaded else { return }\n             resetSpelling()\n             viewModel.refresh(\n-                nativeLanguage: appSettings.nativeLanguageCode,\n-                learningLanguage: appSettings.learningLanguageCode,\n+                nativeLanguage: nativeLanguage,\n+                learningLanguage: learningLanguage,\n                 cardID: focusedCardID\n             )\n         }\n@@ -139,16 +127,24 @@ struct ReviewSessionView: View {\n         resetSpelling()\n         hasLoaded = true\n         viewModel.load(\n-            nativeLanguage: appSettings.nativeLanguageCode,\n-            learningLanguage: appSettings.learningLanguageCode,\n+            nativeLanguage: nativeLanguage,\n+            learningLanguage: learningLanguage,\n             cardID: focusedCardID\n         )\n     }\n \n+    private var nativeLanguage: String {\n+        focusedRow?.nativeLanguageBcp47 ?? appSettings.nativeLanguageCode\n+    }\n+\n+    private var learningLanguage: String {\n+        focusedRow?.learningLanguageBcp47 ?? appSettings.learningLanguageCode\n+    }\n+\n     private var focusedCardID: String? {\n-        guard let focusedWordID else { return nil }\n+        guard let focusedRow else { return nil }\n         return FSRSSchemaMigrator.reviewCardID(\n-            wordID: focusedWordID,\n+            wordID: focusedRow.id,\n             direction: appSettings.reviewDirection\n         )\n     }\n@@ -231,8 +227,11 @@ struct ReviewSessionView: View {\n \n     private func reviewScreen(_ candidate: ReviewQueueCandidate) -> some View {\n         VStack(spacing: 18) {\n-            header\n-            queueCounts\n+            VStack(spacing: 18) {\n+                header\n+                queueCounts\n+            }\n+            .background(controlBackdrop)\n \n             ScrollView {\n                 VStack(spacing: 16) {\n@@ -246,6 +245,9 @@ struct ReviewSessionView: View {\n                 .padding(.vertical, 4)\n             }\n             .scrollDismissesKeyboard(.interactively)\n+            // Keep cards visible behind the translucent areas around controls.\n+            .scrollClipDisabled()\n+            .zIndex(-1)\n \n             if let saveError = viewModel.saveError {\n                 VStack(spacing: 8) {\n@@ -284,12 +286,19 @@ struct ReviewSessionView: View {\n                     .buttonStyle(.plain)\n                 }\n             }\n+            .background(controlBackdrop)\n         }\n         .padding(.horizontal, 20)\n         .padding(.top, 12)\n         .padding(.bottom, 20)\n     }\n \n+    private var controlBackdrop: some View {\n+        RoundedRectangle(cornerRadius: 26, style: .continuous)\n+            .fill(appSettings.currentBackground.opacity(0.45))\n+            .allowsHitTesting(false)\n+    }\n+\n     private var header: some View {\n         HStack {\n             Button {"
+    },
+    {
+      "sha": "6ad814e8e7eba50f72a9c0ee82001d395f79380c",
+      "filename": "Presentation/Features/WordSearch/Views/WordSearchView.swift",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 0,
+      "changes": 5,
+      "blob_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/blob/9096c1e3b20fb920726bd471ed4a092783ee3cc7/Presentation%2FFeatures%2FWordSearch%2FViews%2FWordSearchView.swift",
+      "raw_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/raw/9096c1e3b20fb920726bd471ed4a092783ee3cc7/Presentation%2FFeatures%2FWordSearch%2FViews%2FWordSearchView.swift",
+      "contents_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/contents/Presentation%2FFeatures%2FWordSearch%2FViews%2FWordSearchView.swift?ref=9096c1e3b20fb920726bd471ed4a092783ee3cc7",
+      "patch": "@@ -102,6 +102,11 @@ struct WordSearchView: View {\n         .onChange(of: viewModel.learningLanguage) { _, new in\n             applyLanguageChange(new, to: \\.learningLanguageCode, fallback: \"en-us\")\n         }\n+        .onReceive(viewModel.$result) { result in\n+            if result != nil {\n+                isWordInputFocused = false\n+            }\n+        }\n         .onDisappear { viewModel.cancelPendingSearch() }\n         .onChange(of: appSettings.secondaryLanguageEnabled) { _, _ in viewModel.clearResult() }\n         .onChange(of: appSettings.secondaryLanguageCode) { _, _ in viewModel.clearResult() }"
+    },
+    {
+      "sha": "966d52ec2866ce090fc5587b4f6621f0b9b1ff72",
+      "filename": "Presentation/SharedUI/FloatingTabBar.swift",
+      "status": "modified",
+      "additions": 7,
+      "deletions": 16,
+      "changes": 23,
+      "blob_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/blob/9096c1e3b20fb920726bd471ed4a092783ee3cc7/Presentation%2FSharedUI%2FFloatingTabBar.swift",
+      "raw_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/raw/9096c1e3b20fb920726bd471ed4a092783ee3cc7/Presentation%2FSharedUI%2FFloatingTabBar.swift",
+      "contents_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/contents/Presentation%2FSharedUI%2FFloatingTabBar.swift?ref=9096c1e3b20fb920726bd471ed4a092783ee3cc7",
+      "patch": "@@ -87,11 +87,8 @@ enum AddOption: Hashable, CaseIterable {\n     }\n }\n \n-/// Floating \"Liquid Glass\" tab bar: one wide, flat, evenly-filled bar of\n-/// frosted `.ultraThinMaterial` with real content bleeding through. The\n-/// selected tab is shown with a soft, light capsule highlight behind\n-/// just that item — the bar itself never fills solid and stays nearly flat\n-/// (a hairline border, a very soft shadow) rather than looking puffy/3D.\n+/// Floating navigation with a 45%-opaque theme background so cards remain\n+/// visible around the buttons. The selected item keeps its capsule highlight.\n struct FloatingTabBar: View {\n     @EnvironmentObject private var appSettings: AppSettingsStore\n \n@@ -109,17 +106,11 @@ struct FloatingTabBar: View {\n         }\n         .padding(5)\n         .frame(maxWidth: .infinity)\n-        .background(glassBackground)\n-        .overlay(\n-            Capsule().strokeBorder(Color.white.opacity(0.16), lineWidth: 1)\n-        )\n-        .shadow(color: Color.black.opacity(0.10), radius: 10, x: 0, y: 4)\n-    }\n-\n-    /// Flat frosted blur — just the material, no colored wash or specular\n-    /// gradient, so the bar reads thin and glassy rather than voluminous.\n-    private var glassBackground: some View {\n-        Capsule().fill(.ultraThinMaterial)\n+        .background {\n+            Capsule()\n+                .fill(appSettings.currentBackground.opacity(0.45))\n+                .allowsHitTesting(false)\n+        }\n     }\n \n     private func tabButton(_ tab: MainTab, icon: String, label: String) -> some View {"
+    },
+    {
+      "sha": "c46b63365875f7d24e633d391e8094c1a8ec01c4",
+      "filename": "docs/ui-map.md",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 3,
+      "changes": 8,
+      "blob_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/blob/9096c1e3b20fb920726bd471ed4a092783ee3cc7/docs%2Fui-map.md",
+      "raw_url": "https://github.com/DostonElmurodov/flashcard-ai-ios/raw/9096c1e3b20fb920726bd471ed4a092783ee3cc7/docs%2Fui-map.md",
+      "contents_url": "https://api.github.com/repos/DostonElmurodov/flashcard-ai-ios/contents/docs%2Fui-map.md?ref=9096c1e3b20fb920726bd471ed4a092783ee3cc7",
+      "patch": "@@ -65,13 +65,13 @@\n | **Library tab content** | card | Shown when selection == .library; renders LibraryView(repository:) (defined in a different file, not read here). | Displays the Library screen |\n | **Learn tab content** | card | Shown when selection == .learn; renders DashboardView(repository:). | Displays the study dashboard with review stats, categories, and saved words |\n | **Pro tab content** | card | Shown when selection == .pro; renders the shared ProductPaywallPage as a full page with the tab bar still visible (not a modal). It uses 96pt bottom clearance so the raised action area and final benefits rows remain clear of the floating tab bar. Close, successful purchase, and successful restore set selection back to .learn without changing either onboarding launch flag. | Displays the shared onboarding-style Pro/paywall screen; completion returns to Learn |\n-| **FloatingTabBar** | tab | Reusable floating glass tab bar overlaid at the bottom (padding: horizontal 14, bottom 2). It is removed from accessibility and hit testing while any Dashboard Add menu, target-set chooser, or child flow is active. See its own catalog entry for its buttons. | Switches `selection` between .home/.library/.learn/.pro, or triggers showCreatePage via its + button |\n+| **FloatingTabBar** | tab | Reusable floating tab bar with a 45%-opaque theme background overlaid at the bottom (padding: horizontal 14, bottom 2). It is removed from accessibility and hit testing while any Dashboard Add menu, target-set chooser, or child flow is active. See its own catalog entry for its buttons. | Switches `selection` between .learn/.library/.pro, or triggers showCreatePage via its + button |\n | **CreateFlashcardSetPage navigation destination** | row | navigationDestination(isPresented: $showCreatePage) pushing CreateFlashcardSetPage(repository:) with theme/appSettings environment objects. | Pushes the full-page CreateFlashcardSetPage (defined elsewhere), triggered when FloatingTabBar's + button sets showCreatePage = true |\n \n ## Floating Tab Bar\n \n - **File:** `Presentation/SharedUI/FloatingTabBar.swift`\n-- **Purpose:** Reusable bottom navigation bar ('Liquid Glass' frosted capsule) with 4 tab buttons plus a create action; the enum AddOption (also defined in this file) lists the 6 ways to add words used later on CreateFlashcardSetPage.\n+- **Purpose:** Reusable bottom navigation with Learn, Library, Pro, and Create buttons. The surrounding capsule uses the current theme background at 45% opacity, with no shared blur, border, or shadow; cards remain visible beneath it and the selected button retains its highlight. The enum AddOption (also defined in this file) lists the 6 ways to add words used later on CreateFlashcardSetPage.\n - **How you get here:** Pinned to the bottom of Root Tab Shell (RootTabShell.swift), visible over every tab (Home/Library/Learn/Pro).\n \n | Element | Type | What it does | Leads to |\n@@ -203,7 +203,7 @@\n | **\"BUILD YOUR WORD LIST\" empty review banner** | card | Shown when there are zero words: eyebrow \"BUILD YOUR WORD LIST\", headline \"Learn only the words you need\", body \"I'll translate them, make flashcards, and remind you several times so they stay in memory.\" Non-interactive. | — |\n | **\"DUE REVIEW\" active review banner** | card | Shown once words exist: eyebrow \"DUE REVIEW\", large due count + \"words due\", \"~N min · 0-day streak\" subtitle, and a white pill reading \"Start review\" (or \"Repeat\" when 0 due) with an arrow.right icon. | Presents ReviewSessionView for the selected flashcard set, or all words when All is selected. |\n | **TOTAL stat** | button | NavigationLink showing viewModel.totalWords with label \"TOTAL\". | Pushes WordHistoryView(listSort: .alphabetical), titled \"All Flashcards\". |\n-| **DUE stat** | button | Button showing viewModel.reviewToday with label \"DUE\"; disabled and dimmed when totalWords == 0. | Sets showReviewSession = true (same full-screen Review Session as the banner). |\n+| **DUE stat** | button | Button showing viewModel.reviewToday with label \"DUE\"; disabled and dimmed when totalWords == 0. | Opens the same full-screen Review Session as the banner. |\n | **STUDIED stat** | label/text | Displays `viewModel.studied` with label \"STUDIED\". | — |\n | **STREAK stat** | label/text | Hardcoded \"0d\" value with label \"STREAK\" (not yet wired to real streak data). | — |\n | **\"Flashcards\" / \"Results\" section title** | label/text | Header text that reads \"Results\" while searching, otherwise \"Flashcards\". | — |\n@@ -212,6 +212,7 @@\n | **Load error banner** | banner/error | Red-tinted text showing viewModel.loadError when a load fails. | — |\n | **Empty-state text** | label/text | \"No matches for “<searchText>”\" while searching with no results, or \"No words yet. Tap Add to add your first one.\" when the list is empty and not searching. | — |\n | **Word list** | list | LazyVStack of DashboardWordCard (style: .homeList) for every row in viewModel.visibleRows, with pronunciation playback, tap-to-expand, and per-card Edit/Delete. | See DashboardWordCard entry for its own controls (Edit opens EditWordSheet; Delete opens the delete confirmation dialog). |\n+| **Review word button** | button | An icon-only play button beneath the part of speech at the top right of each Learn card, including search results. Its accessibility label includes Review and the word. Disabled for locked words. | Hides the search keyboard and opens only that word in Review using its saved language pair. Previously studied words can be reviewed early; new words retain the daily limit. Grading completes the one-word session, and Start again repeats it. |\n | **Add button** | expandable action | Compact right-aligned capsule with plus icon and \"Add\" text. It keeps the first-time pulse/glow while the total word count is 5 or fewer and the nudge is incomplete. | Expands the Dashboard Add speed dial. |\n | **Dashboard Add speed dial** | action menu | Dims the Dashboard and shows, top to bottom: Add with AI, Add manually, Scan document, Select image, and Paste text. Add with AI uses the primary accent treatment. Actions scroll within their available-height region only when needed; Add remains fixed. | Opens the existing AI popup, manual-entry view, or local import flow with a captured real Flashcard Set. Tapping the backdrop or × Add closes the menu. |\n | **Choose a Flashcard Set sheet** | sheet | Appears after any Dashboard Add action when **All** is selected. Lists only active user/Library Flashcard Sets; there is no automatic, hidden, uncategorized, seeded-category, or **All** fallback. | Choosing a set opens the requested add flow with that nonoptional set ID. Cancel persists nothing and returns to Dashboard. |\n@@ -313,6 +314,7 @@\n - **File:** `Presentation/Features/Home/Views/ReviewSessionView.swift`\n - **Purpose:** Core flashcard review loop: shows the front of a word, lets the user reveal the translation, then rate their recall (Again/Good/Easy) using spaced repetition.\n - **How you get here:** Presented over Home when a review session starts — ReviewSessionView(repository:categoryId:) for a whole/queued category, or ReviewSessionView(repository:focusedRow:) to jump straight to one word. Shown once the queue has finished loading and there is at least one card and the session isn't complete.\n+- **Scrolling:** The card can scroll behind the fixed header, queue counts, and review controls without a rectangular cut-off. The top and bottom control groups have rounded theme-colored backdrops at 45% opacity. Buttons keep their own backgrounds and remain in front of the card.\n \n | Element | Type | What it does | Leads to |\n |---|---|---|---|"
+    }
+  ]
+}

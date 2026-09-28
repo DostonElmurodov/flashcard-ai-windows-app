@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Mavrylo</RootNamespace>
+    <UserSecretsId>flashcard-ai-api-local-dev</UserSecretsId>
+  </PropertyGroup>
+  <!-- The test project (tests/) and the extracted class libraries (src/) live under this SDK
+       project's root; exclude them so their files are not compiled into the API assembly. -->
+  <ItemGroup>
+    <Compile Remove="tests/**" />
+    <Content Remove="tests/**" />
+    <EmbeddedResource Remove="tests/**" />
+    <None Remove="tests/**" />
+    <Compile Remove="src/**" />
+    <Content Remove="src/**" />
+    <EmbeddedResource Remove="src/**" />
+    <None Remove="src/**" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.9" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="src/Mavrylo.Entities/Mavrylo.Entities.csproj" />
+    <ProjectReference Include="src/Mavrylo.Data/Mavrylo.Data.csproj" />
+    <ProjectReference Include="src/Mavrylo.Services/Mavrylo.Services.csproj" />
+  </ItemGroup>
+</Project>

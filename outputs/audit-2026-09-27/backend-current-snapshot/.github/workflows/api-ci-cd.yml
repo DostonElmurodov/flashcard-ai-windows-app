@@ -1,0 +1,108 @@
+name: API CI/CD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  # GHCR image; metadata-action lowercases the owner automatically
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  build-test:
+    name: Build, test and push image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # gitleaks scans the pushed commit range (<first>^..<last>); the default shallow clone
+          # (fetch-depth: 1) lacks the parent commit, so the range fails to resolve. Full history fixes it.
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      # Quality gate: tests must pass before we build/push an image
+      - name: Restore
+        run: dotnet restore tests/Mavrylo.Tests.csproj
+
+      - name: Build
+        run: dotnet build Mavrylo.csproj --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test tests/Mavrylo.Tests.csproj --configuration Release --no-restore
+
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@v2
+
+      - name: Dependency vulnerability scan
+        run: dotnet list Mavrylo.csproj package --vulnerable --include-transitive
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata (tags/labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=long
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy API to server
+    runs-on: ubuntu-latest
+    needs: build-test
+    if: github.event_name == 'workflow_dispatch'
+    environment: production
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          test -n "$DEPLOY_SSH_KNOWN_HOSTS"
+          printf '%s\n' "$DEPLOY_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Pull image and restart container
+        env:
+          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" \
+            "set -e; cd '$DEPLOY_PATH'; echo '$GHCR_TOKEN' | docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin; docker compose pull; docker compose up -d; i=1; while [ \$i -le 30 ]; do curl -fsS http://127.0.0.1:5289/health && exit 0; sleep 2; i=\$((i + 1)); done; docker compose ps; docker compose logs --tail=200 api; exit 1"

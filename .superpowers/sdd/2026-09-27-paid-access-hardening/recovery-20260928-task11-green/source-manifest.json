@@ -1,0 +1,23 @@
+[
+  {
+    "name": "ios",
+    "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\ios",
+    "base": "9096c1e3b20fb920726bd471ed4a092783ee3cc7",
+    "head": "f2a8c97df85ce8df9cc807fbf59bf1b9f74fad26",
+    "status": []
+  },
+  {
+    "name": "windows",
+    "path": "C:\\Users\\ForDo\\.codex\\worktrees\\paid-access-hardening\\FlashcardAI",
+    "base": "aba59fb8f5e829d2cd10065fd702cff2dc7223b3",
+    "head": "ac37325c3cae2cef5d2adaddbaa214f213a25892",
+    "status": []
+  },
+  {
+    "name": "backend",
+    "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\backend",
+    "base": "473a39bee299f3df4c7fdcf6f45502f880a9bd8b",
+    "head": "7310fa4df055c5715c6974a4bb4a463ff036cac5",
+    "status": []
+  }
+]

@@ -1,0 +1,18 @@
+[
+  {
+    "Path": "App/DependencyInjection/AppComposition.swift",
+    "SHA256": "5E34F5DCE99CF61181F0AAC1F7465EFCFA7C0FD428DA612FA1CAF68346420FAC"
+  },
+  {
+    "Path": "FlashCardAI.xcodeproj/project.pbxproj",
+    "SHA256": "C644A614200EDE0E681ABAE91D9A002827C909245D6AD4CFE4A23B9C242B6B59"
+  },
+  {
+    "Path": "FlashCardAI.xcodeproj/xcshareddata/xcschemes/FlashCardAI.xcscheme",
+    "SHA256": "A7E84EBC54F250CFFF0E8A00C07C7E7CB8B62EF1BDA86CFEAFDAD186569D974B"
+  },
+  {
+    "Path": "FlashCardAIUITests/UILaunchFixtureTests.swift",
+    "SHA256": "D7DCA1A2AE00926CFABEC5C786B151FBDCCB44527B6CC5E7A629985650ACB1A3"
+  }
+]

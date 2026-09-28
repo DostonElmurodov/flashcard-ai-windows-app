@@ -1,0 +1,6 @@
+Runtime: 10.0.11
+Input A: bucket=private-test-id; rows=15
+Input B: bucket=DIFFERENT; rows=999
+Default System.Text.Json serialization A: [{}]
+Default System.Text.Json serialization B: [{}]
+The report type is List<ValueTuple<string, Dictionary<string, long>>>. Default options omit tuple fields.

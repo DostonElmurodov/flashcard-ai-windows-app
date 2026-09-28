@@ -1,0 +1,127 @@
+diff --git a/docs/ai-provider-spend.md b/docs/ai-provider-spend.md
+index 1effa8c..a915f52 100644
+--- a/docs/ai-provider-spend.md
++++ b/docs/ai-provider-spend.md
+@@ -112,7 +112,9 @@ HttpClient's header-only timeout semantics. Automatic response draining is disab
+ Settlement then has a separate bounded five-second database deadline. Caller
+ cancellation propagates as cancellation. An internal reservation/send/body deadline
+ with an active caller maps to the established 503 `ai_translation_unavailable`
+-response. Both are terminal and retain any uncertain reservation. Provider
++response. The handler's separate connection timeout has the same terminal mapping;
++the pinned runtime identifies it as cancellation with an inner `TimeoutException`.
++All retain any uncertain reservation. Provider
+ 401/402/403/429 and local authorization/quota/spend denials never trigger fallback
+ or an outage email. Provider failures with unknown cost remain reserved.
+ 
+@@ -120,7 +122,10 @@ Transport evidence is local loopback against the actual Program named-client
+ registration on .NET 10.0.12: posted-body disconnect, reused connection disconnect,
+ 307 redirect, oversized chunked body and headers-first body stall. Source basis:
+ [HTTP/1 connection](https://raw.githubusercontent.com/dotnet/runtime/v10.0.12/src/libraries/System.Net.Http/src/System/Net/Http/SocketsHttpHandler/HttpConnection.cs)
+-and [pool retries](https://raw.githubusercontent.com/dotnet/runtime/v10.0.12/src/libraries/System.Net.Http/src/System/Net/Http/SocketsHttpHandler/ConnectionPool/HttpConnectionPool.cs).
++and [pool retries / connection timeout](https://raw.githubusercontent.com/dotnet/runtime/v10.0.12/src/libraries/System.Net.Http/src/System/Net/Http/SocketsHttpHandler/ConnectionPool/HttpConnectionPool.cs).
++Additional actual Kestrel tests keep that registered handler and replace only
++connection establishment with a stalled callback and a short test-only connect
++timeout; they verify 503, no fallback and retained accounting without remote sockets.
+ Revalidate on runtime, handler, endpoint, model or pricing changes. The floating
+ deployment image is not proof of the tested runtime. There were no live provider
+ probes; provider adherence to documented token limits/rates remains an assumption.
+diff --git a/src/Mavrylo.Services/Services/AiProviderTransport.cs b/src/Mavrylo.Services/Services/AiProviderTransport.cs
+index 00ba1f4..19c42de 100644
+--- a/src/Mavrylo.Services/Services/AiProviderTransport.cs
++++ b/src/Mavrylo.Services/Services/AiProviderTransport.cs
+@@ -61,9 +61,11 @@ public sealed class AiProviderTransport(IHttpClientFactory clients, IAiSpendGuar
+             usage = ReadUsage(profile.Provider, document.RootElement);
+             return document;
+         }
+-        catch (OperationCanceledException) when (deadline.IsCancellationRequested && !ct.IsCancellationRequested)
++        catch (OperationCanceledException ex) when (!ct.IsCancellationRequested
++            && (deadline.IsCancellationRequested || ex.InnerException is TimeoutException))
+         {
+-            // Our deadline is terminal unavailability; caller cancellation still propagates as cancellation.
++            // .NET's separate ConnectTimeout uses OCE with an inner TimeoutException.
++            // Both provider timers are terminal unavailability; caller cancellation still propagates.
+             throw new AiSpendDeniedException("provider_deadline");
+         }
+         finally
+diff --git a/tests/AiProviderTransportTests.cs b/tests/AiProviderTransportTests.cs
+index 004852b..8c46f37 100644
+--- a/tests/AiProviderTransportTests.cs
++++ b/tests/AiProviderTransportTests.cs
+@@ -11,6 +11,23 @@ namespace Mavrylo.Tests;
+ 
+ public class AiProviderTransportTests(PostgresContainerFixture postgres) : IClassFixture<PostgresContainerFixture>
+ {
++    [Fact]
++    public async Task CallerCancellationDuringConnectionStaysCancellation()
++    {
++        using var handler = AiProviderTransport.CreateHandler();
++        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
++        handler.ConnectCallback = async (_, ct) => { started.SetResult(); await Task.Delay(Timeout.Infinite, ct); return Stream.Null; };
++        using var client = new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan };
++        var guard = new AiSpendTestSupport.RecordingGuard(); var transport = AiSpendTestSupport.Transport(client, guard);
++        var profile = AiCostProfile.Read(AiSpendTestSupport.Config(new() { ["AiSpend:DeadlineMilliseconds"] = "5000" }), "Gemini", "gemini-2.5-flash", "word-detail", "prompt", null, null);
++        using var caller = new CancellationTokenSource();
++        using var request = new HttpRequestMessage(HttpMethod.Post, "http://127.0.0.1/") { Content = new StringContent("{}") };
++        var attempt = transport.SendAsync(profile, "word-detail", request, caller.Token);
++        await started.Task.WaitAsync(TimeSpan.FromSeconds(2)); caller.Cancel();
++        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => attempt);
++        Assert.Single(guard.Attempts); Assert.Null(Assert.Single(guard.Completions));
++    }
++
+     [Theory]
+     [InlineData("disconnect")]
+     [InlineData("redirect")]
+diff --git a/tests/AiSpendRouteTests.cs b/tests/AiSpendRouteTests.cs
+index d4f82e1..34f0b15 100644
+--- a/tests/AiSpendRouteTests.cs
++++ b/tests/AiSpendRouteTests.cs
+@@ -15,6 +15,49 @@ namespace Mavrylo.Tests;
+ 
+ public class AiSpendRouteTests(PostgresContainerFixture postgres) : IClassFixture<PostgresContainerFixture>
+ {
++    [Theory]
++    [InlineData("OpenAI")]
++    [InlineData("Gemini")]
++    public async Task HandlerConnectDeadlineReturnsUnavailableOverHttpAndRetainsReservation(string provider)
++    {
++        var connections = 0; var alerts = new AiProviderBoundaryTests.NoAlert();
++        var config = AiSpendTestSupport.Config(new() { ["AI:Provider"] = provider, ["AiSpend:DeadlineMilliseconds"] = "5000" }).AsEnumerable().ToDictionary(x => x.Key, x => x.Value);
++        config["TestMode:Enabled"] = "true"; config["AiProtection:RequireAssertion"] = "false";
++        await using var factory = new ApiFactory(postgres.ConnectionString, services =>
++        {
++            // Keep the actual named-client handler; replace only connection establishment, with no remote sockets.
++            services.Configure<Microsoft.Extensions.Http.HttpClientFactoryOptions>(AiProviderTransport.ClientName, options =>
++                options.HttpMessageHandlerBuilderActions.Add(builder =>
++                {
++                    var handler = Assert.IsType<SocketsHttpHandler>(builder.PrimaryHandler);
++                    Assert.Equal(TimeSpan.FromSeconds(10), handler.ConnectTimeout);
++                    handler.ConnectTimeout = TimeSpan.FromMilliseconds(80);
++                    handler.ConnectCallback = async (_, ct) =>
++                    {
++                        Interlocked.Increment(ref connections);
++                        await Task.Delay(Timeout.Infinite, ct);
++                        return Stream.Null;
++                    };
++                }));
++            services.RemoveAll<IDevAlertEmailService>(); services.AddSingleton<IDevAlertEmailService>(alerts);
++        }, config);
++        factory.UseKestrel(0);
++        using var client = await AuthorizedClient(factory, true);
++        using var scope = factory.Services.CreateScope(); var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
++        var beforeCount = await db.AiSpendReservations.CountAsync();
++        var beforePending = await db.AiSpendBuckets.Where(x => x.Id == "global").Select(x => x.PendingAttempts).SingleOrDefaultAsync();
++        using var response = await Post(client, "/owlai/account/ai/word-detail", "word-detail", Guid.NewGuid().ToString("N"), CancellationToken.None);
++        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
++        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
++        Assert.Equal("ai_translation_unavailable", body.RootElement.GetProperty("error").GetString());
++        Assert.Equal(1, connections); Assert.Equal(0, alerts.Calls);
++        Assert.Equal(beforeCount + 1, await db.AiSpendReservations.CountAsync());
++        var row = await db.AiSpendReservations.AsNoTracking().OrderByDescending(x => x.CreatedAt).FirstAsync();
++        Assert.Equal(provider, row.Provider); Assert.Null(row.SettledAt);
++        Assert.Equal(provider == "Gemini" ? 568536 : 578345, row.ChargedMicroUsd);
++        Assert.Equal(beforePending + 1, (await db.AiSpendBuckets.AsNoTracking().SingleAsync(x => x.Id == "global")).PendingAttempts);
++    }
++
+     [Theory]
+     [InlineData("OpenAI", "analyze-word")]
+     [InlineData("Gemini", "word-detail")]

@@ -1,0 +1,106 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="0aea385b-f64c-4e3b-9fda-70ad255ca1db" name="ForDo@LIFEBOX 2026-09-27 19:51:32" runUser="LifeBox\CodexSandboxOffline" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-09-27T19:51:32.5008820-05:00" queuing="2026-09-27T19:51:32.5008828-05:00" start="2026-09-27T19:51:29.5625334-05:00" finish="2026-09-27T19:51:42.7642726-05:00" />
+  <TestSettings name="default" id="063a197a-dafe-4e06-870d-85a498042351">
+    <Deployment runDeploymentRoot="ForDo_LIFEBOX_2026-09-27_19_51_32" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="8cce9f84-cee1-4bb5-82e7-32736677727b" testId="702b4a4b-605c-f0d7-7a6a-72217c01bd8a" testName="Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: &quot;Production &quot;, products: &quot;product.one&quot;)" computerName="LIFEBOX" duration="00:00:00.0122957" startTime="2026-09-27T19:51:32.3919442-05:00" endTime="2026-09-27T19:51:32.4046513-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8cce9f84-cee1-4bb5-82e7-32736677727b" />
+    <UnitTestResult executionId="16509644-05a1-46f7-b1ca-790c6d0c2473" testId="1e0c273c-ae98-7081-baa6-879897eb9f79" testName="Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: &quot;Production&quot;, products: &quot;&quot;)" computerName="LIFEBOX" duration="00:00:00.0149650" startTime="2026-09-27T19:51:32.3764590-05:00" endTime="2026-09-27T19:51:32.3917600-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="16509644-05a1-46f7-b1ca-790c6d0c2473" />
+    <UnitTestResult executionId="f7c38d09-6997-40e6-bb2e-dabadb71b64a" testId="053045e4-96e6-d14e-8c54-96e02e043158" testName="Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: &quot;&quot;, products: &quot;product.one&quot;)" computerName="LIFEBOX" duration="00:00:00.2023927" startTime="2026-09-27T19:51:32.1638410-05:00" endTime="2026-09-27T19:51:32.3420357-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f7c38d09-6997-40e6-bb2e-dabadb71b64a" />
+    <UnitTestResult executionId="725080f9-958e-4466-8f84-912782278ce5" testId="50f956ea-d81b-e201-6b71-09f2734e7c1c" testName="Mavrylo.Tests.SubscriptionInventorySqlTests.EmptyTableStillValidatesSettingsAndReportsZero" computerName="LIFEBOX" duration="00:00:00.0512523" startTime="2026-09-27T19:51:32.4461516-05:00" endTime="2026-09-27T19:51:32.4981169-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="725080f9-958e-4466-8f84-912782278ce5" />
+    <UnitTestResult executionId="00dac0f3-0a97-4668-a14c-c2c5fcfb5e56" testId="41bb9542-9eb2-181e-38ee-2c8764864a2a" testName="Mavrylo.Tests.SubscriptionInventorySqlTests.AggregateIsExactSafeAndRepeatableInReadOnlyTransaction" computerName="LIFEBOX" duration="00:00:00.0726208" startTime="2026-09-27T19:51:32.4984076-05:00" endTime="2026-09-27T19:51:32.5717594-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="00dac0f3-0a97-4668-a14c-c2c5fcfb5e56" />
+    <UnitTestResult executionId="a4b8839c-79b6-47dc-a645-6ad0a381e083" testId="4bc751d0-5c64-c129-47c6-bf3a1a67b232" testName="Mavrylo.Tests.TestModeHostBoundaryTests.SignedSandboxFalseRemainsUsableAndReloadCannotEnableTestMode" computerName="LIFEBOX" duration="00:00:04.7541402" startTime="2026-09-27T19:51:37.3897860-05:00" endTime="2026-09-27T19:51:42.1429904-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a4b8839c-79b6-47dc-a645-6ad0a381e083" />
+    <UnitTestResult executionId="6797ee32-2f51-4d2d-acaa-6a7508000143" testId="1126c704-c464-76a8-42f9-b04ccb6ada0c" testName="Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: &quot;Wrong&quot;, products: &quot;product.one&quot;)" computerName="LIFEBOX" duration="00:00:00.0125910" startTime="2026-09-27T19:51:32.4049033-05:00" endTime="2026-09-27T19:51:32.4177571-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6797ee32-2f51-4d2d-acaa-6a7508000143" />
+    <UnitTestResult executionId="24a30b9d-6cd4-4a32-97f8-b71cbc2fc2c4" testId="a9d2d20f-027c-d6e5-d4c1-d8a20c6eafc6" testName="Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: null, products: null)" computerName="LIFEBOX" duration="00:00:00.0117847" startTime="2026-09-27T19:51:32.4427013-05:00" endTime="2026-09-27T19:51:32.4448140-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="24a30b9d-6cd4-4a32-97f8-b71cbc2fc2c4" />
+    <UnitTestResult executionId="b153b131-7b79-49eb-b6e1-8d916d0c9cf2" testId="00a129fd-9b46-b215-ac6c-b6f491d0f414" testName="Mavrylo.Tests.TestModeHostBoundaryTests.NonDevelopmentTrueFailsSpecificallyBeforeMigration(host: &quot;Production&quot;)" computerName="LIFEBOX" duration="00:00:00.0046327" startTime="2026-09-27T19:51:32.2737062-05:00" endTime="2026-09-27T19:51:32.2738206-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b153b131-7b79-49eb-b6e1-8d916d0c9cf2" />
+    <UnitTestResult executionId="114b1b5c-f81e-4e8c-8cab-cbb53d09e3b3" testId="c56b8672-634c-0bfc-d643-1ebf5513693b" testName="Mavrylo.Tests.TestModeHostBoundaryTests.NonDevelopmentTrueFailsSpecificallyBeforeMigration(host: &quot;Staging&quot;)" computerName="LIFEBOX" duration="00:00:00.1020805" startTime="2026-09-27T19:51:32.1666966-05:00" endTime="2026-09-27T19:51:32.2590642-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="114b1b5c-f81e-4e8c-8cab-cbb53d09e3b3" />
+    <UnitTestResult executionId="92cc874e-9fa3-4768-86b3-6d3c10fbddaa" testId="49b03bda-2921-bf1b-f985-1b307b54519d" testName="Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: &quot;LocalTesting&quot;, products: &quot;product.one&quot;)" computerName="LIFEBOX" duration="00:00:00.0326394" startTime="2026-09-27T19:51:32.3436335-05:00" endTime="2026-09-27T19:51:32.3762356-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="92cc874e-9fa3-4768-86b3-6d3c10fbddaa" />
+    <UnitTestResult executionId="c790a755-c3cd-4e0d-a72f-ec4ed5c42bc8" testId="2513fbe2-238e-e6b4-e308-aa2602691160" testName="Mavrylo.Tests.TestModeHostBoundaryTests.DevelopmentCanEnableAfterStartup" computerName="LIFEBOX" duration="00:00:05.1214939" startTime="2026-09-27T19:51:32.2771917-05:00" endTime="2026-09-27T19:51:37.3872356-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c790a755-c3cd-4e0d-a72f-ec4ed5c42bc8" />
+    <UnitTestResult executionId="065db589-b8bd-4df1-b1ba-a2e5526a5daf" testId="ce15d2e6-4b57-9786-f886-08816950c08f" testName="Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: &quot;Production&quot;, products: &quot;product.one,&quot;)" computerName="LIFEBOX" duration="00:00:00.0139845" startTime="2026-09-27T19:51:32.4180898-05:00" endTime="2026-09-27T19:51:32.4325153-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="065db589-b8bd-4df1-b1ba-a2e5526a5daf" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: &quot;Production&quot;, products: &quot;product.one,&quot;)" storage="d:\07 hobby\flashcardai\test-results\paid-access-hardening\backend\tests\bin\release\net10.0\mavrylo.tests.dll" id="ce15d2e6-4b57-9786-f886-08816950c08f">
+      <Execution id="065db589-b8bd-4df1-b1ba-a2e5526a5daf" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Mavrylo.Tests.SubscriptionInventorySqlTests" name="MissingOrInvalidTrustedSettingsFailClosed" />
+    </UnitTest>
+    <UnitTest name="Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: &quot;LocalTesting&quot;, products: &quot;product.one&quot;)" storage="d:\07 hobby\flashcardai\test-results\paid-access-hardening\backend\tests\bin\release\net10.0\mavrylo.tests.dll" id="49b03bda-2921-bf1b-f985-1b307b54519d">
+      <Execution id="92cc874e-9fa3-4768-86b3-6d3c10fbddaa" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Mavrylo.Tests.SubscriptionInventorySqlTests" name="MissingOrInvalidTrustedSettingsFailClosed" />
+    </UnitTest>
+    <UnitTest name="Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: &quot;Production&quot;, products: &quot;&quot;)" storage="d:\07 hobby\flashcardai\test-results\paid-access-hardening\backend\tests\bin\release\net10.0\mavrylo.tests.dll" id="1e0c273c-ae98-7081-baa6-879897eb9f79">
+      <Execution id="16509644-05a1-46f7-b1ca-790c6d0c2473" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Mavrylo.Tests.SubscriptionInventorySqlTests" name="MissingOrInvalidTrustedSettingsFailClosed" />
+    </UnitTest>
+    <UnitTest name="Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: &quot;Production &quot;, products: &quot;product.one&quot;)" storage="d:\07 hobby\flashcardai\test-results\paid-access-hardening\backend\tests\bin\release\net10.0\mavrylo.tests.dll" id="702b4a4b-605c-f0d7-7a6a-72217c01bd8a">
+      <Execution id="8cce9f84-cee1-4bb5-82e7-32736677727b" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Mavrylo.Tests.SubscriptionInventorySqlTests" name="MissingOrInvalidTrustedSettingsFailClosed" />
+    </UnitTest>
+    <UnitTest name="Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: null, products: null)" storage="d:\07 hobby\flashcardai\test-results\paid-access-hardening\backend\tests\bin\release\net10.0\mavrylo.tests.dll" id="a9d2d20f-027c-d6e5-d4c1-d8a20c6eafc6">
+      <Execution id="24a30b9d-6cd4-4a32-97f8-b71cbc2fc2c4" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Mavrylo.Tests.SubscriptionInventorySqlTests" name="MissingOrInvalidTrustedSettingsFailClosed" />
+    </UnitTest>
+    <UnitTest name="Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: &quot;&quot;, products: &quot;product.one&quot;)" storage="d:\07 hobby\flashcardai\test-results\paid-access-hardening\backend\tests\bin\release\net10.0\mavrylo.tests.dll" id="053045e4-96e6-d14e-8c54-96e02e043158">
+      <Execution id="f7c38d09-6997-40e6-bb2e-dabadb71b64a" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Mavrylo.Tests.SubscriptionInventorySqlTests" name="MissingOrInvalidTrustedSettingsFailClosed" />
+    </UnitTest>
+    <UnitTest name="Mavrylo.Tests.SubscriptionInventorySqlTests.MissingOrInvalidTrustedSettingsFailClosed(environment: &quot;Wrong&quot;, products: &quot;product.one&quot;)" storage="d:\07 hobby\flashcardai\test-results\paid-access-hardening\backend\tests\bin\release\net10.0\mavrylo.tests.dll" id="1126c704-c464-76a8-42f9-b04ccb6ada0c">
+      <Execution id="6797ee32-2f51-4d2d-acaa-6a7508000143" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Mavrylo.Tests.SubscriptionInventorySqlTests" name="MissingOrInvalidTrustedSettingsFailClosed" />
+    </UnitTest>
+    <UnitTest name="Mavrylo.Tests.SubscriptionInventorySqlTests.EmptyTableStillValidatesSettingsAndReportsZero" storage="d:\07 hobby\flashcardai\test-results\paid-access-hardening\backend\tests\bin\release\net10.0\mavrylo.tests.dll" id="50f956ea-d81b-e201-6b71-09f2734e7c1c">
+      <Execution id="725080f9-958e-4466-8f84-912782278ce5" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Mavrylo.Tests.SubscriptionInventorySqlTests" name="EmptyTableStillValidatesSettingsAndReportsZero" />
+    </UnitTest>
+    <UnitTest name="Mavrylo.Tests.TestModeHostBoundaryTests.NonDevelopmentTrueFailsSpecificallyBeforeMigration(host: &quot;Staging&quot;)" storage="d:\07 hobby\flashcardai\test-results\paid-access-hardening\backend\tests\bin\release\net10.0\mavrylo.tests.dll" id="c56b8672-634c-0bfc-d643-1ebf5513693b">
+      <Execution id="114b1b5c-f81e-4e8c-8cab-cbb53d09e3b3" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Mavrylo.Tests.TestModeHostBoundaryTests" name="NonDevelopmentTrueFailsSpecificallyBeforeMigration" />
+    </UnitTest>
+    <UnitTest name="Mavrylo.Tests.TestModeHostBoundaryTests.DevelopmentCanEnableAfterStartup" storage="d:\07 hobby\flashcardai\test-results\paid-access-hardening\backend\tests\bin\release\net10.0\mavrylo.tests.dll" id="2513fbe2-238e-e6b4-e308-aa2602691160">
+      <Execution id="c790a755-c3cd-4e0d-a72f-ec4ed5c42bc8" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Mavrylo.Tests.TestModeHostBoundaryTests" name="DevelopmentCanEnableAfterStartup" />
+    </UnitTest>
+    <UnitTest name="Mavrylo.Tests.SubscriptionInventorySqlTests.AggregateIsExactSafeAndRepeatableInReadOnlyTransaction" storage="d:\07 hobby\flashcardai\test-results\paid-access-hardening\backend\tests\bin\release\net10.0\mavrylo.tests.dll" id="41bb9542-9eb2-181e-38ee-2c8764864a2a">
+      <Execution id="00dac0f3-0a97-4668-a14c-c2c5fcfb5e56" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Mavrylo.Tests.SubscriptionInventorySqlTests" name="AggregateIsExactSafeAndRepeatableInReadOnlyTransaction" />
+    </UnitTest>
+    <UnitTest name="Mavrylo.Tests.TestModeHostBoundaryTests.SignedSandboxFalseRemainsUsableAndReloadCannotEnableTestMode" storage="d:\07 hobby\flashcardai\test-results\paid-access-hardening\backend\tests\bin\release\net10.0\mavrylo.tests.dll" id="4bc751d0-5c64-c129-47c6-bf3a1a67b232">
+      <Execution id="a4b8839c-79b6-47dc-a645-6ad0a381e083" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Mavrylo.Tests.TestModeHostBoundaryTests" name="SignedSandboxFalseRemainsUsableAndReloadCannotEnableTestMode" />
+    </UnitTest>
+    <UnitTest name="Mavrylo.Tests.TestModeHostBoundaryTests.NonDevelopmentTrueFailsSpecificallyBeforeMigration(host: &quot;Production&quot;)" storage="d:\07 hobby\flashcardai\test-results\paid-access-hardening\backend\tests\bin\release\net10.0\mavrylo.tests.dll" id="00a129fd-9b46-b215-ac6c-b6f491d0f414">
+      <Execution id="b153b131-7b79-49eb-b6e1-8d916d0c9cf2" />
+      <TestMethod codeBase="D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Mavrylo.Tests.TestModeHostBoundaryTests" name="NonDevelopmentTrueFailsSpecificallyBeforeMigration" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="702b4a4b-605c-f0d7-7a6a-72217c01bd8a" executionId="8cce9f84-cee1-4bb5-82e7-32736677727b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1e0c273c-ae98-7081-baa6-879897eb9f79" executionId="16509644-05a1-46f7-b1ca-790c6d0c2473" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="053045e4-96e6-d14e-8c54-96e02e043158" executionId="f7c38d09-6997-40e6-bb2e-dabadb71b64a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="50f956ea-d81b-e201-6b71-09f2734e7c1c" executionId="725080f9-958e-4466-8f84-912782278ce5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="41bb9542-9eb2-181e-38ee-2c8764864a2a" executionId="00dac0f3-0a97-4668-a14c-c2c5fcfb5e56" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4bc751d0-5c64-c129-47c6-bf3a1a67b232" executionId="a4b8839c-79b6-47dc-a645-6ad0a381e083" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1126c704-c464-76a8-42f9-b04ccb6ada0c" executionId="6797ee32-2f51-4d2d-acaa-6a7508000143" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a9d2d20f-027c-d6e5-d4c1-d8a20c6eafc6" executionId="24a30b9d-6cd4-4a32-97f8-b71cbc2fc2c4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="00a129fd-9b46-b215-ac6c-b6f491d0f414" executionId="b153b131-7b79-49eb-b6e1-8d916d0c9cf2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c56b8672-634c-0bfc-d643-1ebf5513693b" executionId="114b1b5c-f81e-4e8c-8cab-cbb53d09e3b3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="49b03bda-2921-bf1b-f985-1b307b54519d" executionId="92cc874e-9fa3-4768-86b3-6d3c10fbddaa" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2513fbe2-238e-e6b4-e308-aa2602691160" executionId="c790a755-c3cd-4e0d-a72f-ec4ed5c42bc8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ce15d2e6-4b57-9786-f886-08816950c08f" executionId="065db589-b8bd-4df1-b1ba-a2e5526a5daf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="13" executed="13" passed="13" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)&#xD;
+[xUnit.net 00:00:00.12]   Discovering: Mavrylo.Tests&#xD;
+[xUnit.net 00:00:00.26]   Discovered:  Mavrylo.Tests&#xD;
+[xUnit.net 00:00:00.29]   Starting:    Mavrylo.Tests&#xD;
+[xUnit.net 00:00:12.32]   Finished:    Mavrylo.Tests&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

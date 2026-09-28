@@ -1,0 +1,82 @@
+{
+  "name": "Word",
+  "type": "object",
+  "properties": {
+    "word": {
+      "type": "string",
+      "description": "The word to learn"
+    },
+    "translation": {
+      "type": "string",
+      "description": "Translation in native language"
+    },
+    "pronunciation": {
+      "type": "string",
+      "description": "Phonetic pronunciation"
+    },
+    "audio_url": {
+      "type": "string",
+      "description": "Cached audio URL for pronunciation"
+    },
+    "examples": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Example sentences in target language"
+    },
+    "example_translations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Translations of example sentences in native language"
+    },
+    "user_notes": {
+      "type": "string",
+      "description": "User's own notes on this word"
+    },
+    "category_id": {
+      "type": "string",
+      "description": "ID of the category this word belongs to"
+    },
+    "source_language": {
+      "type": "string",
+      "default": "en"
+    },
+    "target_language": {
+      "type": "string",
+      "default": "en"
+    },
+    "next_review": {
+      "type": "string",
+      "format": "date",
+      "description": "Next scheduled review date"
+    },
+    "review_interval": {
+      "type": "number",
+      "default": 1,
+      "description": "Days until next review"
+    },
+    "ease_factor": {
+      "type": "number",
+      "default": 2.5,
+      "description": "SRS ease factor"
+    },
+    "repetitions": {
+      "type": "number",
+      "default": 0
+    },
+    "is_mastered": {
+      "type": "boolean",
+      "default": false
+    },
+    "part_of_speech": {
+      "type": "string",
+      "description": "noun, verb, adjective, etc."
+    }
+  },
+  "required": [
+    "word"
+  ]
+}

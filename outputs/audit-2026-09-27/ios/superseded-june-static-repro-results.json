@@ -1,0 +1,60 @@
+{
+  "kind": "source-characterization-and-sql-reproduction",
+  "ios_runtime_executed": false,
+  "observations": [
+    {
+      "observation": "No client TestMode/test_mode references",
+      "swift_file_count": 49
+    },
+    {
+      "observation": "Local unlimited policy includes trial/grace and ignores dates",
+      "statuses": [
+        "trial",
+        "premium",
+        "grace"
+      ],
+      "supplied_expired_date_changes_result": false
+    },
+    {
+      "observation": "Failed refresh preserves old snapshot; offline grace is not consulted",
+      "past_expiry_premium_remains_premium": true,
+      "grace_has_callers": false
+    },
+    {
+      "observation": "Local cached detail returns before entitlement checks",
+      "network_cost": false,
+      "cached_locked_word_is_readable": true
+    },
+    {
+      "observation": "Restore with no current entitlements retains prior snapshot",
+      "returns_success": false,
+      "clears_snapshot": false
+    },
+    {
+      "observation": "Actual count SQL is per language pair",
+      "counts": {
+        "en/es": 10,
+        "en/de": 1,
+        "global": 11
+      },
+      "second_pair_local_ai_gate_allowed": true
+    },
+    {
+      "observation": "Deleting an older row promotes previously locked row",
+      "before_locked": [
+        "eleventh-other-pair"
+      ],
+      "after_locked": [],
+      "server_ai_grant_proven": false
+    },
+    {
+      "observation": "Edit changes local identity without device-word synchronization",
+      "server_identity_updated": false
+    },
+    {
+      "observation": "Release source guards require bearer/proof and archive uses Release",
+      "archive_configuration": "Release",
+      "source_format_checks": "valid plist/entitlements/StoreKit JSON/scheme XML"
+    }
+  ]
+}

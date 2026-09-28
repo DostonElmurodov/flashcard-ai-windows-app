@@ -1,0 +1,147 @@
+{
+  "recordedUtc": "2026-09-28T03:07:59.3898161Z",
+  "base": "414bc25cf76e5a433e872f71e0a172008475e010",
+  "initialFix": "2a3fbc70a5306b4a4b6eeb57498e043164f3b8f3",
+  "head": "03bb0620098cdbe6d2c21b855271e2e8b968e029",
+  "tree": "88ce2dd71703d24dfa8d1925d8680f1c7717594f",
+  "finalPatchMatchesCommittedDiff": true,
+  "r1r2PatchBase": "414bc25cf76e5a433e872f71e0a172008475e010",
+  "connectPatchBase": "2a3fbc70a5306b4a4b6eeb57498e043164f3b8f3",
+  "status": [],
+  "sources": [
+    {
+      "path": "docs/ai-provider-spend.md",
+      "sha256": "09D161AC75741B152999D7E14A298E3ACD931251AF1E9BF0D24707BB6013175A",
+      "gitBlob": "a915f5251ac57f8a03db946f70b3402a3df64d5a"
+    },
+    {
+      "path": "src/Mavrylo.Services/Services/AiProviderTransport.cs",
+      "sha256": "EFF10CFFCB98EE375CA2A4E105763DD275E7111013190DA83AF8F9F815CC3F81",
+      "gitBlob": "19c42de51f14474936144324928481b65e8d3864"
+    },
+    {
+      "path": "tests/AiProviderBoundaryTests.cs",
+      "sha256": "00D73FA5B0FA6F1320D8F247506150C8C58AF9685E81BFBD05227E9ABD030D9A",
+      "gitBlob": "94d8937814bd1c4c5044461c2afc00478e8d65c7"
+    },
+    {
+      "path": "tests/AiProviderTransportTests.cs",
+      "sha256": "5826E5030DB8AFDA49EEC2DDA2E851490284150CB620991761F396342E94D0BB",
+      "gitBlob": "8c46f3749f593177e9d7907b08ff6a5c3eb87bc0"
+    },
+    {
+      "path": "tests/AiSpendGuardTests.cs",
+      "sha256": "F57707484BDE22F7E30114E1DAEA05C9C07BD1834092572B9DBA425DE2AE1F3A",
+      "gitBlob": "0d62b515d5e9ed2260d576bbb2efda784e261c72"
+    },
+    {
+      "path": "tests/AiSpendRouteTests.cs",
+      "sha256": "750A27496675E73BE373BC8CB5082F6B746F7C8B11C7ACA6E2B2C78B491BB964",
+      "gitBlob": "34f0b153497acb1cd5190c5df38395f6682af585"
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "task-7-fix1-connect-green-source.patch",
+      "sha256": "F5F192AC719FA43A12B3C036D9306B0DC3CDED616F13DDC09131A21E9CE92600",
+      "bytes": 8767,
+      "lastWriteUtc": "2026-09-28T03:04:40.4288569Z"
+    },
+    {
+      "name": "task-7-fix1-connect-green.log",
+      "sha256": "3870647950B0A6394ED06FE47CBB6C55D203014B3A65457E3D428020D2D81814",
+      "bytes": 4106,
+      "lastWriteUtc": "2026-09-28T03:04:55.7372959Z"
+    },
+    {
+      "name": "task-7-fix1-connect-red-source.patch",
+      "sha256": "008AB6941D33E470A75C750865882DD4938099A3D016966FE0F45EB67FBF98F3",
+      "bytes": 5310,
+      "lastWriteUtc": "2026-09-28T03:03:17.4389626Z"
+    },
+    {
+      "name": "task-7-fix1-connect-red.log",
+      "sha256": "584171D37D3ADEF9B0D80499030E72276D66F2CE39526CE543239B7A2583DF42",
+      "bytes": 5986,
+      "lastWriteUtc": "2026-09-28T03:03:45.2271470Z"
+    },
+    {
+      "name": "task-7-fix1-final-source.patch",
+      "sha256": "5465FE3963A2F64A8E05DBE4AFE631C9EB5954CC2C20E2204D20BD002C6A0C66",
+      "bytes": 28923,
+      "lastWriteUtc": "2026-09-28T03:05:33.4979927Z"
+    },
+    {
+      "name": "task-7-fix1-r1-green-source.patch",
+      "sha256": "5D92AAB5B07F491E2553BD44DC1ECC0CF13FCD41F6AD67A7BDD1DC55983243F9",
+      "bytes": 9538,
+      "lastWriteUtc": "2026-09-28T02:54:31.5665614Z"
+    },
+    {
+      "name": "task-7-fix1-r1-green.log",
+      "sha256": "45F995D7C9B64EA96AAAE82147CB4CB784ACE55A2CB3C1AE126CC7A136828481",
+      "bytes": 5711,
+      "lastWriteUtc": "2026-09-28T02:54:48.4562559Z"
+    },
+    {
+      "name": "task-7-fix1-r1-red-source.patch",
+      "sha256": "7310901729F71F697665AA22ADB4A1DD4FE9CABA126DFE8F2C76D2422A617CDA",
+      "bytes": 5969,
+      "lastWriteUtc": "2026-09-28T02:51:08.9876216Z"
+    },
+    {
+      "name": "task-7-fix1-r1-red.log",
+      "sha256": "BB19B1C6B4B353DFB4D427B15F0172069BAC2F0A66057A1A66CFB708E6A59E61",
+      "bytes": 6617,
+      "lastWriteUtc": "2026-09-28T02:51:30.7224147Z"
+    },
+    {
+      "name": "task-7-fix1-r2-green-source.patch",
+      "sha256": "7EE2B69EE720405D079E052649A487439B06DBB9E9D65452CB53E61B494ACE7B",
+      "bytes": 22631,
+      "lastWriteUtc": "2026-09-28T02:57:55.2924168Z"
+    },
+    {
+      "name": "task-7-fix1-r2-green.log",
+      "sha256": "7F36A9410717BC73588ED9005DC4FDA3B8953DAA75C6E3491466FDA236D95FE5",
+      "bytes": 4307,
+      "lastWriteUtc": "2026-09-28T02:58:09.4097494Z"
+    },
+    {
+      "name": "task-7-fix1-r2-red-source.patch",
+      "sha256": "BF374E00D71C946004DC2EBB490E151F446C43BE4F585E0BAFD539632677CF53",
+      "bytes": 20348,
+      "lastWriteUtc": "2026-09-28T02:56:44.4190640Z"
+    },
+    {
+      "name": "task-7-fix1-r2-red.log",
+      "sha256": "9C3446956E415D7D769AA5B0E8916FF3A056ABEEDC74EDE3B4869F854D1A849A",
+      "bytes": 29056,
+      "lastWriteUtc": "2026-09-28T02:56:58.9734876Z"
+    },
+    {
+      "name": "task-7-fix1-release-build-final.log",
+      "sha256": "5DBD6A657D8ADF04F8B69042E8B35C7B6CC645B62C8F9CF97C55BA5D9CF46E9C",
+      "bytes": 1259,
+      "lastWriteUtc": "2026-09-28T03:05:49.9426106Z"
+    },
+    {
+      "name": "task-7-fix1-release-build.log",
+      "sha256": "673050CFE46837F03EFAF46E984F20D5C4726E10CE8E63D9525BFFE0572A7EC8",
+      "bytes": 1259,
+      "lastWriteUtc": "2026-09-28T02:59:14.5255115Z"
+    },
+    {
+      "name": "task-7-fix1-release-focused-final.log",
+      "sha256": "83B8D9C4E18AAC1173BDB852DC49E6AB444F7D0458C50E30962BB785B29BBA87",
+      "bytes": 17930,
+      "lastWriteUtc": "2026-09-28T03:05:48.1554690Z"
+    },
+    {
+      "name": "task-7-fix1-release-focused.log",
+      "sha256": "D6B84A313531615949576191D0443623C99F9A093813FB1ABCAE7413BC0E8CB4",
+      "bytes": 17547,
+      "lastWriteUtc": "2026-09-28T02:59:12.3343022Z"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+# Reproducible build/cache products stay on disk; audit source and results are versioned.
+**/bin/
+**/obj/
+**/temp/
+**/elevated-temp/

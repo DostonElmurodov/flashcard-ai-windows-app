@@ -1,0 +1,10 @@
+RUNTIME .NET 10.0.12
+POSTGRES 13.23
+OMITTED_ZERO_SUCCESS calls=1 result=Hello charged=568536 settled=False pending=1
+OMITTED_ZERO_NEXT reason=budget_or_concurrency calls=1
+EXPLICIT_ZERO_CONTROL calls=2 eachCharged=99 settled=2 pending=0
+POSTDISPATCH_CANCEL calls=1 charged=568536 settled=False pendingAfterNewContext=1
+LEDGER_UNAVAILABLE reason=ledger_unavailable calls=0
+BODY_DEADLINE calls=1 alerts=0 completionUnknown=True
+DEADLINE_HTTP_ROUTE status=500 responseHasEstablishedCode=False calls=1 alerts=0 settled=False callerCancellation=None
+ALL PROBES COMPLETED; NO REMOTE HTTP

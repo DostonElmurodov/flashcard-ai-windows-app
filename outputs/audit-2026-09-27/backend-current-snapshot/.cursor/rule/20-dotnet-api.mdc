@@ -1,0 +1,46 @@
+---
+description: ASP.NET Core API rules for FlashCard AI backend
+globs:
+  - "**/*.cs"
+  - "**/*.csproj"
+  - "**/*.json"
+---
+
+You are assisting with the ASP.NET Core backend for FlashCard AI.
+
+BACKEND TRUTH
+- Current backend is ASP.NET Core .NET 9.
+- Current architecture is pragmatic layered API:
+  - controllers
+  - DTOs
+  - EF Core models
+  - mapping helpers
+  - a small service layer
+- Important logic still lives in controllers today, so do not force a giant architecture rewrite unless asked.
+
+RULES
+- Do not upgrade framework version unless I explicitly ask.
+- Keep controllers/endpoints thin where practical, but preserve current behavior.
+- Prefer safe incremental extraction of logic instead of broad refactors.
+- Maintain snake_case JSON compatibility.
+- Maintain DTO compatibility unless a contract change is requested.
+- Use async/await correctly.
+- Pass CancellationToken through async flows where appropriate.
+- Use dependency injection cleanly.
+- Keep auth/authz explicit and safe.
+- Never expose internal exception details in production responses.
+- Use structured logging without sensitive data.
+
+API CONTRACT DISCIPLINE
+- When changing request/response models, check:
+  - web client impact
+  - native iOS impact
+  - sync impact
+  - OpenAPI impact
+- Do not rename fields casually.
+- Do not break current auth endpoints, sync endpoints, or AI endpoints without calling it out.
+
+AUTH / OAUTH SAFETY
+- Treat Apple auth, Google auth, and JWT issuance as high-risk.
+- Never normalize insecure shortcuts into production behavior.
+- Do not weaken audience validation, signature validation, or token handling.

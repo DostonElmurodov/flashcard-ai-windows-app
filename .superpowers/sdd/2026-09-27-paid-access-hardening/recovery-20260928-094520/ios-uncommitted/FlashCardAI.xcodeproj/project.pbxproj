@@ -1,0 +1,1397 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B71100000000000000000001 /* UILaunchFixtureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B71100000000000000000002 /* UILaunchFixtureTests.swift */; };
+		B71100000000000000000003 /* UIAutomationFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = B71100000000000000000004 /* UIAutomationFixture.swift */; };
+		FA0800000000000000000001 /* EntitlementMutationBoundaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0800000000000000000002 /* EntitlementMutationBoundaryTests.swift */; };
+		AE1800000000000000000011 /* EnglishIrregularVerbForms.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1800000000000000000012 /* EnglishIrregularVerbForms.swift */; };
+		A10000000000000000000001 /* FlashCardAIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* FlashCardAIApp.swift */; };
+		A10000000000000000000003 /* AppRootModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000004 /* AppRootModel.swift */; };
+		A10000000000000000000005 /* WordCacheNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000006 /* WordCacheNormalizer.swift */; };
+		A10000000000000000000007 /* AppLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000008 /* AppLog.swift */; };
+		F6E000000000000000000001 /* ServerFeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E000000000000000000002 /* ServerFeatureFlags.swift */; };
+		A10000000000000000000009 /* APIConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000A /* APIConfiguration.swift */; };
+		A1000000000000000000000B /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000C /* APIError.swift */; };
+		A1000000000000000000000D /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000E /* APIClient.swift */; };
+		A1000000000000000000000F /* AIResponses.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000010 /* AIResponses.swift */; };
+		A10000000000000000000011 /* LocalDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* LocalDatabase.swift */; };
+		A10000000000000000000013 /* WordRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* WordRepository.swift */; };
+		B10300000000000000000001 /* PublicFlashcardSetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10300000000000000000002 /* PublicFlashcardSetService.swift */; };
+		A10000000000000000000015 /* WordSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000016 /* WordSearchView.swift */; };
+		D3A000000000000000000001 /* ManualWordEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3A000000000000000000002 /* ManualWordEntryView.swift */; };
+		F4C000000000000000000001 /* LocalFlashcardImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4C000000000000000000002 /* LocalFlashcardImport.swift */; };
+		F4C000000000000000000003 /* LocalFlashcardImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4C000000000000000000004 /* LocalFlashcardImportView.swift */; };
+		A10000000000000000000019 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001A /* Assets.xcassets */; };
+		A1000000000000000000001B /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001C /* libsqlite3.tbd */; };
+		A10000000000000000000035 /* PronunciationSpeaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000036 /* PronunciationSpeaker.swift */; };
+		A20000000000000000000003 /* WordSearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* WordSearchViewModel.swift */; };
+		D3900000000000000000000B /* CreateFlashcardSetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3900000000000000000000C /* CreateFlashcardSetViewModel.swift */; };
+		A20000000000000000000004 /* WordDetailResultPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* WordDetailResultPanel.swift */; };
+		C1A000000000000000000001 /* AppLaunchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A000000000000000000002 /* AppLaunchState.swift */; };
+		C1A000000000000000000007 /* SyncDTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A000000000000000000008 /* SyncDTOs.swift */; };
+		C1C000000000000000000001 /* LanguageOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C000000000000000000002 /* LanguageOption.swift */; };
+		D30100000000000000000001 /* WordDashboardRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30100000000000000000002 /* WordDashboardRow.swift */; };
+		D30100000000000000000003 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30100000000000000000004 /* DashboardView.swift */; };
+		F50A00000000000000000001 /* DashboardAddSpeedDial.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50A00000000000000000002 /* DashboardAddSpeedDial.swift */; };
+		D30100000000000000000005 /* DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30100000000000000000006 /* DashboardViewModel.swift */; };
+		D30100000000000000000007 /* WordHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30100000000000000000008 /* WordHistoryView.swift */; };
+		D30100000000000000000009 /* DashboardWordCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3010000000000000000000A /* DashboardWordCard.swift */; };
+		D3900000000000000000000D /* SetGridTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3900000000000000000000E /* SetGridTile.swift */; };
+		D39000000000000000000001 /* RootTabShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39000000000000000000002 /* RootTabShell.swift */; };
+		D39000000000000000000003 /* FloatingTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39000000000000000000004 /* FloatingTabBar.swift */; };
+		D39000000000000000000005 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39000000000000000000006 /* LibraryView.swift */; };
+		B10500000000000000000001 /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10500000000000000000002 /* LibraryViewModel.swift */; };
+		D39000000000000000000009 /* CreateFlashcardSetPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3900000000000000000000A /* CreateFlashcardSetPage.swift */; };
+		D30200000000000000000001 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30200000000000000000002 /* ThemeManager.swift */; };
+		D30200000000000000000003 /* ChooseThemeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30200000000000000000004 /* ChooseThemeSheet.swift */; };
+		D30400000000000000000001 /* AppSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30400000000000000000002 /* AppSettingsStore.swift */; };
+		D30400000000000000000003 /* StudyReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30400000000000000000004 /* StudyReminderScheduler.swift */; };
+		D30400000000000000000005 /* ThemeAppearanceControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30400000000000000000006 /* ThemeAppearanceControls.swift */; };
+		D30400000000000000000007 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30400000000000000000008 /* SettingsView.swift */; };
+		D30500000000000000000001 /* LanguageFlagIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30500000000000000000002 /* LanguageFlagIcon.swift */; };
+		D30600000000000000000001 /* EditWordSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30600000000000000000002 /* EditWordSheet.swift */; };
+		D30700000000000000000001 /* ManageFlashcardSetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30700000000000000000002 /* ManageFlashcardSetsView.swift */; };
+		D30800000000000000000001 /* ScanWordsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30800000000000000000002 /* ScanWordsSheet.swift */; };
+		D30900000000000000000001 /* ReviewSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30900000000000000000002 /* ReviewSessionView.swift */; };
+		D30900000000000000000003 /* ReviewSessionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30900000000000000000004 /* ReviewSessionViewModel.swift */; };
+		D31100000000000000000001 /* ApplicationBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D31100000000000000000002 /* ApplicationBehaviorTests.swift */; };
+		F50000000000000000000001 /* ReviewSchedulingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50000000000000000000002 /* ReviewSchedulingModels.swift */; };
+		F50000000000000000000003 /* FSRSSchedulerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50000000000000000000004 /* FSRSSchedulerService.swift */; };
+		F50000000000000000000005 /* FSRSSchedulerServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50000000000000000000006 /* FSRSSchedulerServiceTests.swift */; };
+		F50000000000000000000007 /* FSRS in Frameworks */ = {isa = PBXBuildFile; productRef = F50000000000000000000008 /* FSRS */; };
+		F50100000000000000000001 /* StudyDay.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50100000000000000000002 /* StudyDay.swift */; };
+		F50100000000000000000003 /* FSRSSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50100000000000000000004 /* FSRSSettingsStore.swift */; };
+		F50100000000000000000005 /* StudyDayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50100000000000000000006 /* StudyDayTests.swift */; };
+		F50300000000000000000001 /* LocalDatabaseFSRSMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50300000000000000000002 /* LocalDatabaseFSRSMigrationTests.swift */; };
+		F50300000000000000000003 /* FSRSSchemaMigrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50300000000000000000004 /* FSRSSchemaMigrator.swift */; };
+		F51100000000000000000001 /* FlashcardSetPublicationSchemaMigrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F51100000000000000000002 /* FlashcardSetPublicationSchemaMigrator.swift */; };
+		F50400000000000000000001 /* ReviewCardRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50400000000000000000002 /* ReviewCardRepositoryTests.swift */; };
+		F50400000000000000000003 /* ReviewCardRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50400000000000000000004 /* ReviewCardRepository.swift */; };
+		F50500000000000000000001 /* ReviewQueueService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50500000000000000000002 /* ReviewQueueService.swift */; };
+		F50500000000000000000003 /* ReviewQueueServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50500000000000000000004 /* ReviewQueueServiceTests.swift */; };
+		F50700000000000000000001 /* ReviewSessionViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50700000000000000000002 /* ReviewSessionViewModelTests.swift */; };
+		F50800000000000000000001 /* AppComposition.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50800000000000000000002 /* AppComposition.swift */; };
+		F50900000000000000000001 /* ReverseDirectionSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50900000000000000000002 /* ReverseDirectionSettingsViewModel.swift */; };
+		F50900000000000000000003 /* ReverseDirectionSettingsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50900000000000000000004 /* ReverseDirectionSettingsViewModelTests.swift */; };
+		D3FF00000000000000000001 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3FF00000000000000000002 /* PaywallView.swift */; };
+		E1A000000000000000000001 /* ProductOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A000000000000000000002 /* ProductOnboardingView.swift */; };
+		F60A00000000000000000001 /* ProductPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60A00000000000000000002 /* ProductPalette.swift */; };
+		F60B00000000000000000001 /* ProductPaywallPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60B00000000000000000002 /* ProductPaywallPage.swift */; };
+		E3A000000000000000000001 /* IapDTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A000000000000000000002 /* IapDTOs.swift */; };
+		E3A000000000000000000003 /* AppAccountTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A000000000000000000004 /* AppAccountTokenStore.swift */; };
+		E3A000000000000000000005 /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A000000000000000000006 /* TokenStore.swift */; };
+		E3A000000000000000000007 /* EntitlementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A000000000000000000008 /* EntitlementStore.swift */; };
+		E3A000000000000000000009 /* StoreKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A00000000000000000000A /* StoreKitService.swift */; };
+		E3A00000000000000000000B /* FreeLimitPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A00000000000000000000C /* FreeLimitPolicy.swift */; };
+		E3A00000000000000000000D /* Owl AI.storekit in Resources */ = {isa = PBXBuildFile; fileRef = E3A00000000000000000000E /* Owl AI.storekit */; };
+		F1A000000000000000000001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A000000000000000000002 /* AppDelegate.swift */; };
+		F2A00000000000000000001 /* DeviceAttestDTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A00000000000000000002 /* DeviceAttestDTOs.swift */; };
+		F2A00000000000000000003 /* AppAttestKeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A00000000000000000004 /* AppAttestKeychainStore.swift */; };
+		F2A00000000000000000005 /* AIIntegrityCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A00000000000000000006 /* AIIntegrityCoordinator.swift */; };
+		F2A00000000000000000009 /* DeviceWordDTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A0000000000000000000A /* DeviceWordDTOs.swift */; };
+		B10100000000000000000001 /* PublicFlashcardSetDTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000002 /* PublicFlashcardSetDTOs.swift */; };
+		FAAC00000000000000000001 /* AccountSessionClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAC00000000000000000002 /* AccountSessionClient.swift */; };
+		FAAC00000000000000000003 /* AccountProfileModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAC00000000000000000004 /* AccountProfileModel.swift */; };
+		FAAC00000000000000000005 /* AccountProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAC00000000000000000006 /* AccountProfileView.swift */; };
+		FAAC00000000000000000007 /* SharedAccountSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAC00000000000000000008 /* SharedAccountSyncTests.swift */; };
+		A29B4C8E22E416826820DF69 /* AccountModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E34D7AFBC74EBBFE110F2C36 /* AccountModels.swift */; };
+		13C3782571EB7B7F00569064 /* AccountCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D0BE809ECA61955B1C5E300 /* AccountCredentialStore.swift */; };
+		E26DB6C3C8EF0286C4ECEEEC /* AccountSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D53A098574D5FED4AC5C84F /* AccountSessionController.swift */; };
+		456F9DEFA098F950FB01476B /* AccountAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BA1DFF989CB9DAC102D244 /* AccountAPIClient.swift */; };
+		12CEAF6DF410B890BE99B14A /* GoogleAccountIdentityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F46066C7603A19BC2D64E7D /* GoogleAccountIdentityProvider.swift */; };
+		E182ED7BDDAE3DBE5D09B54F /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F447EB47B3262087377798D9 /* AccountView.swift */; };
+		A9582801F99345CFDFBF9B15 /* AccountViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD55AD4BBEFE031DA83C5BF7 /* AccountViewModel.swift */; };
+		753CEF6B4D4407310A740A55 /* AccountSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9A55EDA139B7FB057F3B29B /* AccountSessionTests.swift */; };
+		4C087833FEC84DA00096CF81 /* AccountViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D0050EC7EE9A7CDDB5E2E81 /* AccountViewTests.swift */; };
+		EF4043FE3325DFC04B814FEA /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = C00313621390BAA29843126F /* GoogleSignIn */; };
+		DC2E1CD73A9D6DB9A44EE403 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 37660ACEC194C776B8BA746F /* GoogleSignInSwift */; };
+		AE1800000000000000000001 /* SecondaryReviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1800000000000000000002 /* SecondaryReviewTests.swift */; };
+		AE1800000000000000000003 /* SecondaryReviewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1800000000000000000004 /* SecondaryReviewModel.swift */; };
+		AE1800000000000000000005 /* SecondaryReviewSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1800000000000000000006 /* SecondaryReviewSurface.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B7110000000000000000000B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A1000000000000000000002D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000029;
+			remoteInfo = FlashCardAI;
+		};
+		D3110000000000000000000B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A1000000000000000000002D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000029;
+			remoteInfo = FlashCardAI;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		B71100000000000000000002 /* UILaunchFixtureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UILaunchFixtureTests.swift; sourceTree = "<group>"; };
+		B71100000000000000000004 /* UIAutomationFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIAutomationFixture.swift; sourceTree = "<group>"; };
+		B71100000000000000000005 /* FlashCardAIUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FlashCardAIUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FA0800000000000000000002 /* EntitlementMutationBoundaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntitlementMutationBoundaryTests.swift; sourceTree = "<group>"; };
+		AE1800000000000000000012 /* EnglishIrregularVerbForms.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnglishIrregularVerbForms.swift; sourceTree = "<group>"; };
+		A10000000000000000000002 /* FlashCardAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlashCardAIApp.swift; sourceTree = "<group>"; };
+		A10000000000000000000004 /* AppRootModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootModel.swift; sourceTree = "<group>"; };
+		A10000000000000000000006 /* WordCacheNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordCacheNormalizer.swift; sourceTree = "<group>"; };
+		A10000000000000000000008 /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
+		F6E000000000000000000002 /* ServerFeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerFeatureFlags.swift; sourceTree = "<group>"; };
+		A1000000000000000000000A /* APIConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIConfiguration.swift; sourceTree = "<group>"; };
+		A1000000000000000000000C /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
+		A1000000000000000000000E /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		A10000000000000000000010 /* AIResponses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIResponses.swift; sourceTree = "<group>"; };
+		A10000000000000000000012 /* LocalDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDatabase.swift; sourceTree = "<group>"; };
+		A10000000000000000000014 /* WordRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordRepository.swift; sourceTree = "<group>"; };
+		B10300000000000000000002 /* PublicFlashcardSetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicFlashcardSetService.swift; sourceTree = "<group>"; };
+		A10000000000000000000016 /* WordSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordSearchView.swift; sourceTree = "<group>"; };
+		D3A000000000000000000002 /* ManualWordEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualWordEntryView.swift; sourceTree = "<group>"; };
+		F4C000000000000000000002 /* LocalFlashcardImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFlashcardImport.swift; sourceTree = "<group>"; };
+		F4C000000000000000000004 /* LocalFlashcardImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFlashcardImportView.swift; sourceTree = "<group>"; };
+		A1000000000000000000001A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A1000000000000000000001C /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
+		A1000000000000000000001D /* FlashCardAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FlashCardAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000036 /* PronunciationSpeaker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PronunciationSpeaker.swift; sourceTree = "<group>"; };
+		A20000000000000000000001 /* WordSearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordSearchViewModel.swift; sourceTree = "<group>"; };
+		D3900000000000000000000C /* CreateFlashcardSetViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateFlashcardSetViewModel.swift; sourceTree = "<group>"; };
+		A20000000000000000000002 /* WordDetailResultPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordDetailResultPanel.swift; sourceTree = "<group>"; };
+		C1A000000000000000000002 /* AppLaunchState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLaunchState.swift; sourceTree = "<group>"; };
+		C1A000000000000000000008 /* SyncDTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncDTOs.swift; sourceTree = "<group>"; };
+		C1A00000000000000000000D /* FlashCardAI.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FlashCardAI.entitlements; sourceTree = "<group>"; };
+		C1C000000000000000000002 /* LanguageOption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageOption.swift; sourceTree = "<group>"; };
+		D30100000000000000000002 /* WordDashboardRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordDashboardRow.swift; sourceTree = "<group>"; };
+		D30100000000000000000004 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		F50A00000000000000000002 /* DashboardAddSpeedDial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardAddSpeedDial.swift; sourceTree = "<group>"; };
+		D30100000000000000000006 /* DashboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
+		D30100000000000000000008 /* WordHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordHistoryView.swift; sourceTree = "<group>"; };
+		D3010000000000000000000A /* DashboardWordCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardWordCard.swift; sourceTree = "<group>"; };
+		D3900000000000000000000E /* SetGridTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetGridTile.swift; sourceTree = "<group>"; };
+		D39000000000000000000002 /* RootTabShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabShell.swift; sourceTree = "<group>"; };
+		D39000000000000000000004 /* FloatingTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingTabBar.swift; sourceTree = "<group>"; };
+		D39000000000000000000006 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		B10500000000000000000002 /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
+		D3900000000000000000000A /* CreateFlashcardSetPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateFlashcardSetPage.swift; sourceTree = "<group>"; };
+		D30200000000000000000002 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
+		D30200000000000000000004 /* ChooseThemeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChooseThemeSheet.swift; sourceTree = "<group>"; };
+		D30400000000000000000002 /* AppSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsStore.swift; sourceTree = "<group>"; };
+		D30400000000000000000004 /* StudyReminderScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyReminderScheduler.swift; sourceTree = "<group>"; };
+		D30400000000000000000006 /* ThemeAppearanceControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeAppearanceControls.swift; sourceTree = "<group>"; };
+		D30400000000000000000008 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		D30500000000000000000002 /* LanguageFlagIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageFlagIcon.swift; sourceTree = "<group>"; };
+		D30600000000000000000002 /* EditWordSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditWordSheet.swift; sourceTree = "<group>"; };
+		D30700000000000000000002 /* ManageFlashcardSetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageFlashcardSetsView.swift; sourceTree = "<group>"; };
+		D30800000000000000000002 /* ScanWordsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanWordsSheet.swift; sourceTree = "<group>"; };
+		D30900000000000000000002 /* ReviewSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewSessionView.swift; sourceTree = "<group>"; };
+		D30900000000000000000004 /* ReviewSessionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewSessionViewModel.swift; sourceTree = "<group>"; };
+		D31100000000000000000002 /* ApplicationBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationBehaviorTests.swift; sourceTree = "<group>"; };
+		F50000000000000000000002 /* ReviewSchedulingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewSchedulingModels.swift; sourceTree = "<group>"; };
+		F50000000000000000000004 /* FSRSSchedulerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FSRSSchedulerService.swift; sourceTree = "<group>"; };
+		F50000000000000000000006 /* FSRSSchedulerServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FSRSSchedulerServiceTests.swift; sourceTree = "<group>"; };
+		F50100000000000000000002 /* StudyDay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyDay.swift; sourceTree = "<group>"; };
+		F50100000000000000000004 /* FSRSSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FSRSSettingsStore.swift; sourceTree = "<group>"; };
+		F50100000000000000000006 /* StudyDayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyDayTests.swift; sourceTree = "<group>"; };
+		F50300000000000000000002 /* LocalDatabaseFSRSMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDatabaseFSRSMigrationTests.swift; sourceTree = "<group>"; };
+		F50300000000000000000004 /* FSRSSchemaMigrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FSRSSchemaMigrator.swift; sourceTree = "<group>"; };
+		F51100000000000000000002 /* FlashcardSetPublicationSchemaMigrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlashcardSetPublicationSchemaMigrator.swift; sourceTree = "<group>"; };
+		F50400000000000000000002 /* ReviewCardRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewCardRepositoryTests.swift; sourceTree = "<group>"; };
+		F50400000000000000000004 /* ReviewCardRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewCardRepository.swift; sourceTree = "<group>"; };
+		F50500000000000000000002 /* ReviewQueueService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewQueueService.swift; sourceTree = "<group>"; };
+		F50500000000000000000004 /* ReviewQueueServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewQueueServiceTests.swift; sourceTree = "<group>"; };
+		F50700000000000000000002 /* ReviewSessionViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewSessionViewModelTests.swift; sourceTree = "<group>"; };
+		F50800000000000000000002 /* AppComposition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppComposition.swift; sourceTree = "<group>"; };
+		F50900000000000000000002 /* ReverseDirectionSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReverseDirectionSettingsViewModel.swift; sourceTree = "<group>"; };
+		F50900000000000000000004 /* ReverseDirectionSettingsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReverseDirectionSettingsViewModelTests.swift; sourceTree = "<group>"; };
+		D31100000000000000000003 /* FlashCardAITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FlashCardAITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3FF00000000000000000002 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
+		E1A000000000000000000002 /* ProductOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductOnboardingView.swift; sourceTree = "<group>"; };
+		F60A00000000000000000002 /* ProductPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductPalette.swift; sourceTree = "<group>"; };
+		F60B00000000000000000002 /* ProductPaywallPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductPaywallPage.swift; sourceTree = "<group>"; };
+		E3A000000000000000000002 /* IapDTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IapDTOs.swift; sourceTree = "<group>"; };
+		E3A000000000000000000004 /* AppAccountTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAccountTokenStore.swift; sourceTree = "<group>"; };
+		E3A000000000000000000006 /* TokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenStore.swift; sourceTree = "<group>"; };
+		E3A000000000000000000008 /* EntitlementStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntitlementStore.swift; sourceTree = "<group>"; };
+		E3A00000000000000000000A /* StoreKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitService.swift; sourceTree = "<group>"; };
+		E3A00000000000000000000C /* FreeLimitPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeLimitPolicy.swift; sourceTree = "<group>"; };
+		E3A00000000000000000000E /* Owl AI.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Owl AI.storekit"; sourceTree = "<group>"; };
+		F1A000000000000000000002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		F2A00000000000000000002 /* DeviceAttestDTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceAttestDTOs.swift; sourceTree = "<group>"; };
+		F2A00000000000000000004 /* AppAttestKeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAttestKeychainStore.swift; sourceTree = "<group>"; };
+		F2A00000000000000000006 /* AIIntegrityCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIIntegrityCoordinator.swift; sourceTree = "<group>"; };
+		F2A0000000000000000000A /* DeviceWordDTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceWordDTOs.swift; sourceTree = "<group>"; };
+		B10100000000000000000002 /* PublicFlashcardSetDTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicFlashcardSetDTOs.swift; sourceTree = "<group>"; };
+		FAAC00000000000000000002 /* AccountSessionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Infrastructure/Networking/AccountSessionClient.swift; sourceTree = SOURCE_ROOT; };
+		FAAC00000000000000000004 /* AccountProfileModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Presentation/Features/Settings/ViewModels/AccountProfileModel.swift; sourceTree = SOURCE_ROOT; };
+		FAAC00000000000000000006 /* AccountProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Presentation/Features/Settings/Views/AccountProfileView.swift; sourceTree = SOURCE_ROOT; };
+		FAAC00000000000000000008 /* SharedAccountSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlashCardAITests/SharedAccountSyncTests.swift; sourceTree = SOURCE_ROOT; };
+		E34D7AFBC74EBBFE110F2C36 /* AccountModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Infrastructure/Auth/AccountModels.swift; sourceTree = SOURCE_ROOT; };
+		0D0BE809ECA61955B1C5E300 /* AccountCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Infrastructure/Auth/AccountCredentialStore.swift; sourceTree = SOURCE_ROOT; };
+		3D53A098574D5FED4AC5C84F /* AccountSessionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Infrastructure/Auth/AccountSessionController.swift; sourceTree = SOURCE_ROOT; };
+		55BA1DFF989CB9DAC102D244 /* AccountAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Infrastructure/Networking/AccountAPIClient.swift; sourceTree = SOURCE_ROOT; };
+		3F46066C7603A19BC2D64E7D /* GoogleAccountIdentityProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Infrastructure/Auth/GoogleAccountIdentityProvider.swift; sourceTree = SOURCE_ROOT; };
+		F447EB47B3262087377798D9 /* AccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Presentation/Features/Account/AccountView.swift; sourceTree = SOURCE_ROOT; };
+		CD55AD4BBEFE031DA83C5BF7 /* AccountViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Presentation/Features/Account/AccountViewModel.swift; sourceTree = SOURCE_ROOT; };
+		F9A55EDA139B7FB057F3B29B /* AccountSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlashCardAITests/AccountSessionTests.swift; sourceTree = SOURCE_ROOT; };
+		5D0050EC7EE9A7CDDB5E2E81 /* AccountViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlashCardAITests/AccountViewTests.swift; sourceTree = SOURCE_ROOT; };
+		ACCA00000000000000000001 /* Account.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/Account.xcconfig; sourceTree = SOURCE_ROOT; };
+		AE1800000000000000000002 /* SecondaryReviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecondaryReviewTests.swift; sourceTree = "<group>"; };
+		AE1800000000000000000004 /* SecondaryReviewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecondaryReviewModel.swift; sourceTree = "<group>"; };
+		AE1800000000000000000006 /* SecondaryReviewSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecondaryReviewSurface.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B71100000000000000000006 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1000000000000000000001E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DC2E1CD73A9D6DB9A44EE403 /* GoogleSignInSwift in Frameworks */,
+				EF4043FE3325DFC04B814FEA /* GoogleSignIn in Frameworks */,
+				A1000000000000000000001B /* libsqlite3.tbd in Frameworks */,
+				F50000000000000000000007 /* FSRS in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D31100000000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0483CD492FE4BDFA00023BA0 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000001C /* libsqlite3.tbd */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
+		A1000000000000000000001F = {
+			isa = PBXGroup;
+			children = (
+				FAAC00000000000000000002 /* AccountSessionClient.swift */,
+				FAAC00000000000000000004 /* AccountProfileModel.swift */,
+				FAAC00000000000000000006 /* AccountProfileView.swift */,
+				FAAC00000000000000000008 /* SharedAccountSyncTests.swift */,
+				ACCA00000000000000000001 /* Account.xcconfig */,
+				242E903CE4807F8B3C5FD3BA /* Account */,
+				A10000000000000000000020 /* App */,
+				A10000000000000000000040 /* Presentation */,
+				A10000000000000000000050 /* Infrastructure */,
+				D31000000000000000000003 /* Domain */,
+				A10000000000000000000060 /* Shared */,
+				A10000000000000000000024 /* Resources */,
+				D31100000000000000000005 /* FlashCardAITests */,
+				B71100000000000000000007 /* FlashCardAIUITests */,
+				A10000000000000000000025 /* Products */,
+				0483CD492FE4BDFA00023BA0 /* Recovered References */,
+			);
+			sourceTree = "<group>";
+		};
+		A10000000000000000000020 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000002 /* FlashCardAIApp.swift */,
+				B71100000000000000000004 /* UIAutomationFixture.swift */,
+				F1A000000000000000000002 /* AppDelegate.swift */,
+				C1A00000000000000000000E /* Session */,
+				A10000000000000000000070 /* Root */,
+				A10000000000000000000071 /* Navigation */,
+				A10000000000000000000072 /* DependencyInjection */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000024 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000001A /* Assets.xcassets */,
+				C1A00000000000000000000D /* FlashCardAI.entitlements */,
+				E3A00000000000000000000E /* Owl AI.storekit */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000025 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000001D /* FlashCardAI.app */,
+				D31100000000000000000003 /* FlashCardAITests.xctest */,
+				B71100000000000000000005 /* FlashCardAIUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000040 /* Presentation */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000041 /* Features */,
+				A10000000000000000000042 /* SharedUI */,
+			);
+			path = Presentation;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000041 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				D3010000000000000000000B /* Home */,
+				A10000000000000000000043 /* WordSearch */,
+				A10000000000000000000044 /* Onboarding */,
+				E2B000000000000000000005 /* Auth */,
+				D3040000000000000000000B /* Settings */,
+				D39000000000000000000007 /* Library */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000042 /* SharedUI */ = {
+			isa = PBXGroup;
+			children = (
+				D39000000000000000000004 /* FloatingTabBar.swift */,
+				F60A00000000000000000002 /* ProductPalette.swift */,
+			);
+			path = SharedUI;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000043 /* WordSearch */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000045 /* Views */,
+				A10000000000000000000046 /* ViewModels */,
+				A10000000000000000000047 /* Components */,
+				A10000000000000000000048 /* Services */,
+			);
+			path = WordSearch;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000044 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000049 /* Views */,
+				C1A00000000000000000000F /* ViewModels */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000045 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000016 /* WordSearchView.swift */,
+				D3900000000000000000000A /* CreateFlashcardSetPage.swift */,
+				D3A000000000000000000002 /* ManualWordEntryView.swift */,
+				F4C000000000000000000004 /* LocalFlashcardImportView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000046 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000001 /* WordSearchViewModel.swift */,
+				D3900000000000000000000C /* CreateFlashcardSetViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000047 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000002 /* WordDetailResultPanel.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000048 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000036 /* PronunciationSpeaker.swift */,
+				F4C000000000000000000002 /* LocalFlashcardImport.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000049 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				E1A000000000000000000002 /* ProductOnboardingView.swift */,
+				F60B00000000000000000002 /* ProductPaywallPage.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000050 /* Infrastructure */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000051 /* Networking */,
+				A10000000000000000000052 /* Persistence */,
+				A10000000000000000000053 /* Repositories */,
+				D3040000000000000000000A /* Notifications */,
+				E3A00000000000000000000F /* Purchases */,
+				A10000000000000000000054 /* DTOs */,
+				A10000000000000000000055 /* Mappers */,
+				F2A00000000000000000007 /* Security */,
+			);
+			path = Infrastructure;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000051 /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000000A /* APIConfiguration.swift */,
+				F6E000000000000000000002 /* ServerFeatureFlags.swift */,
+				A1000000000000000000000C /* APIError.swift */,
+				A1000000000000000000000E /* APIClient.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000052 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				F50300000000000000000004 /* FSRSSchemaMigrator.swift */,
+				F51100000000000000000002 /* FlashcardSetPublicationSchemaMigrator.swift */,
+				A10000000000000000000012 /* LocalDatabase.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000053 /* Repositories */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000014 /* WordRepository.swift */,
+				B10300000000000000000002 /* PublicFlashcardSetService.swift */,
+				F50400000000000000000004 /* ReviewCardRepository.swift */,
+			);
+			path = Repositories;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000054 /* DTOs */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000010 /* AIResponses.swift */,
+				C1A000000000000000000008 /* SyncDTOs.swift */,
+				F2A00000000000000000002 /* DeviceAttestDTOs.swift */,
+				F2A0000000000000000000A /* DeviceWordDTOs.swift */,
+				B10100000000000000000002 /* PublicFlashcardSetDTOs.swift */,
+				E3A000000000000000000002 /* IapDTOs.swift */,
+				D30100000000000000000002 /* WordDashboardRow.swift */,
+			);
+			path = DTOs;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000055 /* Mappers */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Mappers;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000060 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000061 /* Logging */,
+				A10000000000000000000062 /* Normalization */,
+				C1C000000000000000000003 /* Language */,
+				D30400000000000000000009 /* Settings */,
+				A10000000000000000000063 /* Theme */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000061 /* Logging */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000008 /* AppLog.swift */,
+			);
+			path = Logging;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000062 /* Normalization */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000006 /* WordCacheNormalizer.swift */,
+			);
+			path = Normalization;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000063 /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				D30200000000000000000002 /* ThemeManager.swift */,
+				D30200000000000000000004 /* ChooseThemeSheet.swift */,
+				D30400000000000000000006 /* ThemeAppearanceControls.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000070 /* Root */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000004 /* AppRootModel.swift */,
+			);
+			path = Root;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000071 /* Navigation */ = {
+			isa = PBXGroup;
+			children = (
+				D39000000000000000000002 /* RootTabShell.swift */,
+			);
+			path = Navigation;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000072 /* DependencyInjection */ = {
+			isa = PBXGroup;
+			children = (
+				F50800000000000000000002 /* AppComposition.swift */,
+			);
+			path = DependencyInjection;
+			sourceTree = "<group>";
+		};
+		C1A00000000000000000000E /* Session */ = {
+			isa = PBXGroup;
+			children = (
+				C1A000000000000000000002 /* AppLaunchState.swift */,
+			);
+			path = Session;
+			sourceTree = "<group>";
+		};
+		C1A00000000000000000000F /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		C1C000000000000000000003 /* Language */ = {
+			isa = PBXGroup;
+			children = (
+				C1C000000000000000000002 /* LanguageOption.swift */,
+				D30500000000000000000002 /* LanguageFlagIcon.swift */,
+			);
+			path = Language;
+			sourceTree = "<group>";
+		};
+		D3010000000000000000000B /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				D3010000000000000000000C /* Views */,
+				D3010000000000000000000D /* ViewModels */,
+				D3010000000000000000000E /* Components */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		D3010000000000000000000C /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				D30100000000000000000004 /* DashboardView.swift */,
+				D30600000000000000000002 /* EditWordSheet.swift */,
+				D30700000000000000000002 /* ManageFlashcardSetsView.swift */,
+				D30800000000000000000002 /* ScanWordsSheet.swift */,
+				D3FF00000000000000000002 /* PaywallView.swift */,
+				D30900000000000000000002 /* ReviewSessionView.swift */,
+				AE1800000000000000000006 /* SecondaryReviewSurface.swift */,
+				D30100000000000000000008 /* WordHistoryView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		D3010000000000000000000D /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				D30100000000000000000006 /* DashboardViewModel.swift */,
+				D30900000000000000000004 /* ReviewSessionViewModel.swift */,
+				AE1800000000000000000004 /* SecondaryReviewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		D3010000000000000000000E /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				F50A00000000000000000002 /* DashboardAddSpeedDial.swift */,
+				D3010000000000000000000A /* DashboardWordCard.swift */,
+				D3900000000000000000000E /* SetGridTile.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		D30400000000000000000009 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				D30400000000000000000002 /* AppSettingsStore.swift */,
+				F50100000000000000000004 /* FSRSSettingsStore.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		D3040000000000000000000A /* Notifications */ = {
+			isa = PBXGroup;
+			children = (
+				D30400000000000000000004 /* StudyReminderScheduler.swift */,
+			);
+			path = Notifications;
+			sourceTree = "<group>";
+		};
+		D3040000000000000000000B /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				F50900000000000000000005 /* ViewModels */,
+				D3040000000000000000000C /* Views */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		D3040000000000000000000C /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				D30400000000000000000008 /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		F50900000000000000000005 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				F50900000000000000000002 /* ReverseDirectionSettingsViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		D39000000000000000000007 /* Library */ = {
+			isa = PBXGroup;
+			children = (
+				B10500000000000000000003 /* ViewModels */,
+				D39000000000000000000008 /* Views */,
+			);
+			path = Library;
+			sourceTree = "<group>";
+		};
+		D39000000000000000000008 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				D39000000000000000000006 /* LibraryView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		B10500000000000000000003 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				B10500000000000000000002 /* LibraryViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		D31000000000000000000003 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				AE1800000000000000000012 /* EnglishIrregularVerbForms.swift */,
+				D31000000000000000000004 /* SpacedRepetition */,
+				E3A000000000000000000010 /* Entitlement */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		D31000000000000000000004 /* SpacedRepetition */ = {
+			isa = PBXGroup;
+			children = (
+				F50000000000000000000002 /* ReviewSchedulingModels.swift */,
+				F50000000000000000000004 /* FSRSSchedulerService.swift */,
+				F50100000000000000000002 /* StudyDay.swift */,
+				F50500000000000000000002 /* ReviewQueueService.swift */,
+			);
+			path = SpacedRepetition;
+			sourceTree = "<group>";
+		};
+		D31100000000000000000005 /* FlashCardAITests */ = {
+			isa = PBXGroup;
+			children = (
+				FA0800000000000000000002 /* EntitlementMutationBoundaryTests.swift */,
+				F50300000000000000000002 /* LocalDatabaseFSRSMigrationTests.swift */,
+				F50400000000000000000002 /* ReviewCardRepositoryTests.swift */,
+				F50500000000000000000004 /* ReviewQueueServiceTests.swift */,
+				F50700000000000000000002 /* ReviewSessionViewModelTests.swift */,
+				AE1800000000000000000002 /* SecondaryReviewTests.swift */,
+				D31100000000000000000002 /* ApplicationBehaviorTests.swift */,
+				F50000000000000000000006 /* FSRSSchedulerServiceTests.swift */,
+				F50100000000000000000006 /* StudyDayTests.swift */,
+				F50900000000000000000004 /* ReverseDirectionSettingsViewModelTests.swift */,
+			);
+			path = FlashCardAITests;
+			sourceTree = "<group>";
+		};
+		B71100000000000000000007 /* FlashCardAIUITests */ = {
+			isa = PBXGroup;
+			children = (
+				B71100000000000000000002 /* UILaunchFixtureTests.swift */,
+			);
+			path = FlashCardAIUITests;
+			sourceTree = "<group>";
+		};
+		E2B000000000000000000005 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		E3A00000000000000000000F /* Purchases */ = {
+			isa = PBXGroup;
+			children = (
+				E3A000000000000000000004 /* AppAccountTokenStore.swift */,
+				E3A000000000000000000006 /* TokenStore.swift */,
+				E3A000000000000000000008 /* EntitlementStore.swift */,
+				E3A00000000000000000000A /* StoreKitService.swift */,
+			);
+			path = Purchases;
+			sourceTree = "<group>";
+		};
+		E3A000000000000000000010 /* Entitlement */ = {
+			isa = PBXGroup;
+			children = (
+				E3A00000000000000000000C /* FreeLimitPolicy.swift */,
+			);
+			path = Entitlement;
+			sourceTree = "<group>";
+		};
+		F2A00000000000000000007 /* Security */ = {
+			isa = PBXGroup;
+			children = (
+				F2A00000000000000000008 /* AppAttest */,
+			);
+			path = Security;
+			sourceTree = "<group>";
+		};
+		F2A00000000000000000008 /* AppAttest */ = {
+			isa = PBXGroup;
+			children = (
+				F2A00000000000000000004 /* AppAttestKeychainStore.swift */,
+				F2A00000000000000000006 /* AIIntegrityCoordinator.swift */,
+			);
+			path = AppAttest;
+			sourceTree = "<group>";
+		};
+		242E903CE4807F8B3C5FD3BA /* Account */ = {
+			isa = PBXGroup;
+			children = (
+				E34D7AFBC74EBBFE110F2C36 /* AccountModels.swift */,
+				0D0BE809ECA61955B1C5E300 /* AccountCredentialStore.swift */,
+				3D53A098574D5FED4AC5C84F /* AccountSessionController.swift */,
+				55BA1DFF989CB9DAC102D244 /* AccountAPIClient.swift */,
+				3F46066C7603A19BC2D64E7D /* GoogleAccountIdentityProvider.swift */,
+				F447EB47B3262087377798D9 /* AccountView.swift */,
+				CD55AD4BBEFE031DA83C5BF7 /* AccountViewModel.swift */,
+				F9A55EDA139B7FB057F3B29B /* AccountSessionTests.swift */,
+				5D0050EC7EE9A7CDDB5E2E81 /* AccountViewTests.swift */,
+			);
+			name = Account;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A10000000000000000000029 /* FlashCardAI */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1000000000000000000002A /* Build configuration list for PBXNativeTarget "FlashCardAI" */;
+			buildPhases = (
+				A1000000000000000000002B /* Sources */,
+				A1000000000000000000001E /* Frameworks */,
+				A1000000000000000000002C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FlashCardAI;
+			packageProductDependencies = (
+				37660ACEC194C776B8BA746F /* GoogleSignInSwift */,
+				C00313621390BAA29843126F /* GoogleSignIn */,
+				F50000000000000000000008 /* FSRS */,
+			);
+			productName = FlashCardAI;
+			productReference = A1000000000000000000001D /* FlashCardAI.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D31100000000000000000006 /* FlashCardAITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D31100000000000000000007 /* Build configuration list for PBXNativeTarget "FlashCardAITests" */;
+			buildPhases = (
+				D31100000000000000000008 /* Sources */,
+				D31100000000000000000004 /* Frameworks */,
+				D31100000000000000000009 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D3110000000000000000000A /* PBXTargetDependency */,
+			);
+			name = FlashCardAITests;
+			productName = FlashCardAITests;
+			productReference = D31100000000000000000003 /* FlashCardAITests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		B71100000000000000000008 /* FlashCardAIUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B71100000000000000000009 /* Build configuration list for PBXNativeTarget "FlashCardAIUITests" */;
+			buildPhases = (
+				B7110000000000000000000C /* Sources */,
+				B71100000000000000000006 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B7110000000000000000000D /* PBXTargetDependency */,
+			);
+			name = FlashCardAIUITests;
+			productName = FlashCardAIUITests;
+			productReference = B71100000000000000000005 /* FlashCardAIUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A1000000000000000000002D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A10000000000000000000029 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					D31100000000000000000006 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = A10000000000000000000029;
+					};
+					B71100000000000000000008 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = A10000000000000000000029;
+					};
+				};
+			};
+			buildConfigurationList = A1000000000000000000002E /* Build configuration list for PBXProject "FlashCardAI" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A1000000000000000000001F;
+			packageReferences = (
+				D2A45DA4B05998CBBA40CAA7 /* GoogleSignIn-iOS */,
+				F50000000000000000000009 /* XCRemoteSwiftPackageReference \"swift-fsrs\" */,
+			);
+			productRefGroup = A10000000000000000000025 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A10000000000000000000029 /* FlashCardAI */,
+				D31100000000000000000006 /* FlashCardAITests */,
+				B71100000000000000000008 /* FlashCardAIUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A1000000000000000000002C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000019 /* Assets.xcassets in Resources */,
+				E3A00000000000000000000D /* Owl AI.storekit in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D31100000000000000000009 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		B7110000000000000000000C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B71100000000000000000001 /* UILaunchFixtureTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1000000000000000000002B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FAAC00000000000000000005 /* AccountProfileView.swift in Sources */,
+				FAAC00000000000000000003 /* AccountProfileModel.swift in Sources */,
+				FAAC00000000000000000001 /* AccountSessionClient.swift in Sources */,
+				A9582801F99345CFDFBF9B15 /* AccountViewModel.swift in Sources */,
+				E182ED7BDDAE3DBE5D09B54F /* AccountView.swift in Sources */,
+				12CEAF6DF410B890BE99B14A /* GoogleAccountIdentityProvider.swift in Sources */,
+				456F9DEFA098F950FB01476B /* AccountAPIClient.swift in Sources */,
+				E26DB6C3C8EF0286C4ECEEEC /* AccountSessionController.swift in Sources */,
+				13C3782571EB7B7F00569064 /* AccountCredentialStore.swift in Sources */,
+				A29B4C8E22E416826820DF69 /* AccountModels.swift in Sources */,
+				A10000000000000000000001 /* FlashCardAIApp.swift in Sources */,
+				B71100000000000000000003 /* UIAutomationFixture.swift in Sources */,
+				F1A000000000000000000001 /* AppDelegate.swift in Sources */,
+				A10000000000000000000003 /* AppRootModel.swift in Sources */,
+				A10000000000000000000005 /* WordCacheNormalizer.swift in Sources */,
+				A10000000000000000000007 /* AppLog.swift in Sources */,
+				A10000000000000000000009 /* APIConfiguration.swift in Sources */,
+				F6E000000000000000000001 /* ServerFeatureFlags.swift in Sources */,
+				A1000000000000000000000B /* APIError.swift in Sources */,
+				A1000000000000000000000D /* APIClient.swift in Sources */,
+				A1000000000000000000000F /* AIResponses.swift in Sources */,
+				F50300000000000000000003 /* FSRSSchemaMigrator.swift in Sources */,
+				F51100000000000000000001 /* FlashcardSetPublicationSchemaMigrator.swift in Sources */,
+				A10000000000000000000011 /* LocalDatabase.swift in Sources */,
+				A10000000000000000000013 /* WordRepository.swift in Sources */,
+				B10300000000000000000001 /* PublicFlashcardSetService.swift in Sources */,
+				F50400000000000000000003 /* ReviewCardRepository.swift in Sources */,
+				F50500000000000000000001 /* ReviewQueueService.swift in Sources */,
+				F50800000000000000000001 /* AppComposition.swift in Sources */,
+				F50900000000000000000001 /* ReverseDirectionSettingsViewModel.swift in Sources */,
+				A20000000000000000000003 /* WordSearchViewModel.swift in Sources */,
+				D3900000000000000000000B /* CreateFlashcardSetViewModel.swift in Sources */,
+				A20000000000000000000004 /* WordDetailResultPanel.swift in Sources */,
+				A10000000000000000000015 /* WordSearchView.swift in Sources */,
+				D39000000000000000000009 /* CreateFlashcardSetPage.swift in Sources */,
+				D3A000000000000000000001 /* ManualWordEntryView.swift in Sources */,
+				F4C000000000000000000003 /* LocalFlashcardImportView.swift in Sources */,
+				F4C000000000000000000001 /* LocalFlashcardImport.swift in Sources */,
+				A10000000000000000000035 /* PronunciationSpeaker.swift in Sources */,
+				E1A000000000000000000001 /* ProductOnboardingView.swift in Sources */,
+				F60B00000000000000000001 /* ProductPaywallPage.swift in Sources */,
+				F60A00000000000000000001 /* ProductPalette.swift in Sources */,
+				D30200000000000000000001 /* ThemeManager.swift in Sources */,
+				D30200000000000000000003 /* ChooseThemeSheet.swift in Sources */,
+				D30400000000000000000005 /* ThemeAppearanceControls.swift in Sources */,
+				D30400000000000000000001 /* AppSettingsStore.swift in Sources */,
+				D30400000000000000000003 /* StudyReminderScheduler.swift in Sources */,
+				D30400000000000000000007 /* SettingsView.swift in Sources */,
+				C1A000000000000000000001 /* AppLaunchState.swift in Sources */,
+				C1A000000000000000000007 /* SyncDTOs.swift in Sources */,
+				F2A00000000000000000001 /* DeviceAttestDTOs.swift in Sources */,
+				F2A00000000000000000009 /* DeviceWordDTOs.swift in Sources */,
+				B10100000000000000000001 /* PublicFlashcardSetDTOs.swift in Sources */,
+				F2A00000000000000000003 /* AppAttestKeychainStore.swift in Sources */,
+				F2A00000000000000000005 /* AIIntegrityCoordinator.swift in Sources */,
+				E3A000000000000000000001 /* IapDTOs.swift in Sources */,
+				E3A000000000000000000003 /* AppAccountTokenStore.swift in Sources */,
+				E3A000000000000000000005 /* TokenStore.swift in Sources */,
+				E3A000000000000000000007 /* EntitlementStore.swift in Sources */,
+				E3A000000000000000000009 /* StoreKitService.swift in Sources */,
+				C1C000000000000000000001 /* LanguageOption.swift in Sources */,
+				D30500000000000000000001 /* LanguageFlagIcon.swift in Sources */,
+				D30100000000000000000001 /* WordDashboardRow.swift in Sources */,
+				D30100000000000000000003 /* DashboardView.swift in Sources */,
+				F50A00000000000000000001 /* DashboardAddSpeedDial.swift in Sources */,
+				D39000000000000000000001 /* RootTabShell.swift in Sources */,
+				D39000000000000000000003 /* FloatingTabBar.swift in Sources */,
+				D39000000000000000000005 /* LibraryView.swift in Sources */,
+				B10500000000000000000001 /* LibraryViewModel.swift in Sources */,
+				D30600000000000000000001 /* EditWordSheet.swift in Sources */,
+				D30700000000000000000001 /* ManageFlashcardSetsView.swift in Sources */,
+				D30800000000000000000001 /* ScanWordsSheet.swift in Sources */,
+				D3FF00000000000000000001 /* PaywallView.swift in Sources */,
+				D30900000000000000000001 /* ReviewSessionView.swift in Sources */,
+				AE1800000000000000000005 /* SecondaryReviewSurface.swift in Sources */,
+				AE1800000000000000000003 /* SecondaryReviewModel.swift in Sources */,
+				D30900000000000000000003 /* ReviewSessionViewModel.swift in Sources */,
+				D30100000000000000000005 /* DashboardViewModel.swift in Sources */,
+				D30100000000000000000007 /* WordHistoryView.swift in Sources */,
+				D30100000000000000000009 /* DashboardWordCard.swift in Sources */,
+				D3900000000000000000000D /* SetGridTile.swift in Sources */,
+				AE1800000000000000000011 /* EnglishIrregularVerbForms.swift in Sources */,
+				F50000000000000000000001 /* ReviewSchedulingModels.swift in Sources */,
+				F50000000000000000000003 /* FSRSSchedulerService.swift in Sources */,
+				F50100000000000000000001 /* StudyDay.swift in Sources */,
+				F50100000000000000000003 /* FSRSSettingsStore.swift in Sources */,
+				E3A00000000000000000000B /* FreeLimitPolicy.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D31100000000000000000008 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FA0800000000000000000001 /* EntitlementMutationBoundaryTests.swift in Sources */,
+				FAAC00000000000000000007 /* SharedAccountSyncTests.swift in Sources */,
+				4C087833FEC84DA00096CF81 /* AccountViewTests.swift in Sources */,
+				753CEF6B4D4407310A740A55 /* AccountSessionTests.swift in Sources */,
+				F50300000000000000000001 /* LocalDatabaseFSRSMigrationTests.swift in Sources */,
+				F50400000000000000000001 /* ReviewCardRepositoryTests.swift in Sources */,
+				F50500000000000000000003 /* ReviewQueueServiceTests.swift in Sources */,
+				F50700000000000000000001 /* ReviewSessionViewModelTests.swift in Sources */,
+				AE1800000000000000000001 /* SecondaryReviewTests.swift in Sources */,
+				D31100000000000000000001 /* ApplicationBehaviorTests.swift in Sources */,
+				F50000000000000000000005 /* FSRSSchedulerServiceTests.swift in Sources */,
+				F50100000000000000000005 /* StudyDayTests.swift in Sources */,
+				F50900000000000000000003 /* ReverseDirectionSettingsViewModelTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B7110000000000000000000D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000029 /* FlashCardAI */;
+			targetProxy = B7110000000000000000000B /* PBXContainerItemProxy */;
+		};
+		D3110000000000000000000A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000029 /* FlashCardAI */;
+			targetProxy = D3110000000000000000000B /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F50000000000000000000009 /* XCRemoteSwiftPackageReference \"swift-fsrs\" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/open-spaced-repetition/swift-fsrs";
+			requirement = {
+				kind = revision;
+				revision = 4fbaf20184d62f82a9f44f343337c61a2c5483e9;
+			};
+		};
+		D2A45DA4B05998CBBA40CAA7 /* GoogleSignIn-iOS */ = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/google/GoogleSignIn-iOS"; requirement = {kind = exactVersion; version = 9.2.0; }; };
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F50000000000000000000008 /* FSRS */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F50000000000000000000009 /* XCRemoteSwiftPackageReference \"swift-fsrs\" */;
+			productName = FSRS;
+		};
+		C00313621390BAA29843126F /* GoogleSignIn */ = {isa = XCSwiftPackageProductDependency; package = D2A45DA4B05998CBBA40CAA7 /* GoogleSignIn-iOS */; productName = GoogleSignIn; };
+		37660ACEC194C776B8BA746F /* GoogleSignInSwift */ = {isa = XCSwiftPackageProductDependency; package = D2A45DA4B05998CBBA40CAA7 /* GoogleSignIn-iOS */; productName = GoogleSignInSwift; };
+/* End XCSwiftPackageProductDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A1000000000000000000002F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A10000000000000000000030 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A10000000000000000000031 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = ACCA00000000000000000001 /* Account.xcconfig */;
+			buildSettings = {
+				API_BASE_URL = "https://api.mavrylo.com";
+				APP_ATTEST_ENVIRONMENT = development;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Resources/FlashCardAI.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8DTMM37PGV;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Resources/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OWL_DEBUG_BUNDLE_ID = com.mavrylo.owlai;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(OWL_DEBUG_BUNDLE_ID)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A10000000000000000000032 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = ACCA00000000000000000001 /* Account.xcconfig */;
+			buildSettings = {
+				API_BASE_URL = "https://api.mavrylo.com";
+				APP_ATTEST_ENVIRONMENT = production;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Resources/FlashCardAI.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8DTMM37PGV;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Resources/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mavrylo.owlai;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		D3110000000000000000000C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.flashcardai.FlashCardAITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FlashCardAI.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FlashCardAI";
+			};
+			name = Debug;
+		};
+		D3110000000000000000000D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.flashcardai.FlashCardAITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FlashCardAI.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FlashCardAI";
+			};
+			name = Release;
+		};
+		B7110000000000000000000E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.flashcardai.FlashCardAIUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = FlashCardAI;
+			};
+			name = Debug;
+		};
+		B7110000000000000000000F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.flashcardai.FlashCardAIUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = FlashCardAI;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A1000000000000000000002A /* Build configuration list for PBXNativeTarget "FlashCardAI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000031 /* Debug */,
+				A10000000000000000000032 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1000000000000000000002E /* Build configuration list for PBXProject "FlashCardAI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1000000000000000000002F /* Debug */,
+				A10000000000000000000030 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D31100000000000000000007 /* Build configuration list for PBXNativeTarget "FlashCardAITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3110000000000000000000C /* Debug */,
+				D3110000000000000000000D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B71100000000000000000009 /* Build configuration list for PBXNativeTarget "FlashCardAIUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B7110000000000000000000E /* Debug */,
+				B7110000000000000000000F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A1000000000000000000002D /* Project object */;
+}

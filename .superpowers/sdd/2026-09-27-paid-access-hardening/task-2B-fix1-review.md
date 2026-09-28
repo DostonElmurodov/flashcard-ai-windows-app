@@ -1,0 +1,32 @@
+**I1 — finish the registration error contract: ADDRESSED.** The explicit registration failure paths named by the original finding now return the agreed status and `{code,error}` together. Reviewed fix base `24a7130d21da6d592ccee659fa8c232fa7fb44cd` through supplied head `72c072d8d6a0cf798a831a96ed00d2023103879c`.
+
+- **Validation and proof rejection:** [AppAttestRegistrationService.cs:32](<D:/07 Hobby/FlashcardAI/test-results/paid-access-hardening/backend/src/Mavrylo.Services/Services/AppAttestRegistrationService.cs:32>), lines 59 and 65 return `400 invalid_registration_request` for missing/blank fields and invalid base64. Lines 46, 72 and 78 return `403 invalid_device_proof` for unavailable simulator proof, rejected bootstrap challenge and rejected attestation. The verifier's diagnostic is no longer exposed in the HTTP error; line 78 uses a fixed plain message. The merged challenge condition retains short-circuit null protection and the same nonce comparison.
+- **Other device results:** [AppAttestRegistrationService.cs:128](<D:/07 Hobby/FlashcardAI/test-results/paid-access-hardening/backend/src/Mavrylo.Services/Services/AppAttestRegistrationService.cs:128>) and line 131 return `400 invalid_request` for malformed assertion-challenge inputs; line 135 returns `401 invalid_device` for an unknown key. Lines 153, 158 and 165 preserve resume and conflict statuses/codes. The helper at line 167 consistently emits only `code` and `error`.
+- **Required assertions:** [DeviceControllerBootstrapTests.cs:22](<D:/07 Hobby/FlashcardAI/test-results/paid-access-hardening/backend/tests/DeviceControllerBootstrapTests.cs:22>) directly checks service rejection and malformed input; lines 44–69 check malformed fields/base64 through the controller and verify both body properties alongside status. [DeviceControllerBootstrapTests.cs:210](<D:/07 Hobby/FlashcardAI/test-results/paid-access-hardening/backend/tests/DeviceControllerBootstrapTests.cs:210>) checks actual HTTP rejection, malformed registration and unknown-key assertion challenge; its helper at line 243 verifies HTTP status, stable code and nonempty string error together.
+- **Preserved behavior:** The fix does not change registration identity assignment, same-key material comparison, transaction/counter handling, token creation or proof arguments. The resume call at service line 156 still receives the original byte array. The unchanged controller mapper at [DeviceController.cs:89](<D:/07 Hobby/FlashcardAI/test-results/paid-access-hardening/backend/Areas/OwlAI/Controllers/DeviceController.cs:89>) forwards these bodies/statuses; resume's original buffering and `no-store` assignment at line 39 remain intact.
+
+**New breakage in the fix diff:** None found — no Critical, Important or Minor findings introduced by this two-file delta.
+
+**Evidence checks:** Read the supplied fix package once and compared its changed service/test regions with the actual saved source. The report's appended fix section accurately identifies the covering filters and distinguishes the later direct-service test refinement. No tests, builds, migrations, Git commands, network calls or checkout changes were performed during this review.
+
+| Saved evidence inspected | Verified result |
+|---|---|
+| `registration-errors-red.log/.trx` | 0 passed / 5 failed; verifier/HTTP rejection expected 403 but received 401, while malformed-field assertions failed on missing `code`. |
+| `registration-errors-green.trx` | 5/5 passed for the corresponding initial regression cases. |
+| `registration-errors-covering.trx` | 75/75 passed, including registration, same-key conflict/preservation, resume, challenge, counter-race, AI and account-claim coverage named in the report. |
+| `registration-errors-final2.log/.trx` | 12/12 passed; includes the refined `RegistrationService_RejectedAttestationHasStableProofError`, three malformed-field cases and the HTTP contract test. |
+| `fix1-evidence-sha256.json` | All 11 listed artifacts match SHA-256; the appended implementation report also matches `reportSha256`. Manifest names head `72c072d8d6a0cf798a831a96ed00d2023103879c`. |
+| `model-drift-24a7130-root.log` | Hash matches; saved output says no changes since the last migration. This closes the earlier missing-artifact observation for `24a7130`, not a new check at the fix head. |
+
+**Evidence limits:** The 75-test run precedes the reported test-only refinement; final2 verifies the changed test and its surrounding 12-test set. The earlier full suite (643 total: 640 passed, two known B2 failures, one B4 skip) and standalone Release build belong to `24a7130`, not `72c072d`. Clean HEAD and whitespace checking at `72c072d` remain the root's supplied verification; the reviewer did not independently run Git.
+
+**Out-of-scope observations — nonblocking:**
+
+- Prior M1 (deterministic registration-insert race and complete owner-count delta) and M2 (stronger resume, proof-after-business-rollback and populated-startup preservation coverage) remain explicitly deferred to final whole-feature review. They are not discarded or re-verdict-ed here. B2/B4 remain open and this foundation still is not independently deployable.
+- One existing HTTP boundary remains unverified: [DeviceController.cs:15](<D:/07 Hobby/FlashcardAI/test-results/paid-access-hardening/backend/Areas/OwlAI/Controllers/DeviceController.cs:15>) uses `[ApiController]`, with nonnullable request/KeyId at line 32 and [DeviceDtos.cs:14](<D:/07 Hobby/FlashcardAI/test-results/paid-access-hardening/backend/src/Mavrylo.Services/Dtos/DeviceDtos.cs:14>). Framework binding/validation can reject malformed JSON or missing/null required fields before the changed service mapper. The new HTTP case covers a well-formed body with an empty key, and no saved run here answers that earlier boundary. This is unchanged code, not new fix breakage or a demonstrated runtime finding. Suggested final-review check: a focused HTTP theory for missing/null key, null body and malformed JSON, recording status and response shape against the desired validation contract.
+
+**Spec compliance:** PASS for scoped I1 and the root's clarified service error mapping; no whole-feature approval implied.
+
+**Task quality:** ACCEPTABLE for this fix round. The shared helper removes inconsistent response construction, preserves success/proof behavior, and has matching saved service/controller/HTTP evidence.
+
+**Fix round:** All findings under verification addressed; no new Critical/Important breakage. No open in-scope finding.

@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="src/Mavrylo.Entities/Mavrylo.Entities.csproj" />
+  <Project Path="src/Mavrylo.Data/Mavrylo.Data.csproj" />
+  <Project Path="src/Mavrylo.Services/Mavrylo.Services.csproj" />
+  <Project Path="Mavrylo.csproj" />
+  <Project Path="tests/Mavrylo.Tests.csproj" />
+</Solution>

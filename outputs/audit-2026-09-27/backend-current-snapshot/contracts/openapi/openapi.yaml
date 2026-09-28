@@ -1,0 +1,583 @@
+openapi: 3.1.0
+info:
+  title: FlashCard AI API
+  version: 1.0.0
+  description: |
+    Minimal backend for sync, JWT auth (email + Sign in with Apple / Google), and AI proxy.
+servers:
+  - url: https://api.example.com
+    description: Production
+  - url: http://localhost:5288
+    description: Local development
+
+tags:
+  - name: Auth
+  - name: Words
+  - name: Categories
+  - name: UserSettings
+  - name: Sync
+  - name: AI
+
+paths:
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: JWT issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400': { description: Validation error }
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401': { description: Invalid credentials }
+
+  /api/auth/google:
+    post:
+      tags: [Auth]
+      summary: Exchange Google ID token for app JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idToken]
+              properties:
+                idToken:
+                  type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /api/auth/apple:
+    post:
+      tags: [Auth]
+      summary: Exchange Apple identity token for app JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identityToken]
+              properties:
+                identityToken:
+                  type: string
+                nonce:
+                  type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      security: [{ bearerAuth: [] }]
+      summary: Current user
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+
+  /api/words:
+    get:
+      tags: [Words]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: sort
+          in: query
+          schema: { type: string, example: "-created_date" }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 100 }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WordDto'
+    post:
+      tags: [Words]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WordUpsert'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WordDto'
+
+  /api/words/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+    patch:
+      tags: [Words]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WordUpsert'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WordDto'
+    delete:
+      tags: [Words]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204': { description: Deleted }
+
+  /api/categories:
+    get:
+      tags: [Categories]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: sort
+          in: query
+          schema: { type: string, example: order }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50 }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoryDto'
+    post:
+      tags: [Categories]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryUpsert'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryDto'
+
+  /api/categories/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+    patch:
+      tags: [Categories]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryUpsert'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryDto'
+    delete:
+      tags: [Categories]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204': { description: Deleted }
+
+  /api/user-settings:
+    get:
+      tags: [UserSettings]
+      security: [{ bearerAuth: [] }]
+      summary: List (typically one row per user)
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserSettingsDto'
+    post:
+      tags: [UserSettings]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSettingsUpsert'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSettingsDto'
+
+  /api/user-settings/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+    patch:
+      tags: [UserSettings]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSettingsUpsert'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSettingsDto'
+
+  /api/sync/changes:
+    get:
+      tags: [Sync]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: sinceUtc
+          in: query
+          schema: { type: string, format: date-time }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncPullResponse'
+
+  /api/sync/push:
+    post:
+      tags: [Sync]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncPushRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncPushResponse'
+
+  /api/ai/analyze-word:
+    post:
+      tags: [AI]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [word]
+              properties:
+                word: { type: string }
+                nativeLanguage: { type: string }
+                learningLanguage: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  translations: { type: array, items: { type: string } }
+                  translation: { type: string }
+                  pronunciation: { type: string }
+                  part_of_speech: { type: string }
+                  examples: { type: array, items: { type: string } }
+                  example_translations: { type: array, items: { type: string } }
+
+  /api/ai/word-detail:
+    post:
+      tags: [AI]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                word: { type: string }
+                learningLanguage: { type: string }
+                nativeLanguage: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  translation: { type: string }
+                  pronunciation: { type: string }
+                  part_of_speech: { type: string }
+                  examples: { type: array, items: { type: string } }
+                  example_translations: { type: array, items: { type: string } }
+
+  /api/ai/extract-words:
+    post:
+      tags: [AI]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                targetLanguage: { type: string }
+                nativeLanguage: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  words:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        word: { type: string }
+                        translation: { type: string }
+
+  /api/tts/speak:
+    post:
+      tags: [AI]
+      security: [{ bearerAuth: [] }]
+      summary: Optional server TTS (returns audio bytes)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text: { type: string }
+                language: { type: string }
+      responses:
+        '200':
+          description: audio/mpeg or audio/wav
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string }
+        password: { type: string }
+    AuthResponse:
+      type: object
+      properties:
+        token: { type: string }
+        user:
+          $ref: '#/components/schemas/UserDto'
+    UserDto:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string }
+        role: { type: string }
+
+    WordDto:
+      type: object
+      properties:
+        id: { type: string }
+        word: { type: string }
+        translation: { type: string, nullable: true }
+        pronunciation: { type: string, nullable: true }
+        audio_url: { type: string, nullable: true }
+        examples: { type: array, items: { type: string } }
+        example_translations: { type: array, items: { type: string } }
+        user_notes: { type: string, nullable: true }
+        category_id: { type: string, nullable: true }
+        source_language: { type: string }
+        target_language: { type: string }
+        next_review: { type: string, nullable: true }
+        review_interval: { type: integer }
+        ease_factor: { type: number }
+        repetitions: { type: integer }
+        is_mastered: { type: boolean }
+        part_of_speech: { type: string, nullable: true }
+        created_date: { type: string, format: date-time }
+        updated_date: { type: string, format: date-time }
+
+    WordUpsert:
+      type: object
+      properties:
+        word: { type: string }
+        translation: { type: string }
+        pronunciation: { type: string }
+        examples: { type: array, items: { type: string } }
+        example_translations: { type: array, items: { type: string } }
+        user_notes: { type: string }
+        category_id: { type: string }
+        source_language: { type: string }
+        target_language: { type: string }
+        next_review: { type: string }
+        review_interval: { type: integer }
+        ease_factor: { type: number }
+        repetitions: { type: integer }
+        is_mastered: { type: boolean }
+        part_of_speech: { type: string }
+        audio_url: { type: string }
+
+    CategoryDto:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        emoji: { type: string, nullable: true }
+        color: { type: string, nullable: true }
+        order: { type: integer }
+        word_count: { type: integer }
+        created_date: { type: string, format: date-time }
+        updated_date: { type: string, format: date-time }
+
+    CategoryUpsert:
+      type: object
+      properties:
+        name: { type: string }
+        emoji: { type: string }
+        color: { type: string }
+        order: { type: integer }
+
+    UserSettingsDto:
+      type: object
+      properties:
+        id: { type: string }
+        native_language: { type: string }
+        learning_language: { type: string }
+        daily_goal: { type: integer }
+        onboarding_complete: { type: boolean }
+        review_direction: { type: string }
+        created_date: { type: string, format: date-time }
+        updated_date: { type: string, format: date-time }
+
+    UserSettingsUpsert:
+      type: object
+      properties:
+        native_language: { type: string }
+        learning_language: { type: string }
+        daily_goal: { type: integer }
+        onboarding_complete: { type: boolean }
+        review_direction: { type: string }
+
+    SyncPullResponse:
+      type: object
+      properties:
+        serverTimeUtc: { type: string, format: date-time }
+        words: { type: array, items: { $ref: '#/components/schemas/WordDto' } }
+        categories: { type: array, items: { $ref: '#/components/schemas/CategoryDto' } }
+        userSettings: { type: array, items: { $ref: '#/components/schemas/UserSettingsDto' } }
+
+    SyncPushRequest:
+      type: object
+      properties:
+        deviceId: { type: string }
+        words: { type: array, items: { $ref: '#/components/schemas/WordUpsertWithId' } }
+        categories: { type: array, items: { $ref: '#/components/schemas/CategoryUpsertWithId' } }
+        userSettings: { type: array, items: { $ref: '#/components/schemas/UserSettingsUpsertWithId' } }
+
+    WordUpsertWithId:
+      allOf:
+        - $ref: '#/components/schemas/WordUpsert'
+        - type: object
+          properties:
+            id: { type: string }
+            isDeleted: { type: boolean }
+
+    CategoryUpsertWithId:
+      allOf:
+        - $ref: '#/components/schemas/CategoryUpsert'
+        - type: object
+          properties:
+            id: { type: string }
+            isDeleted: { type: boolean }
+
+    UserSettingsUpsertWithId:
+      allOf:
+        - $ref: '#/components/schemas/UserSettingsUpsert'
+        - type: object
+          properties:
+            id: { type: string }
+
+    SyncPushResponse:
+      type: object
+      properties:
+        accepted: { type: boolean }
+        conflicts: { type: array, items: { type: object } }

@@ -1,0 +1,60 @@
+Test run for D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend\tests\bin\Release\net10.0\Mavrylo.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:00.08]   Discovering: Mavrylo.Tests
+[xUnit.net 00:00:00.17]   Discovered:  Mavrylo.Tests
+[xUnit.net 00:00:00.20]   Starting:    Mavrylo.Tests
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.MissingCacheWriteUsageCannotBecomeZeroCost [7 ms]
+  Passed Mavrylo.Tests.FallbackAiJsonServiceTests.ProviderCancellationIsTerminalEvenBeforeCallerTokenIsMarked [15 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.ReservationDeadlineIsTerminalBeforeHttp [133 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.SlowBodyHonorsFullDeadlineAsTerminalUnavailable(gemini: True) [101 ms]
+  Passed Mavrylo.Tests.AiProviderBoundaryTests.SlowBodyHonorsFullDeadlineAsTerminalUnavailable(gemini: False) [90 ms]
+  Passed Mavrylo.Tests.AiProviderTransportTests.RegisteredHandlerSubmitsExactlyOneBoundedPost(mode: "redirect") [3 s]
+  Passed Mavrylo.Tests.AiProviderTransportTests.RegisteredHandlerSubmitsExactlyOneBoundedPost(mode: "chunked") [216 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "missing") [3 s]
+  Passed Mavrylo.Tests.AiProviderTransportTests.RegisteredHandlerSubmitsExactlyOneBoundedPost(mode: "disconnect") [205 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "model") [80 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "total") [94 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "negative") [46 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "reasoning") [79 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "input") [43 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "output") [82 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "overflow") [28 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "cache") [95 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.InvalidUsageRetainsMoneyAndSlotAfterRestart(fault: "tier") [90 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.CallerCancellationAfterDispatchPropagatesAndRetainsMoneyAfterRestart(gemini: False) [101 ms]
+  Passed Mavrylo.Tests.AiProviderTransportTests.RegisteredHandlerSubmitsExactlyOneBoundedPost(mode: "slow") [745 ms]
+  Passed Mavrylo.Tests.AiProviderTransportTests.CallerCancellationDuringConnectionStaysCancellation [4 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "OpenAI", operation: "review-translation") [4 s]
+  Passed Mavrylo.Tests.AiSpendGuardTests.CallerCancellationAfterDispatchPropagatesAndRetainsMoneyAfterRestart(gemini: True) [72 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "inconsistent_total") [118 ms]
+  Passed Mavrylo.Tests.AiProviderTransportTests.PooledConnectionDisconnectAfterPostDoesNotResubmit [229 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "malformed_cache") [113 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "negative_thoughts") [53 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "unknown_tier") [80 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "missing_usage") [91 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "overflow_output") [76 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "missing_candidates") [95 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "oversized_output") [73 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "OpenAI", operation: "batch") [757 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "negative_cache") [86 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "missing_tier") [68 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "missing_model") [80 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "unknown_model") [113 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "malformed_thoughts") [93 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "missing_prompt") [85 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(fault: "missing_total") [62 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "Gemini", operation: "word-detail") [628 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiProtocolZeroComponentsSettleRepeatedSuccessesAndReleaseSlots(explicitZeros: False) [141 ms]
+  Passed Mavrylo.Tests.AiSpendGuardTests.GeminiProtocolZeroComponentsSettleRepeatedSuccessesAndReleaseSlots(explicitZeros: True) [100 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "OpenAI", operation: "analyze-word") [660 ms]
+[xUnit.net 00:00:10.45]   Finished:    Mavrylo.Tests
+  Passed Mavrylo.Tests.AiSpendRouteTests.InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "Gemini", operation: "extract-words") [674 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.HandlerConnectDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "Gemini") [195 ms]
+  Passed Mavrylo.Tests.AiSpendRouteTests.HandlerConnectDeadlineReturnsUnavailableOverHttpAndRetainsReservation(provider: "OpenAI") [235 ms]
+
+Test Run Successful.
+Total tests: 47
+     Passed: 47
+ Total time: 10.9308 Seconds
+Results File: D:\07 Hobby\FlashcardAI\.superpowers\sdd\2026-09-27-paid-access-hardening\task-7-fix1-reviewer-results\task7-fix1-reviewer.trx

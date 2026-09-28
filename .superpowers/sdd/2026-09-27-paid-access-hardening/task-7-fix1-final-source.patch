@@ -1,0 +1,420 @@
+diff --git a/docs/ai-provider-spend.md b/docs/ai-provider-spend.md
+index abec07a..a915f52 100644
+--- a/docs/ai-provider-spend.md
++++ b/docs/ai-provider-spend.md
+@@ -75,7 +75,14 @@ output including thoughts $4.50/M (540/54/4500 nano-USD per token). No explicit
+ cache creation/storage is used. Requests select `serviceTier=standard`, one
+ candidate, `thinkingBudget=0`, and a positive output cap. Settlement requires
+ exact `modelVersion=gemini-2.5-flash` and `usageMetadata.serviceTier=standard`;
+-unrecognized/missing versions or usage components retain the reserve.
++unrecognized/missing versions or required usage components retain the reserve.
++Only omitted `thoughtsTokenCount` and `cachedContentTokenCount` default to zero:
++these are implicit-presence proto3 integer fields in the official
++[Gemini schema](https://github.com/googleapis/googleapis/blob/master/google/ai/generativelanguage/v1beta/generative_service.proto),
++whose [JSON encoding omits default values](https://protobuf.dev/programming-guides/json/#presence-and-default-values).
++The usage object, aggregate counts, model and tier must still be present and
++consistent. Present malformed, null, negative or oversized components cannot
++release a reservation. OpenAI's required components remain unchanged.
+ 
+ Reservation = ceil((full input ceiling × maximum input nano-rate + configured
+ output cap × output nano-rate) / 1000). Validated settlement applies the frozen
+@@ -102,7 +109,12 @@ values are explicitly redacted. Response headers are bounded; `ResponseHeadersRe
+ plus incremental byte counting bounds the body with or without Content-Length.
+ A linked deadline covers reservation, send, headers and body, independent of
+ HttpClient's header-only timeout semantics. Automatic response draining is disabled.
+-Settlement then has a separate bounded five-second database deadline. Cancellation is terminal. Provider
++Settlement then has a separate bounded five-second database deadline. Caller
++cancellation propagates as cancellation. An internal reservation/send/body deadline
++with an active caller maps to the established 503 `ai_translation_unavailable`
++response. The handler's separate connection timeout has the same terminal mapping;
++the pinned runtime identifies it as cancellation with an inner `TimeoutException`.
++All retain any uncertain reservation. Provider
+ 401/402/403/429 and local authorization/quota/spend denials never trigger fallback
+ or an outage email. Provider failures with unknown cost remain reserved.
+ 
+@@ -110,7 +122,10 @@ Transport evidence is local loopback against the actual Program named-client
+ registration on .NET 10.0.12: posted-body disconnect, reused connection disconnect,
+ 307 redirect, oversized chunked body and headers-first body stall. Source basis:
+ [HTTP/1 connection](https://raw.githubusercontent.com/dotnet/runtime/v10.0.12/src/libraries/System.Net.Http/src/System/Net/Http/SocketsHttpHandler/HttpConnection.cs)
+-and [pool retries](https://raw.githubusercontent.com/dotnet/runtime/v10.0.12/src/libraries/System.Net.Http/src/System/Net/Http/SocketsHttpHandler/ConnectionPool/HttpConnectionPool.cs).
++and [pool retries / connection timeout](https://raw.githubusercontent.com/dotnet/runtime/v10.0.12/src/libraries/System.Net.Http/src/System/Net/Http/SocketsHttpHandler/ConnectionPool/HttpConnectionPool.cs).
++Additional actual Kestrel tests keep that registered handler and replace only
++connection establishment with a stalled callback and a short test-only connect
++timeout; they verify 503, no fallback and retained accounting without remote sockets.
+ Revalidate on runtime, handler, endpoint, model or pricing changes. The floating
+ deployment image is not proof of the tested runtime. There were no live provider
+ probes; provider adherence to documented token limits/rates remains an assumption.
+diff --git a/src/Mavrylo.Services/Services/AiProviderTransport.cs b/src/Mavrylo.Services/Services/AiProviderTransport.cs
+index f4fc8be..19c42de 100644
+--- a/src/Mavrylo.Services/Services/AiProviderTransport.cs
++++ b/src/Mavrylo.Services/Services/AiProviderTransport.cs
+@@ -32,6 +32,8 @@ public sealed class AiProviderTransport(IHttpClientFactory clients, IAiSpendGuar
+         {
+             reservation = await guard.TryReserveAsync(new(Guid.NewGuid(), subject, operation, profile, profile.ReservationMicroUsd), deadline.Token);
+         }
++        catch (OperationCanceledException) when (deadline.IsCancellationRequested && !ct.IsCancellationRequested)
++        { throw new AiSpendDeniedException("provider_deadline"); }
+         catch (OperationCanceledException) { throw; }
+         catch (Exception) { throw new AiSpendDeniedException("ledger_unavailable"); }
+         if (reservation == null) throw new AiSpendDeniedException("budget_or_concurrency");
+@@ -59,6 +61,13 @@ public sealed class AiProviderTransport(IHttpClientFactory clients, IAiSpendGuar
+             usage = ReadUsage(profile.Provider, document.RootElement);
+             return document;
+         }
++        catch (OperationCanceledException ex) when (!ct.IsCancellationRequested
++            && (deadline.IsCancellationRequested || ex.InnerException is TimeoutException))
++        {
++            // .NET's separate ConnectTimeout uses OCE with an inner TimeoutException.
++            // Both provider timers are terminal unavailability; caller cancellation still propagates.
++            throw new AiSpendDeniedException("provider_deadline");
++        }
+         finally
+         {
+             // A client disconnect cannot erase a potential bill. Settlement has its own bounded token.
+@@ -73,6 +82,8 @@ public sealed class AiProviderTransport(IHttpClientFactory clients, IAiSpendGuar
+         try
+         {
+             static long Number(JsonElement item, string name) => item.GetProperty(name).GetInt64();
++            // These two Gemini proto3 scalars omit zero on the wire. Present malformed values remain unknown.
++            static long GeminiZeroComponent(JsonElement item, string name) => item.TryGetProperty(name, out var value) ? value.GetInt64() : 0;
+             if (provider == "OpenAI")
+             {
+                 var u = root.GetProperty("usage");
+@@ -82,14 +93,14 @@ public sealed class AiProviderTransport(IHttpClientFactory clients, IAiSpendGuar
+                     Number(input, "cached_tokens"), Number(input, "cache_write_tokens"), Number(u, "total_tokens"));
+             }
+             var usage = root.GetProperty("usageMetadata");
+-            var reasoning = Number(usage, "thoughtsTokenCount");
++            var reasoning = GeminiZeroComponent(usage, "thoughtsTokenCount");
+             return new(root.GetProperty("modelVersion").GetString()!, usage.GetProperty("serviceTier").GetString()!,
+                 Number(usage, "promptTokenCount"), checked(Number(usage, "candidatesTokenCount") + reasoning), reasoning,
+-                Number(usage, "cachedContentTokenCount"), 0, Number(usage, "totalTokenCount"));
++                GeminiZeroComponent(usage, "cachedContentTokenCount"), 0, Number(usage, "totalTokenCount"));
+         }
+         catch (Exception ex) when (ex is KeyNotFoundException or InvalidOperationException or FormatException or OverflowException)
+         {
+-            // Omitted fields are unknown, not a measured zero-cost response.
++            // Missing required fields or malformed values are unknown, not a measured zero-cost response.
+             return null;
+         }
+     }
+diff --git a/tests/AiProviderBoundaryTests.cs b/tests/AiProviderBoundaryTests.cs
+index 683b03d..94d8937 100644
+--- a/tests/AiProviderBoundaryTests.cs
++++ b/tests/AiProviderBoundaryTests.cs
+@@ -86,7 +86,7 @@ public class AiProviderBoundaryTests
+     [Theory]
+     [InlineData(false)]
+     [InlineData(true)]
+-    public async Task SlowBodyHonorsFullDeadlineAndCancellationIsTerminal(bool gemini)
++    public async Task SlowBodyHonorsFullDeadlineAsTerminalUnavailable(bool gemini)
+     {
+         var handler = new FakeHttpMessageHandler(_ => new(HttpStatusCode.OK) { Content = new StreamContent(new SlowStream()) });
+         using var client = new HttpClient(handler); var config = AiSpendTestSupport.Config(new() { ["AiSpend:DeadlineMilliseconds"] = "80" });
+@@ -95,10 +95,22 @@ public class AiProviderBoundaryTests
+             : new OpenAiJsonService(config, transport, NullLogger<OpenAiJsonService>.Instance);
+         config["AI:Provider"] = provider.ProviderName;
+         var alerts = new NoAlert(); var service = new FallbackAiJsonService([provider], config, alerts, NullLogger<FallbackAiJsonService>.Instance);
+-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.CompleteJsonAsync("word-detail", "prompt"));
++        var error = await Assert.ThrowsAsync<AiSpendDeniedException>(() => service.CompleteJsonAsync("word-detail", "prompt"));
++        Assert.Equal("provider_deadline", error.Reason);
+         Assert.Equal(0, alerts.Calls); Assert.Null(Assert.Single(guard.Completions));
+     }
+ 
++    [Fact]
++    public async Task ReservationDeadlineIsTerminalBeforeHttp()
++    {
++        var handler = new FakeHttpMessageHandler(_ => FakeHttpMessageHandler.Json("{}")); using var client = new HttpClient(handler);
++        var config = AiSpendTestSupport.Config(new() { ["AiSpend:DeadlineMilliseconds"] = "80" });
++        var provider = new OpenAiJsonService(config, AiSpendTestSupport.Transport(client, new StalledGuard()), NullLogger<OpenAiJsonService>.Instance);
++        var alerts = new NoAlert(); var service = new FallbackAiJsonService([provider], config, alerts, NullLogger<FallbackAiJsonService>.Instance);
++        var error = await Assert.ThrowsAsync<AiSpendDeniedException>(() => service.CompleteJsonAsync("word-detail", "prompt"));
++        Assert.Equal("provider_deadline", error.Reason); Assert.Empty(handler.CapturedRequests); Assert.Equal(0, alerts.Calls);
++    }
++
+     [Theory]
+     [InlineData(false)]
+     [InlineData(true)]
+@@ -139,8 +151,14 @@ public class AiProviderBoundaryTests
+         public override void Flush() => throw new NotSupportedException(); public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+         public override void SetLength(long value) => throw new NotSupportedException(); public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+     }
+-    private sealed class SlowStream() : NonSeekable(Stream.Null)
++    internal sealed class SlowStream() : NonSeekable(Stream.Null)
+     {
+         public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken ct = default) { await Task.Delay(Timeout.Infinite, ct); return 0; }
+     }
++    private sealed class StalledGuard : IAiSpendGuard
++    {
++        public async Task<SpendReservation?> TryReserveAsync(AiAttempt attempt, CancellationToken ct)
++        { await Task.Delay(Timeout.Infinite, ct); return null; }
++        public Task CompleteAsync(Guid reservationId, AiAttemptUsage? usage, CancellationToken ct) => throw new InvalidOperationException("No reservation was returned.");
++    }
+ }
+diff --git a/tests/AiProviderTransportTests.cs b/tests/AiProviderTransportTests.cs
+index 3ae9605..8c46f37 100644
+--- a/tests/AiProviderTransportTests.cs
++++ b/tests/AiProviderTransportTests.cs
+@@ -11,6 +11,23 @@ namespace Mavrylo.Tests;
+ 
+ public class AiProviderTransportTests(PostgresContainerFixture postgres) : IClassFixture<PostgresContainerFixture>
+ {
++    [Fact]
++    public async Task CallerCancellationDuringConnectionStaysCancellation()
++    {
++        using var handler = AiProviderTransport.CreateHandler();
++        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
++        handler.ConnectCallback = async (_, ct) => { started.SetResult(); await Task.Delay(Timeout.Infinite, ct); return Stream.Null; };
++        using var client = new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan };
++        var guard = new AiSpendTestSupport.RecordingGuard(); var transport = AiSpendTestSupport.Transport(client, guard);
++        var profile = AiCostProfile.Read(AiSpendTestSupport.Config(new() { ["AiSpend:DeadlineMilliseconds"] = "5000" }), "Gemini", "gemini-2.5-flash", "word-detail", "prompt", null, null);
++        using var caller = new CancellationTokenSource();
++        using var request = new HttpRequestMessage(HttpMethod.Post, "http://127.0.0.1/") { Content = new StringContent("{}") };
++        var attempt = transport.SendAsync(profile, "word-detail", request, caller.Token);
++        await started.Task.WaitAsync(TimeSpan.FromSeconds(2)); caller.Cancel();
++        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => attempt);
++        Assert.Single(guard.Attempts); Assert.Null(Assert.Single(guard.Completions));
++    }
++
+     [Theory]
+     [InlineData("disconnect")]
+     [InlineData("redirect")]
+@@ -31,7 +48,7 @@ public class AiProviderTransportTests(PostgresContainerFixture postgres) : IClas
+         request.Headers.Add("x-goog-api-key", "loopback-only-secret");
+         var error = await Record.ExceptionAsync(() => transport.SendAsync(profile, "word-detail", request, default));
+         Assert.NotNull(error);
+-        if (mode == "slow") Assert.IsAssignableFrom<OperationCanceledException>(error);
++        if (mode == "slow") Assert.Equal("provider_deadline", Assert.IsType<AiSpendDeniedException>(error).Reason);
+         if (mode == "redirect") Assert.Equal(307, Assert.IsType<AiProviderException>(error).StatusCode);
+         await Task.Delay(100); // A bounded observation for unexpected automatic retries/redirects.
+         Assert.Equal(1, server.Submissions);
+diff --git a/tests/AiSpendGuardTests.cs b/tests/AiSpendGuardTests.cs
+index fc80037..0d62b51 100644
+--- a/tests/AiSpendGuardTests.cs
++++ b/tests/AiSpendGuardTests.cs
+@@ -3,12 +3,125 @@ using Mavrylo.Services;
+ using Mavrylo.Tests.TestSupport;
+ using Microsoft.EntityFrameworkCore;
+ using Microsoft.Extensions.Configuration;
++using Microsoft.Extensions.Logging.Abstractions;
++using System.Text.Json.Nodes;
+ using Xunit;
+ 
+ namespace Mavrylo.Tests;
+ 
+ public class AiSpendGuardTests(PostgresContainerFixture postgres) : IClassFixture<PostgresContainerFixture>
+ {
++    private const string GeminiZeroUsage = """{"modelVersion":"gemini-2.5-flash","usageMetadata":{"serviceTier":"standard","promptTokenCount":100,"candidatesTokenCount":10,"totalTokenCount":110},"candidates":[{"content":{"parts":[{"text":"{\"translation\":\"Hello\"}"}]}}]}""";
++
++    [Theory]
++    [InlineData(false)]
++    [InlineData(true)]
++    public async Task CallerCancellationAfterDispatchPropagatesAndRetainsMoneyAfterRestart(bool gemini)
++    {
++        await ResetAsync();
++        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
++        var handler = new FakeHttpMessageHandler(_ =>
++        {
++            started.SetResult();
++            return new(System.Net.HttpStatusCode.OK) { Content = new StreamContent(new AiProviderBoundaryTests.SlowStream()) };
++        });
++        using var client = new HttpClient(handler); using var caller = new CancellationTokenSource();
++        var config = AiSpendTestSupport.Config(new() { ["AiSpend:DeadlineMilliseconds"] = "5000" });
++        await using (var db = Database())
++        {
++            var transport = AiSpendTestSupport.Transport(client, new AiSpendGuard(db, config, new Events()));
++            IAiProviderJsonService primary = gemini ? new GeminiJsonService(config, transport, NullLogger<GeminiJsonService>.Instance)
++                : new OpenAiJsonService(config, transport, NullLogger<OpenAiJsonService>.Instance);
++            config["AI:Provider"] = primary.ProviderName;
++            var alerts = new AiProviderBoundaryTests.NoAlert();
++            var service = new FallbackAiJsonService([primary], config, alerts, NullLogger<FallbackAiJsonService>.Instance);
++            var attempt = service.CompleteJsonAsync("word-detail", "synthetic word", caller.Token);
++            await started.Task.WaitAsync(TimeSpan.FromSeconds(5)); caller.Cancel();
++            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => attempt);
++            Assert.Single(handler.CapturedRequests); Assert.Equal(0, alerts.Calls);
++        }
++        await using var restarted = Database();
++        var row = await restarted.AiSpendReservations.SingleAsync();
++        Assert.Null(row.SettledAt); Assert.Equal(gemini ? 568536 : 578345, row.ChargedMicroUsd);
++        Assert.Equal(1, (await restarted.AiSpendBuckets.SingleAsync(x => x.Id == "global")).PendingAttempts);
++    }
++
++    [Theory]
++    [InlineData(false)]
++    [InlineData(true)]
++    public async Task GeminiProtocolZeroComponentsSettleRepeatedSuccessesAndReleaseSlots(bool explicitZeros)
++    {
++        await ResetAsync(); await using var db = Database();
++        var body = JsonNode.Parse(GeminiZeroUsage)!;
++        if (explicitZeros)
++        {
++            body["usageMetadata"]!["thoughtsTokenCount"] = 0;
++            body["usageMetadata"]!["cachedContentTokenCount"] = 0;
++        }
++        var handler = new FakeHttpMessageHandler(_ => FakeHttpMessageHandler.Json(body.ToJsonString())); using var client = new HttpClient(handler);
++        var config = AiSpendTestSupport.Config(new() { ["AiSpend:MaxConcurrentAttempts"] = "1", ["AiSpend:DeadlineMilliseconds"] = "5000" });
++        var provider = new GeminiJsonService(config, AiSpendTestSupport.Transport(client, new AiSpendGuard(db, config, new Events())), NullLogger<GeminiJsonService>.Instance);
++        for (var call = 1; call <= 2; call++)
++        {
++            var result = await provider.CompleteJsonAsync("word-detail", "synthetic word");
++            Assert.Equal("Hello", result!.Value.GetProperty("translation").GetString());
++            var rows = await db.AiSpendReservations.AsNoTracking().ToListAsync();
++            Assert.Equal(call, rows.Count);
++            Assert.All(rows, row => { Assert.NotNull(row.SettledAt); Assert.Equal(99, row.ChargedMicroUsd); Assert.Equal(0, row.ReasoningTokens); Assert.Equal(0, row.CachedTokens); });
++            var bucket = await db.AiSpendBuckets.AsNoTracking().SingleAsync(x => x.Id == "global");
++            Assert.Equal(0, bucket.PendingAttempts); Assert.Equal(call * 99, bucket.ChargedMicroUsd);
++        }
++        Assert.Equal(2, handler.CapturedRequests.Count);
++    }
++
++    [Theory]
++    [InlineData("missing_usage")]
++    [InlineData("missing_total")]
++    [InlineData("missing_prompt")]
++    [InlineData("missing_candidates")]
++    [InlineData("missing_model")]
++    [InlineData("missing_tier")]
++    [InlineData("unknown_model")]
++    [InlineData("unknown_tier")]
++    [InlineData("negative_thoughts")]
++    [InlineData("negative_cache")]
++    [InlineData("malformed_thoughts")]
++    [InlineData("malformed_cache")]
++    [InlineData("inconsistent_total")]
++    [InlineData("oversized_output")]
++    [InlineData("overflow_output")]
++    public async Task GeminiZeroDefaultsDoNotForgiveUnknownOrInvalidUsage(string fault)
++    {
++        await ResetAsync(); await using var db = Database(); var body = JsonNode.Parse(GeminiZeroUsage)!.AsObject();
++        var usage = body["usageMetadata"]!.AsObject();
++        switch (fault)
++        {
++            case "missing_usage": body.Remove("usageMetadata"); break;
++            case "missing_total": usage.Remove("totalTokenCount"); break;
++            case "missing_prompt": usage.Remove("promptTokenCount"); break;
++            case "missing_candidates": usage.Remove("candidatesTokenCount"); break;
++            case "missing_model": body.Remove("modelVersion"); break;
++            case "missing_tier": usage.Remove("serviceTier"); break;
++            case "unknown_model": body["modelVersion"] = "unknown"; break;
++            case "unknown_tier": usage["serviceTier"] = "unknown"; break;
++            case "negative_thoughts": usage["thoughtsTokenCount"] = -1; break;
++            case "negative_cache": usage["cachedContentTokenCount"] = -1; break;
++            case "malformed_thoughts": usage["thoughtsTokenCount"] = "invalid"; break;
++            case "malformed_cache": usage["cachedContentTokenCount"] = "invalid"; break;
++            case "inconsistent_total": usage["totalTokenCount"] = 111; break;
++            case "oversized_output": usage["candidatesTokenCount"] = 513; usage["totalTokenCount"] = 613; break;
++            case "overflow_output": usage["candidatesTokenCount"] = long.MaxValue; usage["thoughtsTokenCount"] = 1; break;
++        }
++        var handler = new FakeHttpMessageHandler(_ => FakeHttpMessageHandler.Json(body.ToJsonString())); using var client = new HttpClient(handler);
++        var config = AiSpendTestSupport.Config(new() { ["AiSpend:MaxConcurrentAttempts"] = "1", ["AiSpend:DeadlineMilliseconds"] = "5000" });
++        var provider = new GeminiJsonService(config, AiSpendTestSupport.Transport(client, new AiSpendGuard(db, config, new Events())), NullLogger<GeminiJsonService>.Instance);
++        Assert.NotNull(await provider.CompleteJsonAsync("word-detail", "synthetic word"));
++        var row = await db.AiSpendReservations.AsNoTracking().SingleAsync();
++        Assert.Null(row.SettledAt); Assert.Equal(568536, row.ChargedMicroUsd);
++        Assert.Equal(1, (await db.AiSpendBuckets.AsNoTracking().SingleAsync(x => x.Id == "global")).PendingAttempts);
++        await Assert.ThrowsAsync<AiSpendDeniedException>(() => provider.CompleteJsonAsync("word-detail", "next synthetic word"));
++        Assert.Single(handler.CapturedRequests);
++    }
+     private AppDbContext Database() => new(new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(postgres.ConnectionString).Options);
+     private async Task ResetAsync()
+     {
+diff --git a/tests/AiSpendRouteTests.cs b/tests/AiSpendRouteTests.cs
+index 4f43e7d..34f0b15 100644
+--- a/tests/AiSpendRouteTests.cs
++++ b/tests/AiSpendRouteTests.cs
+@@ -15,6 +15,79 @@ namespace Mavrylo.Tests;
+ 
+ public class AiSpendRouteTests(PostgresContainerFixture postgres) : IClassFixture<PostgresContainerFixture>
+ {
++    [Theory]
++    [InlineData("OpenAI")]
++    [InlineData("Gemini")]
++    public async Task HandlerConnectDeadlineReturnsUnavailableOverHttpAndRetainsReservation(string provider)
++    {
++        var connections = 0; var alerts = new AiProviderBoundaryTests.NoAlert();
++        var config = AiSpendTestSupport.Config(new() { ["AI:Provider"] = provider, ["AiSpend:DeadlineMilliseconds"] = "5000" }).AsEnumerable().ToDictionary(x => x.Key, x => x.Value);
++        config["TestMode:Enabled"] = "true"; config["AiProtection:RequireAssertion"] = "false";
++        await using var factory = new ApiFactory(postgres.ConnectionString, services =>
++        {
++            // Keep the actual named-client handler; replace only connection establishment, with no remote sockets.
++            services.Configure<Microsoft.Extensions.Http.HttpClientFactoryOptions>(AiProviderTransport.ClientName, options =>
++                options.HttpMessageHandlerBuilderActions.Add(builder =>
++                {
++                    var handler = Assert.IsType<SocketsHttpHandler>(builder.PrimaryHandler);
++                    Assert.Equal(TimeSpan.FromSeconds(10), handler.ConnectTimeout);
++                    handler.ConnectTimeout = TimeSpan.FromMilliseconds(80);
++                    handler.ConnectCallback = async (_, ct) =>
++                    {
++                        Interlocked.Increment(ref connections);
++                        await Task.Delay(Timeout.Infinite, ct);
++                        return Stream.Null;
++                    };
++                }));
++            services.RemoveAll<IDevAlertEmailService>(); services.AddSingleton<IDevAlertEmailService>(alerts);
++        }, config);
++        factory.UseKestrel(0);
++        using var client = await AuthorizedClient(factory, true);
++        using var scope = factory.Services.CreateScope(); var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
++        var beforeCount = await db.AiSpendReservations.CountAsync();
++        var beforePending = await db.AiSpendBuckets.Where(x => x.Id == "global").Select(x => x.PendingAttempts).SingleOrDefaultAsync();
++        using var response = await Post(client, "/owlai/account/ai/word-detail", "word-detail", Guid.NewGuid().ToString("N"), CancellationToken.None);
++        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
++        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
++        Assert.Equal("ai_translation_unavailable", body.RootElement.GetProperty("error").GetString());
++        Assert.Equal(1, connections); Assert.Equal(0, alerts.Calls);
++        Assert.Equal(beforeCount + 1, await db.AiSpendReservations.CountAsync());
++        var row = await db.AiSpendReservations.AsNoTracking().OrderByDescending(x => x.CreatedAt).FirstAsync();
++        Assert.Equal(provider, row.Provider); Assert.Null(row.SettledAt);
++        Assert.Equal(provider == "Gemini" ? 568536 : 578345, row.ChargedMicroUsd);
++        Assert.Equal(beforePending + 1, (await db.AiSpendBuckets.AsNoTracking().SingleAsync(x => x.Id == "global")).PendingAttempts);
++    }
++
++    [Theory]
++    [InlineData("OpenAI", "analyze-word")]
++    [InlineData("Gemini", "word-detail")]
++    [InlineData("OpenAI", "review-translation")]
++    [InlineData("Gemini", "extract-words")]
++    [InlineData("OpenAI", "batch")]
++    public async Task InternalDeadlineReturnsUnavailableOverHttpAndRetainsReservation(string provider, string operation)
++    {
++        var handler = new FakeHttpMessageHandler(_ => new(HttpStatusCode.OK) { Content = new StreamContent(new AiProviderBoundaryTests.SlowStream()) });
++        using var wire = new HttpClient(handler); var alerts = new AiProviderBoundaryTests.NoAlert(); await using var factory = Factory(wire, alerts);
++        factory.UseKestrel(0); // Exercise the actual HTTP response, including unhandled exception mapping.
++        using var client = await AuthorizedClient(factory, true);
++        var config = factory.Services.GetRequiredService<IConfiguration>(); config["AI:Provider"] = provider;
++        config["AiSpend:DeadlineMilliseconds"] = "500";
++        using var scope = factory.Services.CreateScope(); var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
++        var beforeCount = await db.AiSpendReservations.CountAsync();
++        var beforePending = await db.AiSpendBuckets.Where(x => x.Id == "global").Select(x => x.PendingAttempts).SingleOrDefaultAsync();
++        var path = "/owlai/account/ai/" + (operation == "batch" ? "word-detail" : operation);
++        using var response = await Post(client, path, operation, Guid.NewGuid().ToString("N"), CancellationToken.None);
++        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
++        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
++        Assert.Equal("ai_translation_unavailable", body.RootElement.GetProperty("error").GetString());
++        Assert.Single(handler.CapturedRequests); Assert.Equal(0, alerts.Calls);
++        Assert.Equal(beforeCount + 1, await db.AiSpendReservations.CountAsync());
++        var row = await db.AiSpendReservations.AsNoTracking().OrderByDescending(x => x.CreatedAt).FirstAsync();
++        Assert.Equal(provider, row.Provider); Assert.Null(row.SettledAt);
++        Assert.Equal(provider == "Gemini" ? 568536 : 578345, row.ChargedMicroUsd);
++        Assert.Equal(beforePending + 1, (await db.AiSpendBuckets.AsNoTracking().SingleAsync(x => x.Id == "global")).PendingAttempts);
++    }
++
+     [Theory]
+     [InlineData("free-device")]
+     [InlineData("paid-device")]
+@@ -157,12 +230,12 @@ public class AiSpendRouteTests(PostgresContainerFixture postgres) : IClassFixtur
+         }
+         return client;
+     }
+-    private static async Task<HttpResponseMessage> Post(HttpClient client, string path, string operation, string word)
++    private static async Task<HttpResponseMessage> Post(HttpClient client, string path, string operation, string word, CancellationToken ct = default)
+     {
+         if (operation != "extract-words") return await client.PostAsJsonAsync(path,
+-            new { word, native_language = "en", learning_language = "es", secondary_language = operation is "batch" or "review-translation" ? "fr" : null });
++            new { word, native_language = "en", learning_language = "es", secondary_language = operation is "batch" or "review-translation" ? "fr" : null }, ct);
+         using var content = new MultipartFormDataContent(); content.Add(new ByteArrayContent([0xff, 0xd8, 0xff, 0xe0, 0]), "image", "image.jpg");
+-        return await client.PostAsync(path + "?target_language=es&native_language=en", content);
++        return await client.PostAsync(path + "?target_language=es&native_language=en", content, ct);
+     }
+     private static string OpenAiResponse(string text) => JsonSerializer.Serialize(new
+     {
