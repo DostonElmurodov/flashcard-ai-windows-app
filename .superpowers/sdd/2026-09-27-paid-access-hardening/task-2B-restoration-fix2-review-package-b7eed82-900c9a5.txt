@@ -1,0 +1,605 @@
+ .../Services/AccountEntitlementService.cs          |   6 +-
+ .../Services/AnonymousPurchaseService.cs           |  48 +++--
+ .../Services/DeviceContextService.cs               |  32 ++--
+ .../Services/EntitlementService.cs                 |   3 +-
+ tests/MobilePurchaseRestoreTests.cs                |   2 +-
+ tests/RestorationPostgresTests.cs                  | 203 +++++++++++++++++++++
+ tests/SharedSubscriptionPostgresTests.cs           | 147 ++++++++++++---
+ 7 files changed, 387 insertions(+), 54 deletions(-)
+
+diff --git a/src/Mavrylo.Services/Services/AccountEntitlementService.cs b/src/Mavrylo.Services/Services/AccountEntitlementService.cs
+index c9dd21c..866afde 100644
+--- a/src/Mavrylo.Services/Services/AccountEntitlementService.cs
++++ b/src/Mavrylo.Services/Services/AccountEntitlementService.cs
+@@ -52,6 +52,8 @@ public sealed class AccountEntitlementService(AppDbContext db, EntitlementServic
+             return (503, new { code = "apple_unavailable", error = "Apple subscription status could not be refreshed." });
+         var sub = canonical.Subscription;
+         if (sub.OriginalTransactionId != proof.Subscription.OriginalTransactionId
++            || sub.Environment != proof.Subscription.Environment
++            || sub.ProductId != proof.Subscription.ProductId
+             || !entitlements.IsApplicable(sub)
+             || !IsActive(entitlements.ToEntitlement(sub).Status))
+             return (402, new { code = "subscription_inactive", error = "An active verified subscription is required." });
+@@ -79,7 +81,9 @@ public sealed class AccountEntitlementService(AppDbContext db, EntitlementServic
+         {
+             return (503, new { code = "subscription_reconciliation_required", error = "Stored subscription needs reconciliation." });
+         }
+-        if (persisted.TokenConflictDetectedAt != null)
++        var tokenConflict = await entitlements.RecordTokenConflictAsync(sub.OriginalTransactionId,
++            sub.Environment, proof.Subscription.AppAccountToken, ct);
++        if (tokenConflict || persisted.TokenConflictDetectedAt != null)
+         {
+             await tx.CommitAsync(ct);
+             return (503, new { code = "subscription_reconciliation_required", error = "Stored subscription needs reconciliation." });
+diff --git a/src/Mavrylo.Services/Services/AnonymousPurchaseService.cs b/src/Mavrylo.Services/Services/AnonymousPurchaseService.cs
+index d5fec5d..3aac798 100644
+--- a/src/Mavrylo.Services/Services/AnonymousPurchaseService.cs
++++ b/src/Mavrylo.Services/Services/AnonymousPurchaseService.cs
+@@ -80,8 +80,7 @@ public sealed class AnonymousPurchaseService(
+         }
+         if (state.TokenConflictDetectedAt != null)
+             return Error(503, "subscription_reconciliation_required", "Stored purchase needs reconciliation.");
+-        var access = await resolver.ResolveAsync(keyId, ct);
+-        return SelectedAccessResponse(keyId, access!);
++        return await SelectedAccessResponseAsync(keyId, ct);
+     }
+ 
+     public async Task<IapService.IapResult> RestoreMobileAsync(string keyId, IapRestoreRequest request, CancellationToken ct)
+@@ -169,25 +168,26 @@ public sealed class AnonymousPurchaseService(
+         await db.SaveChangesAsync(ct);
+         await tx.CommitAsync(ct);
+ 
+-        var access = await resolver.ResolveAsync(keyId, ct);
+-        return SelectedAccessResponse(keyId, access!);
++        return await SelectedAccessResponseAsync(keyId, ct);
+     }
+ 
+-    private IapService.IapResult SelectedAccessResponse(string keyId, MobilePurchaseAccess access)
++    private async Task<IapService.IapResult> SelectedAccessResponseAsync(string keyId, CancellationToken ct)
+     {
+-        if (access.Subscription?.TokenConflictDetectedAt != null)
++        var context = (await deviceContext.ResolveAsync(keyId, ct))!;
++        if (context.Subscription?.TokenConflictDetectedAt != null)
+             return Error(503, "subscription_reconciliation_required", "Stored purchase needs reconciliation.");
+-        var entitlement = access.Entitlement;
++        var entitlement = context.Entitlement;
+         var now = clock.GetUtcNow().UtcDateTime;
+         var (jwt, jwtExpiry) = tokens.CreateDeviceToken(keyId, entitlement.Status,
+-            access.Subscription?.OriginalTransactionId);
+-        var authority = access.Authority;
++            context.Subscription?.OriginalTransactionId);
++        var authority = context.Authority;
+         var dto = new EntitlementDto(entitlement.Status, entitlement.ProductId, entitlement.ExpiresAt?.ToString("O"),
+             entitlement.IsTrial, entitlement.AutoRenew, entitlement.WasEverPaid,
+-            authority == "mobile_restore" ? "mobile_restore" : "device", access.Subscription?.ClaimedAt != null);
++            authority == "account" ? "account" : authority == "mobile_restore" ? "mobile_restore" : "device",
++            context.Subscription?.ClaimedAt != null);
+         return new(200, new IapVerifyResponse(dto, jwt,
+-            Math.Max(0, (int)(jwtExpiry - now).TotalSeconds), authority,
+-            authority == "mobile_restore" && access.GrantValidUntil is { } until
++            Math.Max(0, (int)(jwtExpiry - now).TotalSeconds), authority == "account" ? "none" : authority,
++            authority == "mobile_restore" && context.GrantValidUntil is { } until
+                 ? DateTime.SpecifyKind(until, DateTimeKind.Utc).ToString("O") : null));
+     }
+ 
+@@ -196,12 +196,24 @@ public sealed class AnonymousPurchaseService(
+     {
+         if (signed.AppAccountToken == null || canonical.AppAccountToken == null
+             || signed.AppAccountToken == canonical.AppAccountToken) return null;
+-        var conflict = await entitlements.RecordTokenConflictAsync(signed.OriginalTransactionId,
++        await using var tx = await db.Database.BeginTransactionAsync(ct);
++        if (db.Database.IsNpgsql())
++            await db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({canonical.OriginalTransactionId}, 431))", ct);
++        var existing = await db.Subscriptions.AsNoTracking().AnyAsync(x => x.OriginalTransactionId == canonical.OriginalTransactionId
++            && x.Environment == canonical.Environment, ct);
++        if (!existing)
++            return Error(503, "apple_identity_mismatch", "Apple subscription identity mismatch.");
++        // Persist the ordered Apple lifecycle and both token observations atomically. Neither owner
++        // bindings nor mobile grants are written on this disagreement path.
++        canonical.DeviceUuid = "";
++        try { await entitlements.UpsertAsync(canonical, ct, relinkDevice: false); }
++        catch (SubscriptionReconciliationRequiredException)
++        {
++            return Error(503, "subscription_reconciliation_required", "Stored purchase needs reconciliation.");
++        }
++        await entitlements.RecordTokenConflictAsync(signed.OriginalTransactionId,
+             signed.Environment, signed.AppAccountToken, ct);
+-        conflict = await entitlements.RecordTokenConflictAsync(signed.OriginalTransactionId,
+-            signed.Environment, canonical.AppAccountToken, ct) || conflict;
+-        return conflict
+-            ? Error(503, "subscription_reconciliation_required", "Stored purchase needs reconciliation.")
+-            : Error(503, "apple_identity_mismatch", "Apple subscription identity mismatch.");
++        await tx.CommitAsync(ct);
++        return Error(503, "subscription_reconciliation_required", "Stored purchase needs reconciliation.");
+     }
+ }
+diff --git a/src/Mavrylo.Services/Services/DeviceContextService.cs b/src/Mavrylo.Services/Services/DeviceContextService.cs
+index 0a47339..b71d80c 100644
+--- a/src/Mavrylo.Services/Services/DeviceContextService.cs
++++ b/src/Mavrylo.Services/Services/DeviceContextService.cs
+@@ -30,8 +30,10 @@ public sealed class DeviceContextService(AppDbContext db, EntitlementService ent
+         if (device is null)
+             return null;
+ 
++        // Account lookup may refresh the same Apple purchase. Select device access only after that write.
++        var (authenticatedAccount, shared) = await ResolveSharedAccountAsync(ct);
+         var access = await new MobilePurchaseAccessResolver(db, entitlements).ResolveAsync(keyId, ct);
+-        var (ent, account) = await ResolveEntitlementAsync(access!.Subscription, ct, access.Entitlement);
++        var (ent, account) = ResolveEntitlement(access!.Subscription, access.Entitlement, authenticatedAccount, shared);
+         var usesAccount = account != null && !AccountEntitlementService.IsActive(access.Entitlement.Status);
+         var selected = access.Subscription;
+         if (usesAccount)
+@@ -102,23 +104,29 @@ public sealed class DeviceContextService(AppDbContext db, EntitlementService ent
+         return persisted;
+     }
+ 
+-    public async Task<(EntitlementService.Entitlement Entitlement, string? AccountId)> ResolveEntitlementAsync(
+-        SubscriptionEntity? sub, CancellationToken ct, EntitlementService.Entitlement? independent = null)
++    private async Task<(string? AccountId, AccountEntitlement? Entitlement)> ResolveSharedAccountAsync(CancellationToken ct)
+     {
+         var http = accessor?.HttpContext;
+         if (http != null && http.Request.Headers.TryGetValue("X-Account-Authorization", out var header))
+         {
+             var account = await http.RequestServices.GetRequiredService<SharedAccountAuthentication>().AccountAsync(header.ToString(), ct);
+             if (account != null)
+-            {
+-                var shared = await http.RequestServices.GetRequiredService<AccountEntitlementService>().GetAsync(account, ct);
+-                if (sub?.OwnerAccountId == account && AccountEntitlementService.IsActive(independent?.Status ?? ""))
+-                    return (independent!, account);
+-                if (!AccountEntitlementService.IsActive(independent?.Status ?? "") &&
+-                    (AccountEntitlementService.IsActive(shared.Status) || sub?.OwnerAccountId == account))
+-                    return (new(shared.Status, shared.ProductId, shared.ExpiresAt, shared.IsTrial, shared.AutoRenew, shared.WasEverPaid), account);
+-            }
++                return (account, await http.RequestServices.GetRequiredService<AccountEntitlementService>().GetAsync(account, ct));
++        }
++        return (null, null);
++    }
++
++    private (EntitlementService.Entitlement Entitlement, string? AccountId) ResolveEntitlement(
++        SubscriptionEntity? sub, EntitlementService.Entitlement independent, string? account, AccountEntitlement? shared)
++    {
++        if (account != null && shared != null)
++        {
++            if (sub?.OwnerAccountId == account && AccountEntitlementService.IsActive(independent.Status))
++                return (independent, account);
++            if (!AccountEntitlementService.IsActive(independent.Status) &&
++                (AccountEntitlementService.IsActive(shared.Status) || sub?.OwnerAccountId == account))
++                return (new(shared.Status, shared.ProductId, shared.ExpiresAt, shared.IsTrial, shared.AutoRenew, shared.WasEverPaid), account);
+         }
+-        return (independent ?? entitlements.ToDeviceEntitlement(sub), null);
++        return (independent, null);
+     }
+ }
+diff --git a/src/Mavrylo.Services/Services/EntitlementService.cs b/src/Mavrylo.Services/Services/EntitlementService.cs
+index a5b3c1f..4be2524 100644
+--- a/src/Mavrylo.Services/Services/EntitlementService.cs
++++ b/src/Mavrylo.Services/Services/EntitlementService.cs
+@@ -130,7 +130,8 @@ public sealed class EntitlementService(AppDbContext db, TimeProvider timeProvide
+         existing.Environment = incoming.Environment;
+         existing.LastCheckedAt = timeProvider.GetUtcNow().UtcDateTime;
+         existing.RevokedAt = incoming.RevokedAt;
+-        if (incoming.AppAccountToken != null && existing.AppAccountToken == null)
++        if (incoming.AppAccountToken != null && existing.AppAccountToken == null
++            && existing.TokenConflictDetectedAt == null)
+             existing.AppAccountToken = incoming.AppAccountToken;
+         if (incoming.AppTransactionId != null && existing.AppTransactionId == null)
+             existing.AppTransactionId = incoming.AppTransactionId;
+diff --git a/tests/MobilePurchaseRestoreTests.cs b/tests/MobilePurchaseRestoreTests.cs
+index 8985f9d..94de5b7 100644
+--- a/tests/MobilePurchaseRestoreTests.cs
++++ b/tests/MobilePurchaseRestoreTests.cs
+@@ -341,7 +341,7 @@ public sealed class MobilePurchaseRestoreTests
+         Assert.NotNull(saved.TokenConflictDetectedAt);
+         Assert.Equal(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(conflictingToken.ToByteArray())),
+             saved.TokenConflictObservedHash);
+-        Assert.Equal(canonicalTokenKind == 2 ? original.ExpiresAt : canonical.ExpiresAt, saved.ExpiresAt);
++        Assert.Equal(canonical.ExpiresAt, saved.ExpiresAt);
+         Assert.Equal(originalToken, (await fixture.Db.ApplePurchaseBindings.AsNoTracking().SingleAsync()).BoundAppAccountToken);
+         Assert.Empty(await fixture.Db.MobilePurchaseGrants.ToListAsync());
+         Assert.Equal(503, (await iap.TokenAsync("drift-key", default)).Status);
+diff --git a/tests/RestorationPostgresTests.cs b/tests/RestorationPostgresTests.cs
+index b9a668b..e3614a2 100644
+--- a/tests/RestorationPostgresTests.cs
++++ b/tests/RestorationPostgresTests.cs
+@@ -174,6 +174,209 @@ public sealed class RestorationPostgresTests(PostgresContainerFixture postgres)
+         }
+     }
+ 
++    [Theory]
++    [InlineData(false, false, false)]
++    [InlineData(false, true, false)]
++    [InlineData(true, false, false)]
++    [InlineData(true, true, false)]
++    [InlineData(false, false, true)]
++    [InlineData(true, false, true)]
++    public async Task TokenDisagreementPersistsNewerCanonicalRevocationWithConflictBeforeDeny(
++        bool verify, bool signedTokenDiffers, bool storedTokenMissing)
++    {
++        var originalId = Guid.NewGuid().ToString("N");
++        var oldToken = Guid.NewGuid();
++        var otherToken = Guid.NewGuid();
++        var owner = Guid.NewGuid();
++        var key = "disagreement-" + originalId;
++        var oldEvent = new DateTime(DateTime.UtcNow.Ticks / 10 * 10, DateTimeKind.Utc).AddHours(-2);
++        await using (var setup = Database())
++        {
++            await setup.Database.MigrateAsync();
++            setup.AnonymousPurchaseOwners.Add(new AnonymousPurchaseOwnerEntity { Id = owner });
++            setup.AnonymousPurchaseTokens.Add(new AnonymousPurchaseTokenEntity { AnonymousOwnerId = owner,
++                AppAccountToken = oldToken });
++            setup.Devices.Add(new DeviceEntity { KeyId = key, DeviceUuid = "private-" + originalId,
++                AnonymousOwnerId = owner });
++            var stored = Purchase(originalId, oldToken);
++            if (storedTokenMissing) stored.AppAccountToken = null;
++            stored.LastAppleEventAt = oldEvent;
++            setup.Subscriptions.Add(stored);
++            setup.ApplePurchaseBindings.Add(new ApplePurchaseBindingEntity { Environment = "Production",
++                OriginalTransactionId = originalId, AnonymousOwnerId = owner, BindingKind = "server_token",
++                BoundAppAccountToken = oldToken });
++            await setup.SaveChangesAsync();
++        }
++        var (apple, request) = Evidence(originalId, signedTokenDiffers ? otherToken : oldToken);
++        var canonical = apple.SubscriptionStatusesResult.Subscription!;
++        canonical.AppAccountToken = signedTokenDiffers ? oldToken : otherToken;
++        canonical.LastAppleEventAt = oldEvent.AddHours(1);
++        canonical.RevokedAt = canonical.LastAppleEventAt;
++        canonical.ExpiresAt = oldEvent.AddDays(12);
++        await using (var processing = Database())
++        {
++            var iap = IapTestFactory.Create(processing, apple);
++            Assert.Equal(503, verify
++                ? (await iap.VerifyAsync(key, new IapVerifyRequest("signed-transaction"), default)).Status
++                : (await iap.RestoreAsync(key, request, default)).Status);
++        }
++        await using (var check = Database())
++        {
++            var saved = await check.Subscriptions.AsNoTracking().SingleAsync(x => x.OriginalTransactionId == originalId);
++            Assert.NotNull(saved.TokenConflictDetectedAt);
++            Assert.Equal(storedTokenMissing ? null : oldToken, saved.AppAccountToken);
++            Assert.Equal(canonical.LastAppleEventAt, saved.LastAppleEventAt);
++            Assert.Equal(canonical.RevokedAt, saved.RevokedAt);
++            Assert.Equal(canonical.ExpiresAt, saved.ExpiresAt);
++            Assert.Null(saved.OwnerAccountId);
++            Assert.Null(saved.ClaimedAt);
++            Assert.Equal(oldToken, (await check.ApplePurchaseBindings.AsNoTracking().SingleAsync(x =>
++                x.OriginalTransactionId == originalId)).BoundAppAccountToken);
++            Assert.Empty(await check.MobilePurchaseGrants.Where(x => x.OriginalTransactionId == originalId).ToListAsync());
++            Assert.False((await check.Devices.AsNoTracking().SingleAsync(x => x.KeyId == key)).RequiresAccountSubscription);
++        }
++        apple.VerifyTransactionResult.Subscription!.AppAccountToken = null;
++        canonical.AppAccountToken = null;
++        canonical.LastAppleEventAt = oldEvent;
++        canonical.RevokedAt = null;
++        await using (var retry = Database())
++            Assert.Equal(503, (await IapTestFactory.Create(retry, apple).RestoreAsync(key, request, default)).Status);
++        apple.VerifyTransactionResult.Subscription!.AppAccountToken = oldToken;
++        canonical.AppAccountToken = oldToken;
++        await using (var formerTokenRetry = Database())
++            Assert.Equal(503, (await IapTestFactory.Create(formerTokenRetry, apple).RestoreAsync(key, request, default)).Status);
++        await using (var check = Database())
++        {
++            var saved = await check.Subscriptions.AsNoTracking().SingleAsync(x => x.OriginalTransactionId == originalId);
++            Assert.NotNull(saved.TokenConflictDetectedAt);
++            Assert.Equal(oldEvent.AddHours(1), saved.LastAppleEventAt);
++            Assert.NotNull(saved.RevokedAt);
++            Assert.Empty(await check.MobilePurchaseGrants.Where(x => x.OriginalTransactionId == originalId).ToListAsync());
++        }
++    }
++
++    [Theory]
++    [InlineData(false, "original")]
++    [InlineData(false, "environment")]
++    [InlineData(false, "product")]
++    [InlineData(true, "original")]
++    [InlineData(true, "environment")]
++    [InlineData(true, "product")]
++    public async Task MismatchedCanonicalIdentityCannotImportLifecycleOrTokenConflict(bool verify, string mismatch)
++    {
++        var originalId = Guid.NewGuid().ToString("N");
++        var token = Guid.NewGuid();
++        var owner = Guid.NewGuid();
++        var key = "identity-" + originalId;
++        var oldEvent = new DateTime(DateTime.UtcNow.Ticks / 10 * 10, DateTimeKind.Utc).AddHours(-2);
++        await using (var setup = Database())
++        {
++            await setup.Database.MigrateAsync();
++            setup.AnonymousPurchaseOwners.Add(new AnonymousPurchaseOwnerEntity { Id = owner });
++            setup.AnonymousPurchaseTokens.Add(new AnonymousPurchaseTokenEntity { AnonymousOwnerId = owner,
++                AppAccountToken = token });
++            setup.Devices.Add(new DeviceEntity { KeyId = key, DeviceUuid = "private-" + originalId,
++                AnonymousOwnerId = owner });
++            var purchase = Purchase(originalId, token);
++            purchase.LastAppleEventAt = oldEvent;
++            setup.Subscriptions.Add(purchase);
++            setup.ApplePurchaseBindings.Add(new ApplePurchaseBindingEntity { Environment = "Production",
++                OriginalTransactionId = originalId, AnonymousOwnerId = owner, BindingKind = "server_token",
++                BoundAppAccountToken = token });
++            await setup.SaveChangesAsync();
++        }
++        var (apple, request) = Evidence(originalId, token);
++        var canonical = apple.SubscriptionStatusesResult.Subscription!;
++        canonical.AppAccountToken = Guid.NewGuid();
++        canonical.LastAppleEventAt = oldEvent.AddHours(1);
++        canonical.RevokedAt = canonical.LastAppleEventAt;
++        if (mismatch == "original") canonical.OriginalTransactionId = "other-" + originalId;
++        if (mismatch == "environment") canonical.Environment = "Sandbox";
++        if (mismatch == "product") canonical.ProductId = "com.mavrylo.monthly";
++        await using (var processing = Database())
++        {
++            var iap = IapTestFactory.Create(processing, apple);
++            Assert.Equal(503, verify
++                ? (await iap.VerifyAsync(key, new IapVerifyRequest("signed-transaction"), default)).Status
++                : (await iap.RestoreAsync(key, request, default)).Status);
++        }
++        await using (var check = Database())
++        {
++            var saved = await check.Subscriptions.AsNoTracking().SingleAsync(x => x.OriginalTransactionId == originalId);
++            Assert.Equal(oldEvent, saved.LastAppleEventAt);
++            Assert.Null(saved.RevokedAt);
++            Assert.Null(saved.TokenConflictDetectedAt);
++            Assert.Equal(token, saved.AppAccountToken);
++            Assert.Equal(1, await check.Subscriptions.CountAsync(x => x.OriginalTransactionId == originalId));
++            if (mismatch == "original")
++                Assert.False(await check.Subscriptions.AnyAsync(x => x.OriginalTransactionId == "other-" + originalId));
++            Assert.Empty(await check.MobilePurchaseGrants.Where(x => x.OriginalTransactionId == originalId).ToListAsync());
++        }
++    }
++
++    [Theory]
++    [InlineData(false, false)]
++    [InlineData(false, true)]
++    [InlineData(true, false)]
++    [InlineData(true, true)]
++    public async Task ClaimRecordsSignedTokenConflictBeforeFirstOrIdempotentOwnershipWrite(
++        bool alreadyLinked, bool canonicalTokenMissing)
++    {
++        var originalId = Guid.NewGuid().ToString("N");
++        var accountId = "claim-" + originalId;
++        var key = "key-" + originalId;
++        var owner = Guid.NewGuid();
++        var originalToken = Guid.NewGuid();
++        var observedToken = Guid.NewGuid();
++        var claimedAt = DateTime.UtcNow.AddDays(-2);
++        await using (var setup = Database())
++        {
++            await setup.Database.MigrateAsync();
++            setup.Users.Add(new AppUser { Id = accountId, Email = accountId + "@example.test" });
++            setup.AnonymousPurchaseOwners.Add(new AnonymousPurchaseOwnerEntity { Id = owner });
++            setup.AnonymousPurchaseTokens.Add(new AnonymousPurchaseTokenEntity
++                { AnonymousOwnerId = owner, AppAccountToken = originalToken });
++            setup.Devices.Add(new DeviceEntity { KeyId = key, DeviceUuid = "private-" + originalId,
++                AnonymousOwnerId = owner, RequiresAccountSubscription = alreadyLinked });
++            var saved = Purchase(originalId, originalToken);
++            if (alreadyLinked) { saved.OwnerAccountId = accountId; saved.ClaimedAt = claimedAt; }
++            setup.Subscriptions.Add(saved);
++            setup.ApplePurchaseBindings.Add(new ApplePurchaseBindingEntity { Environment = "Production",
++                OriginalTransactionId = originalId, AnonymousOwnerId = owner,
++                BindingKind = "server_token", BoundAppAccountToken = originalToken });
++            await setup.SaveChangesAsync();
++        }
++
++        var signed = Purchase(originalId, observedToken);
++        var canonical = Purchase(originalId, originalToken);
++        if (canonicalTokenMissing) canonical.AppAccountToken = null;
++        var apple = new FakeAppStoreServerClient
++        {
++            VerifyTransactionResult = new(true, signed, true, null),
++            SubscriptionStatusesResult = new(true, canonical, null)
++        };
++        await using (var claimDb = Database())
++        {
++            var claim = new AccountEntitlementService(claimDb,
++                new(claimDb, TimeProvider.System, TestConfig.SubscriptionPolicy()), apple,
++                new(claimDb, TimeProvider.System), TimeProvider.System);
++            Assert.Equal(503, (await claim.ClaimAsync(accountId, key, "signed", default)).Status);
++        }
++        await using var check = Database();
++        var persisted = await check.Subscriptions.AsNoTracking().SingleAsync(x => x.OriginalTransactionId == originalId);
++        Assert.Equal(originalToken, persisted.AppAccountToken);
++        Assert.NotNull(persisted.TokenConflictDetectedAt);
++        Assert.Equal(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(observedToken.ToByteArray())),
++            persisted.TokenConflictObservedHash);
++        Assert.Equal(alreadyLinked ? accountId : null, persisted.OwnerAccountId);
++        if (alreadyLinked) Assert.Equal(claimedAt.Ticks / 10, persisted.ClaimedAt!.Value.Ticks / 10);
++        else Assert.Null(persisted.ClaimedAt);
++        Assert.Equal(alreadyLinked, (await check.Devices.AsNoTracking().SingleAsync(x => x.KeyId == key))
++            .RequiresAccountSubscription);
++        Assert.Equal(originalToken, (await check.ApplePurchaseBindings.AsNoTracking().SingleAsync(x =>
++            x.OriginalTransactionId == originalId)).BoundAppAccountToken);
++    }
++
+     [Fact]
+     public async Task NotificationFirstStateDoesNotEnrollInstallationAndConcurrentVerifyRestoreBindOnce()
+     {
+diff --git a/tests/SharedSubscriptionPostgresTests.cs b/tests/SharedSubscriptionPostgresTests.cs
+index eaa1238..eda85f4 100644
+--- a/tests/SharedSubscriptionPostgresTests.cs
++++ b/tests/SharedSubscriptionPostgresTests.cs
+@@ -8,6 +8,7 @@ using Mavrylo.Models;
+ using Mavrylo.Services;
+ using Mavrylo.Tests.TestSupport;
+ using Microsoft.EntityFrameworkCore;
++using Microsoft.Extensions.Configuration;
+ using Microsoft.Extensions.DependencyInjection;
+ using Microsoft.Extensions.DependencyInjection.Extensions;
+ using Microsoft.Extensions.Logging.Abstractions;
+@@ -271,14 +272,17 @@ public class SharedSubscriptionPostgresTests(PostgresContainerFixture postgres)
+         return token;
+     }
+ 
+-    [Fact]
+-    public async Task AccountFallbackTokenIdentifiesSelectedAccountPurchaseInsteadOfExpiredDevicePurchase()
++    [Theory]
++    [InlineData(false)]
++    [InlineData(true)]
++    public async Task AccountFallbackAgreesAcrossVerifyRestoreAndTokenWithoutLeakingWhenLoggedOut(bool revoked)
+     {
+         var id = Guid.NewGuid().ToString("N");
++        var apple = new FakeAppStoreServerClient { IsServerApiConfigured = false, IsLocalVerifyEnabled = false };
+         await using var factory = new ApiFactory(postgres.ConnectionString, services =>
+         {
+             services.RemoveAll<IAppStoreServerClient>();
+-            services.AddSingleton<IAppStoreServerClient>(new FakeAppStoreServerClient { IsServerApiConfigured = false });
++            services.AddSingleton<IAppStoreServerClient>(apple);
+             services.RemoveAll<IAppAttestVerifier>();
+             services.AddSingleton<IAppAttestVerifier>(new FakeAppAttestVerifier { IsDevelopmentBypassEnabled = true });
+         });
+@@ -289,39 +293,140 @@ public class SharedSubscriptionPostgresTests(PostgresContainerFixture postgres)
+         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+         var key = "SIMULATOR-" + id;
+         var owner = Guid.NewGuid();
++        var purchaseToken = Guid.NewGuid();
+         db.AnonymousPurchaseOwners.Add(new AnonymousPurchaseOwnerEntity { Id = owner });
++        db.AnonymousPurchaseTokens.Add(new AnonymousPurchaseTokenEntity
++            { AnonymousOwnerId = owner, AppAccountToken = purchaseToken });
+         db.Devices.Add(new DeviceEntity { KeyId = key, DeviceUuid = "private-" + id, AnonymousOwnerId = owner });
+         var expiredId = "expired-" + id;
+         var activeId = "account-" + id;
++        var now = DateTime.UtcNow;
+         db.Subscriptions.AddRange(
+             new SubscriptionEntity { OriginalTransactionId = expiredId, ProductId = "monthly", Environment = "Production",
+-                ExpiresAt = DateTime.UtcNow.AddDays(-1), WasEverPaid = true },
++                ExpiresAt = now.AddDays(revoked ? 5 : -1), RevokedAt = revoked ? now : null,
++                AppAccountToken = purchaseToken, WasEverPaid = true },
+             new SubscriptionEntity { OriginalTransactionId = activeId, ProductId = "monthly", Environment = "Production",
+                 OwnerAccountId = session.Profile.Id, ClaimedAt = DateTime.UtcNow.AddDays(-2),
+                 ExpiresAt = DateTime.UtcNow.AddDays(10), WasEverPaid = true });
+         db.ApplePurchaseBindings.Add(new ApplePurchaseBindingEntity { Environment = "Production",
+-            OriginalTransactionId = expiredId, AnonymousOwnerId = owner, BindingKind = "server_token" });
++            OriginalTransactionId = expiredId, AnonymousOwnerId = owner, BindingKind = "server_token",
++            BoundAppAccountToken = purchaseToken });
+         await db.SaveChangesAsync();
++        var a = new SubscriptionEntity { OriginalTransactionId = expiredId, ProductId = "monthly",
++            Environment = "Production", ExpiresAt = now.AddDays(revoked ? 5 : -1),
++            RevokedAt = revoked ? now : null, AppAccountToken = purchaseToken, WasEverPaid = true };
++        var deviceId = Guid.NewGuid().ToString("D");
++        var nonce = Guid.NewGuid().ToString("D");
++        var digest = Convert.ToBase64String(System.Security.Cryptography.SHA384.HashData(
++            System.Text.Encoding.ASCII.GetBytes(nonce + deviceId)));
++        apple.VerifyTransactionResult = new(true, a, true, null, digest, nonce);
++        apple.SubscriptionStatusesResult = new(true, a, null);
++        apple.AppTransactionResult = new(true, "Production", null, digest, nonce, null);
+         client.DefaultRequestHeaders.Authorization = new("Bearer",
+             scope.ServiceProvider.GetRequiredService<JwtTokenService>().CreateDeviceToken(key, "free").Token);
+         client.DefaultRequestHeaders.Add("X-Account-Authorization", "Bearer " + session.AccessToken);
+-
+-        var response = await client.PostAsJsonAsync("/owlai/iap/token", new { });
+-        Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
+-        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+-        Assert.Equal("premium", body.GetProperty("entitlement").GetProperty("status").GetString());
+-        Assert.Equal("account", body.GetProperty("entitlement").GetProperty("resolution_source").GetString());
+-        Assert.True(body.GetProperty("entitlement").GetProperty("purchase_is_linked").GetBoolean());
+-        var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler()
+-            .ReadJwtToken(body.GetProperty("access_token").GetString()!);
+-        Assert.Equal(activeId, token.Claims.Single(x => x.Type == "otid").Value);
+-
++        async Task AssertRoutes(bool account)
++        {
++            var requests = new[]
++            {
++                ("/owlai/iap/verify", (object)new { jws_transaction = "signed" }),
++                ("/owlai/iap/restore", (object)new { jws_transaction = "signed",
++                    jws_app_transaction = "app", device_verification_id = deviceId }),
++                ("/owlai/iap/token", (object)new { })
++            };
++            foreach (var (path, request) in requests)
++            {
++                using var response = await client.PostAsJsonAsync(path, request);
++                Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
++                var body = await response.Content.ReadFromJsonAsync<JsonElement>();
++                var entitlement = body.GetProperty("entitlement");
++                Assert.Equal(account ? "premium" : revoked ? "revoked" : "expired_paid",
++                    entitlement.GetProperty("status").GetString());
++                Assert.Equal(account ? "account" : "device", entitlement.GetProperty("resolution_source").GetString());
++                Assert.Equal(account, entitlement.GetProperty("purchase_is_linked").GetBoolean());
++                Assert.Equal(account ? "none" : "owner", body.GetProperty("purchase_authority").GetString());
++                if (body.TryGetProperty("mobile_grant_expires_at", out var grantExpiry))
++                    Assert.Equal(JsonValueKind.Null, grantExpiry.ValueKind);
++                var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler()
++                    .ReadJwtToken(body.GetProperty("access_token").GetString()!);
++                Assert.Equal(account ? activeId : expiredId, token.Claims.Single(x => x.Type == "otid").Value);
++            }
++        }
++        await AssertRoutes(true);
+         client.DefaultRequestHeaders.Remove("X-Account-Authorization");
+-        var guest = await client.PostAsJsonAsync("/owlai/iap/token", new { });
+-        Assert.True(guest.IsSuccessStatusCode, await guest.Content.ReadAsStringAsync());
+-        var guestBody = await guest.Content.ReadFromJsonAsync<JsonElement>();
+-        Assert.Equal("expired_paid", guestBody.GetProperty("entitlement").GetProperty("status").GetString());
+-        Assert.Equal("device", guestBody.GetProperty("entitlement").GetProperty("resolution_source").GetString());
++        await AssertRoutes(false);
++    }
++
++    [Theory]
++    [InlineData("conflict", false, HttpStatusCode.PaymentRequired)]
++    [InlineData("revoke", false, HttpStatusCode.PaymentRequired)]
++    [InlineData("healthy", false, HttpStatusCode.OK)]
++    [InlineData("conflict", true, HttpStatusCode.OK)]
++    [InlineData("revoke", true, HttpStatusCode.OK)]
++    public async Task AccountRefreshReselectsPurchaseBeforeSameRequestAiGrant(string change, bool independentB, HttpStatusCode expected)
++    {
++        var id = Guid.NewGuid().ToString("N");
++        var now = DateTime.UtcNow;
++        var original = "account-" + id;
++        var oldToken = Guid.NewGuid();
++        var canonical = new SubscriptionEntity { OriginalTransactionId = original, Environment = "Production",
++            ProductId = "monthly", AppAccountToken = change == "conflict" ? Guid.NewGuid() : oldToken,
++            ExpiresAt = now.AddDays(9), RevokedAt = change == "revoke" ? now : null,
++            LastAppleEventAt = now, WasEverPaid = true };
++        var apple = new FakeAppStoreServerClient { SubscriptionStatusesResult = new(true, canonical, null) };
++        var provider = new FakeHttpMessageHandler(_ => FakeHttpMessageHandler.Json(JsonSerializer.Serialize(new
++        {
++            model = "gpt-6-luna", service_tier = "default", output_text = "{\"translation\":\"Hello\",\"corrected_word\":\"hola\"}",
++            usage = new { input_tokens = 100, output_tokens = 30, total_tokens = 130,
++                input_tokens_details = new { cached_tokens = 20, cache_write_tokens = 10 },
++                output_tokens_details = new { reasoning_tokens = 10 } }
++        })));
++        using var providerClient = new HttpClient(provider);
++        var config = AiSpendTestSupport.Config(new() { ["TestMode:Enabled"] = "false",
++            ["AiProtection:RequireAssertion"] = "false", ["AccountAi:DailyQuota"] = "200",
++            ["AccountAi:RequestsPerMinute"] = "30" }).AsEnumerable().ToDictionary(x => x.Key, x => x.Value);
++        await using var factory = new ApiFactory(postgres.ConnectionString, services =>
++        {
++            services.RemoveAll<IAppStoreServerClient>(); services.AddSingleton<IAppStoreServerClient>(apple);
++            services.RemoveAll<IHttpClientFactory>(); services.AddSingleton<IHttpClientFactory>(new FakeHttpClientFactory(providerClient));
++            services.RemoveAll<IAppAttestVerifier>(); services.AddSingleton<IAppAttestVerifier>(new FakeAppAttestVerifier { IsDevelopmentBypassEnabled = true });
++        }, config);
++        using var client = factory.CreateClient();
++        using var scope = factory.Services.CreateScope();
++        var session = await scope.ServiceProvider.GetRequiredService<AccountService>()
++            .SignInAsync(new("refresh-" + id, null, "Owner"), default, allowCreation: true);
++        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
++        var key = "SIMULATOR-" + id;
++        var device = new DeviceEntity { KeyId = key, DeviceUuid = id };
++        db.Devices.Add(device);
++        db.Subscriptions.Add(new SubscriptionEntity { OriginalTransactionId = original, Environment = "Production",
++            ProductId = "monthly", AppAccountToken = oldToken, DeviceUuid = id, OwnerAccountId = session.Profile.Id,
++            ClaimedAt = now.AddDays(-2), ExpiresAt = now.AddDays(9), LastCheckedAt = now.AddHours(-1),
++            LastAppleEventAt = now.AddHours(-1), WasEverPaid = true });
++        if (independentB)
++            db.Subscriptions.Add(new SubscriptionEntity { OriginalTransactionId = "independent-" + id,
++                Environment = "Production", ProductId = "monthly", DeviceUuid = id,
++                ExpiresAt = now.AddDays(7), WasEverPaid = true });
++        await db.SaveChangesAsync();
++        var boundToken = await BindOriginalOwner(db, device, original);
++        db.Subscriptions.Single(x => x.OriginalTransactionId == original).AppAccountToken = boundToken;
++        canonical.AppAccountToken = change == "conflict" ? Guid.NewGuid() : boundToken;
++        if (independentB)
++            db.ApplePurchaseBindings.Add(new ApplePurchaseBindingEntity { Environment = "Production",
++                OriginalTransactionId = "independent-" + id, AnonymousOwnerId = device.AnonymousOwnerId!.Value,
++                BindingKind = "server_token", BoundAppAccountToken = boundToken });
++        await db.SaveChangesAsync();
++        client.DefaultRequestHeaders.Authorization = new("Bearer",
++            scope.ServiceProvider.GetRequiredService<JwtTokenService>().CreateDeviceToken(key, "premium").Token);
++        client.DefaultRequestHeaders.Add("X-Account-Authorization", "Bearer " + session.AccessToken);
++        using var response = await client.PostAsJsonAsync("/owlai/ai/word-detail",
++            new { word = "r3-" + id, native_language = "en", learning_language = "es" });
++        Assert.Equal(1, apple.RefreshCallCount);
++        Assert.Equal(expected, response.StatusCode);
++        Assert.Equal(expected == HttpStatusCode.OK ? 1 : 0, provider.CapturedRequests.Count);
++        var stored = await db.Subscriptions.AsNoTracking().SingleAsync(x => x.OriginalTransactionId == original);
++        if (change == "conflict") Assert.NotNull(stored.TokenConflictDetectedAt);
++        if (change == "revoke") Assert.NotNull(stored.RevokedAt);
+     }
+ 
+     [Fact]
