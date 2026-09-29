@@ -21,3 +21,9 @@ Root read-only follow-up to Task2B.2 review Declined item 6. This records a loca
 This concerns retained server/local evidence on a known installation. It does not claim that a wholly new anonymous identity with no surviving marker and no Apple evidence can be recognized as the same prior person; that residual remains bounded by the approved aggregate spend policy.
 
 Route the client portion to Task3B, the server/migration portion to the unfinished Task10 migration/readiness work, and the final decision/results to the separate whole-feature review. Do not silently label this closed by B1/B2 or the 686 passing tests. Do not expand the current Task2B.2 I1–I3/M1–M3 fix round without a concrete dependency.
+
+## Post-acceptance source checkpoint
+
+Root re-read `MobilePurchaseAccessResolver` and `DeviceContextService` at accepted backend `3957f3e08c6317ff1495939e5c0cfbe7fea4f110`. With no applicable owner/grant candidates, the mobile resolver still returns `Entitlement.Free()`; the existing `RequiresAccountSubscription` marker is not used to preserve a recovery restriction. Account fallback is now correctly resolved after its refresh and before mobile selection, but without a valid account header it does not close this separate legacy gap. This remains source evidence, not an executed migration/HTTP reproduction.
+
+Task3B Mac run `36519160205` at iOS `3a9aab9e215763071da605076f808794e670df7f` now passes `testMigrationEraFreeResponseCannotEraseKnownPaidHistoryBeforeAppleRestoration`. That proves the bounded local-store case only. Actual startup/empty discovery/outage integration, server recovery disposition and populated migrations remain required. No UUID-derived grant or additional ownership inference is authorized by this checkpoint.

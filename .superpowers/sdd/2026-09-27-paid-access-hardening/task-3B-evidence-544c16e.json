@@ -1,0 +1,267 @@
+{
+  "base": "f6a9e194505dfd27ec28b3fbde11bfcb8eca095e",
+  "head": "544c16e1173c3fe2b219be050bd6416d3e2b89b2",
+  "status": "Source review only; final Mac execution blocked before start by GitHub billing",
+  "files": [
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\anonymous-restore-approved-behavior.md",
+      "bytes": 6299,
+      "sha256": "3FA06D6FC00975DE9C0424C75A0FAA636ED97B7F82ACC6B5A773A26AD277CEDC"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\anonymous-restore-contract.md",
+      "bytes": 25852,
+      "sha256": "8701EDC0A31ED8BFF40F713C78A56C5124AA58B3FB74690D1130C45CD5BFF581"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\final-review-carryover.md",
+      "bytes": 7709,
+      "sha256": "0AC43A9C60C4047E442FF7EAB2F3AC2B1A1A823B9A58F4316472F7C365F5FF9E"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\legacy-migration-preflight.md",
+      "bytes": 4512,
+      "sha256": "14DC49CF5E456F4E7488174A4B7774FFC9E10F9593F9C6CD4B78D61D4D44D334"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-3B-brief.md",
+      "bytes": 12555,
+      "sha256": "C32B01203DF321958D853D58883C09514BA837358137F0359FDA71D01EED879D"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-3B-mac-evidence-index.md",
+      "bytes": 8690,
+      "sha256": "0778C7E9ECCEDCFD1D4B8CE0396FF5423BD917956DCFB7FFAC7E7E5F7C64E2C9"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-3B-report-snapshot-544c16e.md",
+      "bytes": 9721,
+      "sha256": "BC3C31AEA4F2F2DE2C3810ACB674B9B40A6BD67BDDEAD25C8D7FB33C9B5796D7"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-3B-review-package-f6a9e19-544c16e.txt",
+      "bytes": 167633,
+      "sha256": "7A5E10322081DDFD74BE58257AA6AB8DBAEB0472083D6EE84F30590110030187"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36517924836-restore-proof-red-54fa4bb\\artifacts\\ios-validation\\source-head.txt",
+      "bytes": 41,
+      "sha256": "9650501A2A054E2F96651F0E575B9CBF8EE5826045A528D0AABA4DD9E6A282C5"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36517924836-restore-proof-red-54fa4bb\\artifacts\\ios-validation\\xcode-test.log",
+      "bytes": 1999050,
+      "sha256": "5A23BB55776C6BCE93F89770C62118FC9087E7CBFDB30B0AA69E2B75DC82B315"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36517924836-restore-proof-red-54fa4bb\\cases.json",
+      "bytes": 2862,
+      "sha256": "C2423018A9D00277220A50C24F39124ABFC44A77CD68ADE13621A9EA81372518"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36517924836-restore-proof-red-54fa4bb\\evidence-hashes.json",
+      "bytes": 593596,
+      "sha256": "0040428E693D9D394395B57176361F19864A10D79530906AE7BF7EBDDE6F1858"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36517924836-restore-proof-red-54fa4bb\\full.log",
+      "bytes": 2404756,
+      "sha256": "FFBFB803419AF7726CB371AE74BEEB50BA98B84440D1BFBC36E2FA73A65F9D00"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36517924836-restore-proof-red-54fa4bb\\run.json",
+      "bytes": 1865,
+      "sha256": "A23F7EA2EC5B722547EB25C4B9B9C69EC6705BF0D337A9A0AAF5B9F39F23E58F"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36519160205-restore-proof-red2-3a9aab9\\artifacts\\ios-validation\\source-head.txt",
+      "bytes": 41,
+      "sha256": "DAC10E9A6C4315E6CC02F995E1ABFF5793AF2EE1B97C114203F839EC78419240"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36519160205-restore-proof-red2-3a9aab9\\artifacts\\ios-validation\\xcode-test.log",
+      "bytes": 2006975,
+      "sha256": "3AD5B4F1EF8D48D89F764E224D5B3112FD18733AD70727052F628A759FC410D0"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36519160205-restore-proof-red2-3a9aab9\\cases.json",
+      "bytes": 4340,
+      "sha256": "0D8B49B541957A044AE052A3B7837CEBE5FA64E88FAB26506AC725BD72AC3295"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36519160205-restore-proof-red2-3a9aab9\\evidence-hashes.json",
+      "bytes": 420576,
+      "sha256": "19509EF3DCA967B72FEBE5428477E3454B5E4BA9D571E7D22DE1C920C7455D9D"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36519160205-restore-proof-red2-3a9aab9\\full.log",
+      "bytes": 2415452,
+      "sha256": "2FCA40657CC5E1B4FE713B2657E48D2F18B90B097816BEC81AA9C714CDA4EAA7"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36519160205-restore-proof-red2-3a9aab9\\run.json",
+      "bytes": 1865,
+      "sha256": "C7FBE9D7780BEB38010B5A2C1F2DBBF9518D9E5373D10F5FAC670E5CA025F34C"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36520917034-restore-proof-checkpoint-63a4716\\artifacts\\ios-validation\\source-head.txt",
+      "bytes": 41,
+      "sha256": "D63E4F1B83F8343D9DB5C045D7AF94B6F9926D4F359BB6D13AC525DEE33DFD35"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36520917034-restore-proof-checkpoint-63a4716\\artifacts\\ios-validation\\xcode-test.log",
+      "bytes": 1828504,
+      "sha256": "AA1194F493827FB5C47A3DD5E14A6CD43AB680AFA0EFE6D33AFDE6A8E9097BD4"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36520917034-restore-proof-checkpoint-63a4716\\cases.json",
+      "bytes": 4,
+      "sha256": "A5338D955B09046EC0B16F3A9625B7955C763AAE07DC722E474E6078745F932F"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36520917034-restore-proof-checkpoint-63a4716\\evidence-hashes.json",
+      "bytes": 5691,
+      "sha256": "7AA276388BCAE40901EDD2A3CD148AB16C04F6A5C5A1157F8E6937B513F79E96"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36520917034-restore-proof-checkpoint-63a4716\\full.log",
+      "bytes": 2191538,
+      "sha256": "F930ECAB385D4F708BD00EF44EB056F665785A8351C713F96B8501596EB0C55B"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36520917034-restore-proof-checkpoint-63a4716\\run.json",
+      "bytes": 1865,
+      "sha256": "016EB69A30F693903850CA3DE1758532584BA376C8712C24EC842E306A6EF557"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36520919418-paid-access-checkpoint-63a4716\\artifacts\\ios-validation\\source-head.txt",
+      "bytes": 41,
+      "sha256": "D63E4F1B83F8343D9DB5C045D7AF94B6F9926D4F359BB6D13AC525DEE33DFD35"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36520919418-paid-access-checkpoint-63a4716\\artifacts\\ios-validation\\xcode-test.log",
+      "bytes": 1828566,
+      "sha256": "6C35F4D1CED6E6AF007D39E24D4D2A2BC4F1AED241EF160E5D311AE8D294138D"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36520919418-paid-access-checkpoint-63a4716\\cases.json",
+      "bytes": 4,
+      "sha256": "A5338D955B09046EC0B16F3A9625B7955C763AAE07DC722E474E6078745F932F"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36520919418-paid-access-checkpoint-63a4716\\evidence-hashes.json",
+      "bytes": 5691,
+      "sha256": "16EAF3DDE18C33774D1DC1057F5AC47C1B600BDF3E1D04562462D9C7C876171D"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36520919418-paid-access-checkpoint-63a4716\\full.log",
+      "bytes": 2191598,
+      "sha256": "C438F4F46E2B2E80A35D2B96C8FE173358917E89BAE1F8175732256102AE65FF"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36520919418-paid-access-checkpoint-63a4716\\run.json",
+      "bytes": 1865,
+      "sha256": "6B664F5877B76F7C90C67AD3B85EC285658958C4E5FBCA1CE3642105797D5962"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521130121-restore-proof-checkpoint-bbdbaa2\\artifacts\\ios-validation\\source-head.txt",
+      "bytes": 41,
+      "sha256": "F61A7732E2E7A126880A37203457633D9C82E623D522D3D9391CDB993B21D732"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521130121-restore-proof-checkpoint-bbdbaa2\\artifacts\\ios-validation\\xcode-test.log",
+      "bytes": 1996896,
+      "sha256": "2875F043D0625F69CC7C8D7B6DE4A69A58DBA0166F7ECD90094F68CA5EB27911"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521130121-restore-proof-checkpoint-bbdbaa2\\cases.json",
+      "bytes": 6385,
+      "sha256": "C054E244FB44711537804B6C6B099F88ECE3EBF7BE3DFFA68DA7FE84629B83EB"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521130121-restore-proof-checkpoint-bbdbaa2\\evidence-hashes.json",
+      "bytes": 425016,
+      "sha256": "E45B2016FB6914F0D972AEDE3835B6EDA5280E90B25EA7F408D30C115347318D"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521130121-restore-proof-checkpoint-bbdbaa2\\full.log",
+      "bytes": 2402248,
+      "sha256": "735CE0D86A57D3E852232E87AFB4260729B268260FE11E16B90E7E23763524AB"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521130121-restore-proof-checkpoint-bbdbaa2\\run.json",
+      "bytes": 1865,
+      "sha256": "3DE84333A19438B445D695C342F0887A1BDDA10C60A6279DFE697DC1B227350F"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521131761-paid-access-checkpoint-bbdbaa2\\artifacts\\ios-validation\\source-head.txt",
+      "bytes": 41,
+      "sha256": "F61A7732E2E7A126880A37203457633D9C82E623D522D3D9391CDB993B21D732"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521131761-paid-access-checkpoint-bbdbaa2\\artifacts\\ios-validation\\xcode-test.log",
+      "bytes": 2024983,
+      "sha256": "F75A55E55EAA834CD00B39309554F278C5AEA1F917387541978E73C15B863A75"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521131761-paid-access-checkpoint-bbdbaa2\\cases.json",
+      "bytes": 23977,
+      "sha256": "7D85997E03F29317955917BCB32A1FA6FEF89944E990E90089B902F6C72044F6"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521131761-paid-access-checkpoint-bbdbaa2\\evidence-hashes.json",
+      "bytes": 474515,
+      "sha256": "84DBCA6DD6B51CB382B08ACBA269D260B92A0AA39EC6316C9D113972E3DE4233"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521131761-paid-access-checkpoint-bbdbaa2\\full.log",
+      "bytes": 2443198,
+      "sha256": "C3AFD62055115952C24662FF24B093F02F685D9087199FB008DE92973CE9D081"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521131761-paid-access-checkpoint-bbdbaa2\\run.json",
+      "bytes": 1865,
+      "sha256": "B4ACAB71A279EAC5BE79C28F13AEC0270640D38C8DAB2D70CC789BB0BB56DE5A"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521873497-restore-proof-green-candidate-544c16e\\artifacts.json",
+      "bytes": 34,
+      "sha256": "E338FB10E6740E1E43CDBE137DA3A22EC09F95D8097C5F247E751DE5F81F87B4"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521873497-restore-proof-green-candidate-544c16e\\evidence-hashes.json",
+      "bytes": 710,
+      "sha256": "03C7E54891026D44FF33413CCDC030CE633B40D907B8C83CFCB9B7F76B837C9D"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521873497-restore-proof-green-candidate-544c16e\\run-summary.txt",
+      "bytes": 656,
+      "sha256": "2E69358E7E77642272E208F66E52C67178C3763C1B0C8AD033189E223796AB38"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521873497-restore-proof-green-candidate-544c16e\\run.json",
+      "bytes": 560,
+      "sha256": "D5B98DC94E8001E5F80A2ECB523E2A5D74455ED986838BB18651E97E12D2A0CB"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521875224-paid-access-green-candidate-544c16e\\artifacts.json",
+      "bytes": 34,
+      "sha256": "E338FB10E6740E1E43CDBE137DA3A22EC09F95D8097C5F247E751DE5F81F87B4"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521875224-paid-access-green-candidate-544c16e\\evidence-hashes.json",
+      "bytes": 710,
+      "sha256": "4DC70B2A940715169358A8FCC67C2AFC0667C42F18FD1187C2B07A3F4F4F6996"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521875224-paid-access-green-candidate-544c16e\\run-summary.txt",
+      "bytes": 656,
+      "sha256": "FFD702F6414ECB301F81DD0FB10A5CD439DC7FD0DE0504A950A15538F52CCD37"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36521875224-paid-access-green-candidate-544c16e\\run.json",
+      "bytes": 560,
+      "sha256": "8CBDA9F4EFEC9C8F18CE0F19A36BDA506E27D5230A9E152841DECE4387E97575"
+    }
+  ]
+}
