@@ -1,0 +1,2117 @@
+Task2B.2 fix1 full review
+BASE faeec095aed5ca49af3e80404ae95abd9bee6341
+HEAD b7eed82092508141631ab41d48a758120c41647f
+COMMITS
+b7eed82 Harden purchase restoration claim and token reconciliation
+ Filters/PurchaseRequestFields.cs                   |   14 +-
+ docs/paid-access-policy.md                         |    2 +
+ docs/paid-access-rollout.md                        |    7 +
+ src/Mavrylo.Data/AppDbContext.cs                   |    1 +
+ ..._AddSubscriptionTokenReconciliation.Designer.cs | 1018 ++++++++++++++++++++
+ ...929015517_AddSubscriptionTokenReconciliation.cs |   40 +
+ .../Migrations/AppDbContextModelSnapshot.cs        |    7 +
+ src/Mavrylo.Entities/Models/SubscriptionEntity.cs  |    3 +
+ .../Services/AccountEntitlementService.cs          |   10 +-
+ .../Services/AnonymousPurchaseService.cs           |   60 +-
+ .../Services/AppStoreNotificationService.cs        |    8 +
+ src/Mavrylo.Services/Services/AppleJws.cs          |    9 +-
+ .../Services/DeviceContextService.cs               |   21 +-
+ .../Services/EntitlementService.cs                 |   41 +
+ src/Mavrylo.Services/Services/IapService.cs        |    7 +-
+ tests/AccountClaimHttpValidationTests.cs           |    8 +-
+ tests/AppStoreServerClientTests.cs                 |    6 +-
+ tests/AppleJwsTests.cs                             |   32 +
+ tests/MobilePurchaseRestoreTests.cs                |  142 +++
+ tests/RestorationPostgresTests.cs                  |  160 +++
+ tests/SharedSubscriptionPostgresTests.cs           |   53 +
+ tests/SubscriptionLifecycleTests.cs                |   34 +
+ tests/TestSupport/FakeAppStoreServerClient.cs      |   10 +-
+ 23 files changed, 1661 insertions(+), 32 deletions(-)
+diff --git a/Filters/PurchaseRequestFields.cs b/Filters/PurchaseRequestFields.cs
+index 35b0c7b..b5bbe69 100644
+--- a/Filters/PurchaseRequestFields.cs
++++ b/Filters/PurchaseRequestFields.cs
+@@ -4,6 +4,12 @@ namespace Mavrylo.Filters;
+ 
+ internal static class PurchaseRequestFields
+ {
++    private static readonly Dictionary<string, int> ClaimLengths = new(StringComparer.Ordinal)
++    {
++        ["account_id"] = 100,
++        ["jws_transaction"] = 30_000
++    };
++
+     public static bool ValidForPath(PathString path, byte[] rawBody)
+         => path.Value?.TrimEnd('/').ToLowerInvariant() switch
+         {
+@@ -12,11 +18,12 @@ internal static class PurchaseRequestFields
+             "/owlai/iap/restore" => Valid(rawBody, 80_000,
+                 ["jws_transaction", "jws_app_transaction", "device_verification_id"], []),
+             "/owlai/account/subscription/apple/claim" => Valid(rawBody, 40_000,
+-                ["account_id", "jws_transaction"], []),
++                ["account_id", "jws_transaction"], [], ClaimLengths),
+             _ => true
+         };
+ 
+-    private static bool Valid(byte[] rawBody, int maxBytes, string[] required, string[] optional)
++    private static bool Valid(byte[] rawBody, int maxBytes, string[] required, string[] optional,
++        IReadOnlyDictionary<string, int>? fieldLengths = null)
+     {
+         if (rawBody.Length > maxBytes) return false;
+         try
+@@ -31,6 +38,9 @@ internal static class PurchaseRequestFields
+                 if (property.Value.ValueKind != JsonValueKind.String
+                     && !(optional.Contains(property.Name, StringComparer.Ordinal)
+                         && property.Value.ValueKind == JsonValueKind.Null)) return false;
++                if (fieldLengths != null && fieldLengths.TryGetValue(property.Name, out var maxLength)
++                    && (string.IsNullOrWhiteSpace(property.Value.GetString())
++                        || property.Value.GetString()!.Length > maxLength)) return false;
+             }
+             return required.All(seen.Contains);
+         }
+diff --git a/docs/paid-access-policy.md b/docs/paid-access-policy.md
+index ac14c81..914b494 100644
+--- a/docs/paid-access-policy.md
++++ b/docs/paid-access-policy.md
+@@ -39,6 +39,8 @@ All IAP mutation routes use a device JWT and a fresh App Attest assertion over t
+ 
+ Missing `appAccountToken` is valid for mobile restore and lifecycle evidence, including Family Sharing, but never proves original owner authority. Account claim uses the account session, device proof, and an existing `server_token` binding for a first claim. A restored phone with no original owner proof receives `desktop_owner_proof_required`; its mobile access remains usable. A deleted account leaves the purchase claim timestamp as a tombstone and preserves mobile grant history. The exceptional first-desktop case after total original-key loss has no automated backend override; support recovery needs a separately verified process.
+ 
++If verified Apple evidence carries a non-null `appAccountToken` conflicting with stored purchase metadata or its immutable owner binding, the backend keeps the original owner and token, records the first observed conflict time and a SHA-256 token digest, and quarantines that purchase. Verify, restore and claim of that purchase return `503 subscription_reconciliation_required`. Token, entitlement and purchase-context resolve an independent valid purchase when available; when the quarantined purchase is selected, they return the same 503 rather than suggesting a new purchase. A missing token or a retry with the former token does not clear quarantine. Newer Apple lifecycle events, including revocation, remain recorded. There is no automatic clearing or support override in this backend chunk; trusted evidence and a reviewed repair process are required before release.
++
+ A complete captured matching Apple envelope plus a fresh attacker installation proof can still obtain a finite mobile grant referencing the same purchase. App Attest does not bind the submitted StoreKit device ID to its key. Stable shared quota enforcement remains Task 6A/B4; this backend chunk does not yet cap aggregate consumption across such grants. The residual does not confer original owner, desktop claim, account-data, or other-installation word authority. Physical iPhone/reinstall/Family Sharing tests, client wiring, deployed `AppAppleId`, old-data inventory and migration rehearsal, D2 limits and release approval remain open gates.
+ 
+ The new response fields are additive for existing clients, but old clients that send only a UUID or raw transaction JWS cannot obtain new owner/mobile authority. A coordinated iOS release must send the full locally verified restore envelope and a fresh assertion. The backend does not revive the unsafe UUID fallback to make old clients appear compatible. Inventory affected installed clients and legacy purchases before enforcement.
+diff --git a/docs/paid-access-rollout.md b/docs/paid-access-rollout.md
+index a7de5ec..7ca038e 100644
+--- a/docs/paid-access-rollout.md
++++ b/docs/paid-access-rollout.md
+@@ -73,6 +73,13 @@ that does not upgrade it to original-owner or desktop-claim authority. If live
+ Production has such rows, validate recovery and reconciliation for each affected
+ class before production rollout. The additive anonymous-owner/binding/grant migration
+ exists locally; old-data startup and production inventory remain release gates.
++The additive subscription-token conflict columns also exist locally. A conflicting
++verified token is recorded by first-seen time and digest, while the original
++owner/token and later revocation history are retained. The quarantine remains
++sticky across missing-token and old-token retries; selected purchase routes
++return `503 subscription_reconciliation_required`. Inventory these rows and
++prove a reviewed, non-destructive repair on a restored copy before deployment;
++this code does not implement an operational clearing or ownership override.
+ 
+ ## Separate environments and client distribution
+ 
+diff --git a/src/Mavrylo.Data/AppDbContext.cs b/src/Mavrylo.Data/AppDbContext.cs
+index f6b2435..291395c 100644
+--- a/src/Mavrylo.Data/AppDbContext.cs
++++ b/src/Mavrylo.Data/AppDbContext.cs
+@@ -144,6 +144,7 @@ public class AppDbContext : DbContext
+         {
+             e.ToTable("subscriptions");
+             e.HasKey(x => x.OriginalTransactionId);
++            e.Property(x => x.TokenConflictObservedHash).HasMaxLength(64);
+             e.HasIndex(x => x.DeviceUuid);
+             e.HasIndex(x => x.OwnerAccountId);
+             e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.OwnerAccountId).OnDelete(DeleteBehavior.SetNull);
+diff --git a/src/Mavrylo.Data/Migrations/20260929015517_AddSubscriptionTokenReconciliation.Designer.cs b/src/Mavrylo.Data/Migrations/20260929015517_AddSubscriptionTokenReconciliation.Designer.cs
+new file mode 100644
+index 0000000..9f41315
+--- /dev/null
++++ b/src/Mavrylo.Data/Migrations/20260929015517_AddSubscriptionTokenReconciliation.Designer.cs
+@@ -0,0 +1,1018 @@
++﻿// <auto-generated />
++using System;
++using Mavrylo.Data;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.EntityFrameworkCore.Infrastructure;
++using Microsoft.EntityFrameworkCore.Migrations;
++using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
++using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
++
++#nullable disable
++
++namespace Mavrylo.Migrations
++{
++    [DbContext(typeof(AppDbContext))]
++    [Migration("20260929015517_AddSubscriptionTokenReconciliation")]
++    partial class AddSubscriptionTokenReconciliation
++    {
++        /// <inheritdoc />
++        protected override void BuildTargetModel(ModelBuilder modelBuilder)
++        {
++#pragma warning disable 612, 618
++            modelBuilder
++                .HasAnnotation("ProductVersion", "10.0.9")
++                .HasAnnotation("Relational:MaxIdentifierLength", 63);
++
++            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
++
++            modelBuilder.Entity("Mavrylo.Models.AccountRefreshTokenEntity", b =>
++                {
++                    b.Property<string>("Hash")
++                        .HasMaxLength(64)
++                        .HasColumnType("character varying(64)");
++
++                    b.Property<DateTime?>("ConsumedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("SessionId")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.HasKey("Hash");
++
++                    b.HasIndex("SessionId");
++
++                    b.ToTable("account_refresh_tokens", (string)null);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AccountSessionEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("ExpiresAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<DateTime?>("RevokedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("UserId")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("UserId");
++
++                    b.ToTable("account_sessions", (string)null);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AccountSyncEntity", b =>
++                {
++                    b.Property<string>("UserId")
++                        .HasColumnType("text");
++
++                    b.Property<string>("Kind")
++                        .HasMaxLength(8)
++                        .HasColumnType("character varying(8)");
++
++                    b.Property<string>("Id")
++                        .HasMaxLength(128)
++                        .HasColumnType("character varying(128)");
++
++                    b.Property<long>("ChangeRevision")
++                        .HasColumnType("bigint");
++
++                    b.Property<string>("Data")
++                        .HasColumnType("jsonb");
++
++                    b.Property<bool>("Deleted")
++                        .HasColumnType("boolean");
++
++                    b.Property<long>("Version")
++                        .HasColumnType("bigint");
++
++                    b.HasKey("UserId", "Kind", "Id");
++
++                    b.HasIndex("UserId", "ChangeRevision");
++
++                    b.ToTable("account_sync_records", (string)null);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AiSpendBucketEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasMaxLength(16)
++                        .HasColumnType("character varying(16)");
++
++                    b.Property<long>("ChargedMicroUsd")
++                        .HasColumnType("bigint");
++
++                    b.Property<int>("PendingAttempts")
++                        .HasColumnType("integer");
++
++                    b.HasKey("Id");
++
++                    b.ToTable("ai_spend_buckets", null, t =>
++                        {
++                            t.HasCheckConstraint("CK_ai_spend_bucket_amounts", "\"ChargedMicroUsd\" >= 0 AND \"PendingAttempts\" >= 0");
++                        });
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AiSpendReservationEntity", b =>
++                {
++                    b.Property<Guid>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("uuid");
++
++                    b.Property<long>("CacheRate")
++                        .HasColumnType("bigint");
++
++                    b.Property<long>("CacheWriteRate")
++                        .HasColumnType("bigint");
++
++                    b.Property<long?>("CacheWriteTokens")
++                        .HasColumnType("bigint");
++
++                    b.Property<long?>("CachedTokens")
++                        .HasColumnType("bigint");
++
++                    b.Property<long>("ChargedMicroUsd")
++                        .HasColumnType("bigint");
++
++                    b.Property<string>("Cohort")
++                        .IsRequired()
++                        .HasMaxLength(16)
++                        .HasColumnType("character varying(16)");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<long>("InputRate")
++                        .HasColumnType("bigint");
++
++                    b.Property<long?>("InputTokens")
++                        .HasColumnType("bigint");
++
++                    b.Property<long>("MaxInputTokens")
++                        .HasColumnType("bigint");
++
++                    b.Property<int>("MaxOutputTokens")
++                        .HasColumnType("integer");
++
++                    b.Property<string>("Model")
++                        .IsRequired()
++                        .HasMaxLength(80)
++                        .HasColumnType("character varying(80)");
++
++                    b.Property<string>("Operation")
++                        .IsRequired()
++                        .HasMaxLength(32)
++                        .HasColumnType("character varying(32)");
++
++                    b.Property<long>("OutputRate")
++                        .HasColumnType("bigint");
++
++                    b.Property<long?>("OutputTokens")
++                        .HasColumnType("bigint");
++
++                    b.Property<string>("Profile")
++                        .IsRequired()
++                        .HasMaxLength(80)
++                        .HasColumnType("character varying(80)");
++
++                    b.Property<string>("Provider")
++                        .IsRequired()
++                        .HasMaxLength(16)
++                        .HasColumnType("character varying(16)");
++
++                    b.Property<long?>("ReasoningTokens")
++                        .HasColumnType("bigint");
++
++                    b.Property<long>("ReservedMicroUsd")
++                        .HasColumnType("bigint");
++
++                    b.Property<DateTime?>("SettledAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("SubjectHash")
++                        .IsRequired()
++                        .HasMaxLength(64)
++                        .HasColumnType("character varying(64)");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("SettledAt", "CreatedAt");
++
++                    b.ToTable("ai_spend_reservations", null, t =>
++                        {
++                            t.HasCheckConstraint("CK_ai_spend_reservation_amounts", "\"ReservedMicroUsd\" > 0 AND \"ChargedMicroUsd\" >= 0 AND \"ChargedMicroUsd\" <= \"ReservedMicroUsd\"");
++                        });
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AiUsageEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<int>("Count")
++                        .HasColumnType("integer");
++
++                    b.Property<string>("Date")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("KeyId")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("KeyId", "Date")
++                        .IsUnique();
++
++                    b.ToTable("ai_usage", (string)null);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AnonymousPurchaseOwnerEntity", b =>
++                {
++                    b.Property<Guid>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("uuid");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("Provenance")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.HasKey("Id");
++
++                    b.ToTable("anonymous_purchase_owners", null, t =>
++                        {
++                            t.HasCheckConstraint("CK_anonymous_purchase_owners_provenance", "\"Provenance\" IN ('installation', 'legacy_unproven')");
++                        });
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AnonymousPurchaseTokenEntity", b =>
++                {
++                    b.Property<Guid>("AppAccountToken")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("uuid");
++
++                    b.Property<Guid>("AnonymousOwnerId")
++                        .HasColumnType("uuid");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.HasKey("AppAccountToken");
++
++                    b.HasIndex("AnonymousOwnerId")
++                        .IsUnique();
++
++                    b.ToTable("anonymous_purchase_tokens", (string)null);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AppUser", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<string>("AppleSub")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("DisplayName")
++                        .HasColumnType("text");
++
++                    b.Property<string>("Email")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("GoogleSub")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime?>("IosEnrolledAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("PasswordHash")
++                        .HasColumnType("text");
++
++                    b.Property<long>("SyncRevision")
++                        .HasColumnType("bigint");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("AppleSub");
++
++                    b.HasIndex("Email")
++                        .IsUnique()
++                        .HasFilter("\"GoogleSub\" IS NULL");
++
++                    b.HasIndex("GoogleSub")
++                        .IsUnique();
++
++                    b.ToTable("Users");
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.ApplePurchaseBindingEntity", b =>
++                {
++                    b.Property<string>("Environment")
++                        .HasColumnType("text");
++
++                    b.Property<string>("OriginalTransactionId")
++                        .HasColumnType("text");
++
++                    b.Property<Guid>("AnonymousOwnerId")
++                        .HasColumnType("uuid");
++
++                    b.Property<string>("BindingKind")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<Guid?>("BoundAppAccountToken")
++                        .HasColumnType("uuid");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("VerifiedAppTransactionId")
++                        .HasColumnType("text");
++
++                    b.HasKey("Environment", "OriginalTransactionId");
++
++                    b.HasIndex("AnonymousOwnerId");
++
++                    b.HasIndex("BoundAppAccountToken");
++
++                    b.HasIndex("OriginalTransactionId");
++
++                    b.ToTable("apple_purchase_bindings", null, t =>
++                        {
++                            t.HasCheckConstraint("CK_apple_purchase_bindings_kind", "\"BindingKind\" IN ('server_token', 'legacy_unproven')");
++                        });
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.CategoryEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<string>("Color")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("Emoji")
++                        .HasColumnType("text");
++
++                    b.Property<bool>("IsDeleted")
++                        .HasColumnType("boolean");
++
++                    b.Property<string>("Name")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<int>("Order")
++                        .HasColumnType("integer");
++
++                    b.Property<DateTime>("UpdatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("UserId")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<int>("WordCount")
++                        .HasColumnType("integer");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("UserId");
++
++                    b.ToTable("Categories");
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.ChallengeEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime?>("ConsumedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<DateTime>("ExpiresAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("KeyId")
++                        .HasColumnType("text");
++
++                    b.Property<string>("Kind")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<byte[]>("Nonce")
++                        .IsRequired()
++                        .HasColumnType("bytea");
++
++                    b.Property<string>("RequestPath")
++                        .HasColumnType("text");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("ConsumedAt");
++
++                    b.HasIndex("Kind", "KeyId", "RequestPath", "ExpiresAt");
++
++                    b.ToTable("challenges", (string)null);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.DeviceEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<Guid?>("AnonymousOwnerId")
++                        .HasColumnType("uuid");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("DeviceUuid")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("Environment")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("KeyId")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("LastSeenAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<byte[]>("PublicKey")
++                        .IsRequired()
++                        .HasColumnType("bytea");
++
++                    b.Property<bool>("RequiresAccountSubscription")
++                        .HasColumnType("boolean");
++
++                    b.Property<long>("SignCount")
++                        .HasColumnType("bigint");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("AnonymousOwnerId")
++                        .IsUnique();
++
++                    b.HasIndex("DeviceUuid");
++
++                    b.HasIndex("KeyId")
++                        .IsUnique();
++
++                    b.ToTable("devices", (string)null);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.DeviceWordEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<string>("ClientWordId")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("DetailJson")
++                        .HasColumnType("text");
++
++                    b.Property<string>("DeviceUuid")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("DisplayWord")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<bool>("IsActive")
++                        .HasColumnType("boolean");
++
++                    b.Property<string>("LearningLanguage")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("NativeLanguage")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("NormalizedWord")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("PartOfSpeech")
++                        .HasColumnType("text");
++
++                    b.Property<string>("Pronunciation")
++                        .HasColumnType("text");
++
++                    b.Property<string>("Translation")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("UpdatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("DeviceUuid", "ClientWordId");
++
++                    b.HasIndex("DeviceUuid", "IsActive");
++
++                    b.HasIndex("DeviceUuid", "NormalizedWord", "NativeLanguage", "LearningLanguage")
++                        .IsUnique();
++
++                    b.ToTable("device_words", (string)null);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.MobilePurchaseGrantEntity", b =>
++                {
++                    b.Property<string>("DeviceId")
++                        .HasColumnType("text");
++
++                    b.Property<string>("Environment")
++                        .HasColumnType("text");
++
++                    b.Property<string>("OriginalTransactionId")
++                        .HasColumnType("text");
++
++                    b.Property<string>("EvidenceKind")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("LastEvidenceHash")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("ValidUntil")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("VerifiedAppTransactionId")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("VerifiedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.HasKey("DeviceId", "Environment", "OriginalTransactionId");
++
++                    b.HasIndex("Environment", "OriginalTransactionId");
++
++                    b.ToTable("mobile_purchase_grants", null, t =>
++                        {
++                            t.HasCheckConstraint("CK_mobile_purchase_grants_kind", "\"EvidenceKind\" IN ('paired_device', 'paired_device_legacy')");
++                        });
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.PublicFlashcardSetEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<string>("ClientSetId")
++                        .IsRequired()
++                        .HasMaxLength(100)
++                        .HasColumnType("character varying(100)");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("Description")
++                        .HasMaxLength(1000)
++                        .HasColumnType("character varying(1000)");
++
++                    b.Property<string>("OwnerAccountId")
++                        .HasColumnType("text");
++
++                    b.Property<string>("OwnerDeviceId")
++                        .HasColumnType("text");
++
++                    b.Property<string>("SearchText")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("SnapshotJson")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("Status")
++                        .IsRequired()
++                        .HasMaxLength(16)
++                        .HasColumnType("character varying(16)");
++
++                    b.Property<string>("Title")
++                        .IsRequired()
++                        .HasMaxLength(120)
++                        .HasColumnType("character varying(120)");
++
++                    b.Property<DateTime>("UpdatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<int>("WordCount")
++                        .HasColumnType("integer");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("OwnerAccountId", "ClientSetId")
++                        .IsUnique();
++
++                    b.HasIndex("OwnerDeviceId", "ClientSetId")
++                        .IsUnique();
++
++                    b.HasIndex("Status", "UpdatedAt");
++
++                    b.ToTable("public_flashcard_sets", null, t =>
++                        {
++                            t.HasCheckConstraint("CK_public_flashcard_sets_owner", "(\"OwnerDeviceId\" IS NOT NULL) <> (\"OwnerAccountId\" IS NOT NULL)");
++
++                            t.HasCheckConstraint("CK_public_flashcard_sets_status", "\"Status\" IN ('pending', 'approved')");
++                        });
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.SubscriptionEntity", b =>
++                {
++                    b.Property<string>("OriginalTransactionId")
++                        .HasColumnType("text");
++
++                    b.Property<Guid?>("AppAccountToken")
++                        .HasColumnType("uuid");
++
++                    b.Property<string>("AppTransactionId")
++                        .HasColumnType("text");
++
++                    b.Property<bool>("AutoRenew")
++                        .HasColumnType("boolean");
++
++                    b.Property<DateTime?>("ClaimedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("DeviceUuid")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("Environment")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<DateTime?>("ExpiresAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("InAppOwnershipType")
++                        .HasColumnType("text");
++
++                    b.Property<bool>("IsTrial")
++                        .HasColumnType("boolean");
++
++                    b.Property<DateTime?>("LastAppleEventAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<DateTime>("LastCheckedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("OwnerAccountId")
++                        .HasColumnType("text");
++
++                    b.Property<string>("ProductId")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<DateTime?>("RevokedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("Status")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<DateTime?>("TokenConflictDetectedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("TokenConflictObservedHash")
++                        .HasMaxLength(64)
++                        .HasColumnType("character varying(64)");
++
++                    b.Property<bool>("WasEverPaid")
++                        .HasColumnType("boolean");
++
++                    b.HasKey("OriginalTransactionId");
++
++                    b.HasIndex("DeviceUuid");
++
++                    b.HasIndex("OwnerAccountId");
++
++                    b.ToTable("subscriptions", (string)null);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.TranslationCacheEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<string>("AudioContentType")
++                        .HasColumnType("text");
++
++                    b.Property<string>("AudioStorageKey")
++                        .HasColumnType("text");
++
++                    b.Property<string>("AudioUrl")
++                        .HasColumnType("text");
++
++                    b.Property<string>("CacheKind")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<DateTime?>("LastHitAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("LearningLanguage")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("NativeLanguage")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("NormalizedKey")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("PromptVersion")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("ResponseJson")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("NormalizedKey", "NativeLanguage", "LearningLanguage", "CacheKind", "PromptVersion")
++                        .IsUnique()
++                        .HasDatabaseName("IX_translation_cache_lookup");
++
++                    b.ToTable("translation_cache", (string)null);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.UserSettingsEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<string>("AccentPreset")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<int>("DailyGoal")
++                        .HasColumnType("integer");
++
++                    b.Property<bool>("ExpandHistoryCards")
++                        .HasColumnType("boolean");
++
++                    b.Property<string>("LearningLanguage")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("NativeLanguage")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<bool>("OnboardingComplete")
++                        .HasColumnType("boolean");
++
++                    b.Property<string>("ReminderMinutesJson")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<bool>("RemindersEnabled")
++                        .HasColumnType("boolean");
++
++                    b.Property<string>("ReviewDirection")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("ThemeAppearance")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("UpdatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("UserId")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("UserId")
++                        .IsUnique();
++
++                    b.ToTable("UserSettings");
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.WordEntity", b =>
++                {
++                    b.Property<string>("Id")
++                        .HasColumnType("text");
++
++                    b.Property<string>("AudioUrl")
++                        .HasColumnType("text");
++
++                    b.Property<string>("CategoryId")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<double>("EaseFactor")
++                        .HasColumnType("double precision");
++
++                    b.Property<string>("ExampleTranslationsJson")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("ExamplesJson")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<bool>("IsDeleted")
++                        .HasColumnType("boolean");
++
++                    b.Property<bool>("IsMastered")
++                        .HasColumnType("boolean");
++
++                    b.Property<string>("NextReview")
++                        .HasColumnType("text");
++
++                    b.Property<string>("PartOfSpeech")
++                        .HasColumnType("text");
++
++                    b.Property<string>("Pronunciation")
++                        .HasColumnType("text");
++
++                    b.Property<int>("Repetitions")
++                        .HasColumnType("integer");
++
++                    b.Property<int>("ReviewInterval")
++                        .HasColumnType("integer");
++
++                    b.Property<string>("SourceLanguage")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("TargetLanguage")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("Translation")
++                        .HasColumnType("text");
++
++                    b.Property<DateTime>("UpdatedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("UserId")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.Property<string>("UserNotes")
++                        .HasColumnType("text");
++
++                    b.Property<string>("Word")
++                        .IsRequired()
++                        .HasColumnType("text");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("UserId", "UpdatedAt");
++
++                    b.ToTable("Words");
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AccountRefreshTokenEntity", b =>
++                {
++                    b.HasOne("Mavrylo.Models.AccountSessionEntity", null)
++                        .WithMany()
++                        .HasForeignKey("SessionId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AccountSessionEntity", b =>
++                {
++                    b.HasOne("Mavrylo.Models.AppUser", null)
++                        .WithMany()
++                        .HasForeignKey("UserId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AccountSyncEntity", b =>
++                {
++                    b.HasOne("Mavrylo.Models.AppUser", null)
++                        .WithMany()
++                        .HasForeignKey("UserId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.AnonymousPurchaseTokenEntity", b =>
++                {
++                    b.HasOne("Mavrylo.Models.AnonymousPurchaseOwnerEntity", null)
++                        .WithMany()
++                        .HasForeignKey("AnonymousOwnerId")
++                        .OnDelete(DeleteBehavior.Restrict)
++                        .IsRequired();
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.ApplePurchaseBindingEntity", b =>
++                {
++                    b.HasOne("Mavrylo.Models.AnonymousPurchaseOwnerEntity", null)
++                        .WithMany()
++                        .HasForeignKey("AnonymousOwnerId")
++                        .OnDelete(DeleteBehavior.Restrict)
++                        .IsRequired();
++
++                    b.HasOne("Mavrylo.Models.AnonymousPurchaseTokenEntity", null)
++                        .WithMany()
++                        .HasForeignKey("BoundAppAccountToken")
++                        .OnDelete(DeleteBehavior.Restrict);
++
++                    b.HasOne("Mavrylo.Models.SubscriptionEntity", null)
++                        .WithMany()
++                        .HasForeignKey("OriginalTransactionId")
++                        .OnDelete(DeleteBehavior.Restrict)
++                        .IsRequired();
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.DeviceEntity", b =>
++                {
++                    b.HasOne("Mavrylo.Models.AnonymousPurchaseOwnerEntity", null)
++                        .WithMany()
++                        .HasForeignKey("AnonymousOwnerId")
++                        .OnDelete(DeleteBehavior.Restrict);
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.MobilePurchaseGrantEntity", b =>
++                {
++                    b.HasOne("Mavrylo.Models.DeviceEntity", null)
++                        .WithMany()
++                        .HasForeignKey("DeviceId")
++                        .OnDelete(DeleteBehavior.Restrict)
++                        .IsRequired();
++
++                    b.HasOne("Mavrylo.Models.ApplePurchaseBindingEntity", null)
++                        .WithMany()
++                        .HasForeignKey("Environment", "OriginalTransactionId")
++                        .OnDelete(DeleteBehavior.Restrict)
++                        .IsRequired();
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.PublicFlashcardSetEntity", b =>
++                {
++                    b.HasOne("Mavrylo.Models.AppUser", null)
++                        .WithMany()
++                        .HasForeignKey("OwnerAccountId")
++                        .OnDelete(DeleteBehavior.Cascade);
++
++                    b.HasOne("Mavrylo.Models.DeviceEntity", "OwnerDevice")
++                        .WithMany()
++                        .HasForeignKey("OwnerDeviceId")
++                        .OnDelete(DeleteBehavior.Cascade);
++
++                    b.Navigation("OwnerDevice");
++                });
++
++            modelBuilder.Entity("Mavrylo.Models.SubscriptionEntity", b =>
++                {
++                    b.HasOne("Mavrylo.Models.AppUser", null)
++                        .WithMany()
++                        .HasForeignKey("OwnerAccountId")
++                        .OnDelete(DeleteBehavior.SetNull);
++                });
++#pragma warning restore 612, 618
++        }
++    }
++}
+diff --git a/src/Mavrylo.Data/Migrations/20260929015517_AddSubscriptionTokenReconciliation.cs b/src/Mavrylo.Data/Migrations/20260929015517_AddSubscriptionTokenReconciliation.cs
+new file mode 100644
+index 0000000..5f70a04
+--- /dev/null
++++ b/src/Mavrylo.Data/Migrations/20260929015517_AddSubscriptionTokenReconciliation.cs
+@@ -0,0 +1,40 @@
++﻿using System;
++using Microsoft.EntityFrameworkCore.Migrations;
++
++#nullable disable
++
++namespace Mavrylo.Migrations
++{
++    /// <inheritdoc />
++    public partial class AddSubscriptionTokenReconciliation : Migration
++    {
++        /// <inheritdoc />
++        protected override void Up(MigrationBuilder migrationBuilder)
++        {
++            migrationBuilder.AddColumn<DateTime>(
++                name: "TokenConflictDetectedAt",
++                table: "subscriptions",
++                type: "timestamp with time zone",
++                nullable: true);
++
++            migrationBuilder.AddColumn<string>(
++                name: "TokenConflictObservedHash",
++                table: "subscriptions",
++                type: "character varying(64)",
++                maxLength: 64,
++                nullable: true);
++        }
++
++        /// <inheritdoc />
++        protected override void Down(MigrationBuilder migrationBuilder)
++        {
++            migrationBuilder.DropColumn(
++                name: "TokenConflictDetectedAt",
++                table: "subscriptions");
++
++            migrationBuilder.DropColumn(
++                name: "TokenConflictObservedHash",
++                table: "subscriptions");
++        }
++    }
++}
+diff --git a/src/Mavrylo.Data/Migrations/AppDbContextModelSnapshot.cs b/src/Mavrylo.Data/Migrations/AppDbContextModelSnapshot.cs
+index 6df0028..2c406ab 100644
+--- a/src/Mavrylo.Data/Migrations/AppDbContextModelSnapshot.cs
++++ b/src/Mavrylo.Data/Migrations/AppDbContextModelSnapshot.cs
+@@ -699,6 +699,13 @@ namespace Mavrylo.Migrations
+                         .IsRequired()
+                         .HasColumnType("text");
+ 
++                    b.Property<DateTime?>("TokenConflictDetectedAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("TokenConflictObservedHash")
++                        .HasMaxLength(64)
++                        .HasColumnType("character varying(64)");
++
+                     b.Property<bool>("WasEverPaid")
+                         .HasColumnType("boolean");
+ 
+diff --git a/src/Mavrylo.Entities/Models/SubscriptionEntity.cs b/src/Mavrylo.Entities/Models/SubscriptionEntity.cs
+index 513382e..867001f 100644
+--- a/src/Mavrylo.Entities/Models/SubscriptionEntity.cs
++++ b/src/Mavrylo.Entities/Models/SubscriptionEntity.cs
+@@ -21,6 +21,9 @@ public class SubscriptionEntity
+     /// <summary>Historical device namespace, retained for reconciliation only.</summary>
+     public string DeviceUuid { get; set; } = "";
+     public Guid? AppAccountToken { get; set; }
++    // A verified token disagreed with durable purchase identity. Never clear this without explicit reconciliation.
++    public DateTime? TokenConflictDetectedAt { get; set; }
++    public string? TokenConflictObservedHash { get; set; }
+     public string? AppTransactionId { get; set; }
+     public string? InAppOwnershipType { get; set; }
+ 
+diff --git a/src/Mavrylo.Services/Services/AccountEntitlementService.cs b/src/Mavrylo.Services/Services/AccountEntitlementService.cs
+index 0e5b63d..c9dd21c 100644
+--- a/src/Mavrylo.Services/Services/AccountEntitlementService.cs
++++ b/src/Mavrylo.Services/Services/AccountEntitlementService.cs
+@@ -73,11 +73,19 @@ public sealed class AccountEntitlementService(AppDbContext db, EntitlementServic
+                 && x.AnonymousOwnerId == device.AnonymousOwnerId, ct))
+             return (403, new { code = "desktop_owner_proof_required", error = "Original purchase owner proof is required." });
+         sub.DeviceUuid = "";
+-        try { await entitlements.UpsertAsync(sub, ct); }
++        SubscriptionEntity persisted;
++        try { persisted = await entitlements.UpsertAsync(sub, ct); }
+         catch (SubscriptionReconciliationRequiredException)
+         {
+             return (503, new { code = "subscription_reconciliation_required", error = "Stored subscription needs reconciliation." });
+         }
++        if (persisted.TokenConflictDetectedAt != null)
++        {
++            await tx.CommitAsync(ct);
++            return (503, new { code = "subscription_reconciliation_required", error = "Stored subscription needs reconciliation." });
++        }
++        if (!entitlements.IsApplicable(persisted) || !IsActive(entitlements.ToEntitlement(persisted).Status))
++            return (402, new { code = "subscription_inactive", error = "An active verified subscription is required." });
+         if (!await ownership.TryClaimAsync(sub.OriginalTransactionId, accountId, ct))
+             return (409, new { code = "subscription_already_linked", error = "This subscription is already linked to an account." });
+         await db.Devices.Where(x => x.KeyId == deviceKeyId).ExecuteUpdateAsync(s => s.SetProperty(x => x.RequiresAccountSubscription, true), ct);
+diff --git a/src/Mavrylo.Services/Services/AnonymousPurchaseService.cs b/src/Mavrylo.Services/Services/AnonymousPurchaseService.cs
+index 61d9c1f..d5fec5d 100644
+--- a/src/Mavrylo.Services/Services/AnonymousPurchaseService.cs
++++ b/src/Mavrylo.Services/Services/AnonymousPurchaseService.cs
+@@ -27,6 +27,8 @@ public sealed class AnonymousPurchaseService(
+         if (device?.AnonymousOwnerId is not { } ownerId)
+             return Error(401, "invalid_device", "Unknown device.");
+         var access = await resolver.ResolveAsync(keyId, ct);
++        if (access?.Subscription?.TokenConflictDetectedAt != null)
++            return Error(503, "subscription_reconciliation_required", "Stored purchase needs reconciliation.");
+         if (access?.Authority == "mobile_restore" && AccountEntitlementService.IsActive(access.Entitlement.Status))
+             return Error(409, "subscription_already_active", "A restored subscription is already active.");
+ 
+@@ -63,12 +65,12 @@ public sealed class AnonymousPurchaseService(
+         var canonical = refreshed.Subscription;
+         if (canonical.OriginalTransactionId != local.OriginalTransactionId
+             || canonical.Environment != local.Environment || canonical.ProductId != local.ProductId
+-            || !entitlements.IsApplicable(canonical)
+-            || (local.AppAccountToken != null && canonical.AppAccountToken != null
+-                && local.AppAccountToken != canonical.AppAccountToken))
++            || !entitlements.IsApplicable(canonical))
+             return Error(503, "apple_identity_mismatch", "Apple subscription identity mismatch.");
++        if (await TokenDisagreementErrorAsync(local, canonical, ct) is { } disagreement) return disagreement;
+         if (!await deviceContext.HasOwnerPurchaseProofAsync(context.Device, local, ct))
+             return Error(403, "purchase_owner_proof_required", "Purchase owner proof is required.");
++        canonical.AppAccountToken ??= local.AppAccountToken;
+         canonical.DeviceUuid = "";
+         SubscriptionEntity state;
+         try { state = await deviceContext.BindOwnerPurchaseAsync(context.Device, local, canonical, ct); }
+@@ -76,13 +78,10 @@ public sealed class AnonymousPurchaseService(
+         {
+             return Error(503, "subscription_reconciliation_required", "Stored purchase needs reconciliation.");
+         }
++        if (state.TokenConflictDetectedAt != null)
++            return Error(503, "subscription_reconciliation_required", "Stored purchase needs reconciliation.");
+         var access = await resolver.ResolveAsync(keyId, ct);
+-        var entitlement = access!.Entitlement;
+-        var now = clock.GetUtcNow().UtcDateTime;
+-        var (jwt, jwtExpiry) = tokens.CreateDeviceToken(keyId, entitlement.Status, state.OriginalTransactionId);
+-        var dto = new EntitlementDto(entitlement.Status, entitlement.ProductId, entitlement.ExpiresAt?.ToString("O"),
+-            entitlement.IsTrial, entitlement.AutoRenew, entitlement.WasEverPaid, "device", state.ClaimedAt != null);
+-        return new(200, new IapVerifyResponse(dto, jwt, Math.Max(0, (int)(jwtExpiry - now).TotalSeconds), "owner"));
++        return SelectedAccessResponse(keyId, access!);
+     }
+ 
+     public async Task<IapService.IapResult> RestoreMobileAsync(string keyId, IapRestoreRequest request, CancellationToken ct)
+@@ -103,10 +102,10 @@ public sealed class AnonymousPurchaseService(
+         var canonical = refreshed.Subscription;
+         if (canonical.OriginalTransactionId != local.OriginalTransactionId
+             || canonical.Environment != local.Environment || canonical.ProductId != local.ProductId
+-            || !entitlements.IsApplicable(canonical)
+-            || (local.AppAccountToken != null && canonical.AppAccountToken != null
+-                && local.AppAccountToken != canonical.AppAccountToken))
++            || !entitlements.IsApplicable(canonical))
+             return Error(503, "apple_identity_mismatch", "Apple subscription identity mismatch.");
++        if (await TokenDisagreementErrorAsync(local, canonical, ct) is { } disagreement) return disagreement;
++        canonical.AppAccountToken ??= local.AppAccountToken;
+         canonical.DeviceUuid = "";
+ 
+         await using var tx = await db.Database.BeginTransactionAsync(ct);
+@@ -118,6 +117,11 @@ public sealed class AnonymousPurchaseService(
+         {
+             return Error(503, "subscription_reconciliation_required", "Stored purchase needs reconciliation.");
+         }
++        if (state.TokenConflictDetectedAt != null)
++        {
++            await tx.CommitAsync(ct);
++            return Error(503, "subscription_reconciliation_required", "Stored purchase needs reconciliation.");
++        }
+         var binding = await db.ApplePurchaseBindings.SingleOrDefaultAsync(x => x.Environment == state.Environment
+             && x.OriginalTransactionId == state.OriginalTransactionId, ct);
+         if (binding == null)
+@@ -166,14 +170,38 @@ public sealed class AnonymousPurchaseService(
+         await tx.CommitAsync(ct);
+ 
+         var access = await resolver.ResolveAsync(keyId, ct);
+-        var entitlement = access!.Entitlement;
+-        var (jwt, jwtExpiry) = tokens.CreateDeviceToken(keyId, entitlement.Status, state.OriginalTransactionId);
++        return SelectedAccessResponse(keyId, access!);
++    }
++
++    private IapService.IapResult SelectedAccessResponse(string keyId, MobilePurchaseAccess access)
++    {
++        if (access.Subscription?.TokenConflictDetectedAt != null)
++            return Error(503, "subscription_reconciliation_required", "Stored purchase needs reconciliation.");
++        var entitlement = access.Entitlement;
++        var now = clock.GetUtcNow().UtcDateTime;
++        var (jwt, jwtExpiry) = tokens.CreateDeviceToken(keyId, entitlement.Status,
++            access.Subscription?.OriginalTransactionId);
+         var authority = access.Authority;
+         var dto = new EntitlementDto(entitlement.Status, entitlement.ProductId, entitlement.ExpiresAt?.ToString("O"),
+             entitlement.IsTrial, entitlement.AutoRenew, entitlement.WasEverPaid,
+-            authority == "owner" ? "device" : "mobile_restore", state.ClaimedAt != null);
++            authority == "mobile_restore" ? "mobile_restore" : "device", access.Subscription?.ClaimedAt != null);
+         return new(200, new IapVerifyResponse(dto, jwt,
+             Math.Max(0, (int)(jwtExpiry - now).TotalSeconds), authority,
+-            authority == "mobile_restore" ? validUntil.ToString("O") : null));
++            authority == "mobile_restore" && access.GrantValidUntil is { } until
++                ? DateTime.SpecifyKind(until, DateTimeKind.Utc).ToString("O") : null));
++    }
++
++    private async Task<IapService.IapResult?> TokenDisagreementErrorAsync(
++        SubscriptionEntity signed, SubscriptionEntity canonical, CancellationToken ct)
++    {
++        if (signed.AppAccountToken == null || canonical.AppAccountToken == null
++            || signed.AppAccountToken == canonical.AppAccountToken) return null;
++        var conflict = await entitlements.RecordTokenConflictAsync(signed.OriginalTransactionId,
++            signed.Environment, signed.AppAccountToken, ct);
++        conflict = await entitlements.RecordTokenConflictAsync(signed.OriginalTransactionId,
++            signed.Environment, canonical.AppAccountToken, ct) || conflict;
++        return conflict
++            ? Error(503, "subscription_reconciliation_required", "Stored purchase needs reconciliation.")
++            : Error(503, "apple_identity_mismatch", "Apple subscription identity mismatch.");
+     }
+ }
+diff --git a/src/Mavrylo.Services/Services/AppStoreNotificationService.cs b/src/Mavrylo.Services/Services/AppStoreNotificationService.cs
+index 2e25cf5..1900218 100644
+--- a/src/Mavrylo.Services/Services/AppStoreNotificationService.cs
++++ b/src/Mavrylo.Services/Services/AppStoreNotificationService.cs
+@@ -61,6 +61,14 @@ public sealed class AppStoreNotificationService(
+             {
+                 if (canonical.Subscription.OriginalTransactionId != verified.Subscription.OriginalTransactionId
+                     || !entitlements.IsApplicable(canonical.Subscription)) return 503;
++                if (verified.Subscription.AppAccountToken is { } signedToken
++                    && canonical.Subscription.AppAccountToken is { } canonicalToken
++                    && signedToken != canonicalToken
++                    && !await entitlements.RecordTokenConflictAsync(verified.Subscription.OriginalTransactionId,
++                        verified.Subscription.Environment, signedToken, ct)
++                    && !await entitlements.RecordTokenConflictAsync(verified.Subscription.OriginalTransactionId,
++                        verified.Subscription.Environment, canonicalToken, ct)) return 503;
++                canonical.Subscription.AppAccountToken ??= verified.Subscription.AppAccountToken;
+                 verified = new AppStoreServerClient.VerifiedTransaction(
+                     true,
+                     canonical.Subscription,
+diff --git a/src/Mavrylo.Services/Services/AppleJws.cs b/src/Mavrylo.Services/Services/AppleJws.cs
+index 478c9da..ccfc3a0 100644
+--- a/src/Mavrylo.Services/Services/AppleJws.cs
++++ b/src/Mavrylo.Services/Services/AppleJws.cs
+@@ -87,10 +87,11 @@ public static class AppleJws
+             // Offline verification follows Apple's reference: certificates must be valid when
+             // the payload was signed. This date is trusted only after the signature also succeeds.
+             var dateField = appTransaction ? "receiptCreationDate" : "signedDate";
+-            if (appTransaction && (!payload.TryGetProperty(dateField, out var receiptDate) || receiptDate.ValueKind != JsonValueKind.Number))
+-                return DecodeResult.Fail("app transaction missing receiptCreationDate");
+-            var effectiveDate = payload.TryGetProperty(dateField, out var signedDate)
+-                ? DateTimeOffset.FromUnixTimeMilliseconds(signedDate.GetInt64()).UtcDateTime : DateTime.UtcNow;
++            if (!payload.TryGetProperty(dateField, out var signedDate)
++                || signedDate.ValueKind != JsonValueKind.Number
++                || !signedDate.TryGetInt64(out var signedMilliseconds) || signedMilliseconds <= 0)
++                return DecodeResult.Fail($"signed payload missing valid {dateField}");
++            var effectiveDate = DateTimeOffset.FromUnixTimeMilliseconds(signedMilliseconds).UtcDateTime;
+             if (!VerifyCertificateChain(leaf, [chainCerts[1]], trustedRoot, effectiveDate, out var error))
+                 return DecodeResult.Fail(error!);
+ 
+diff --git a/src/Mavrylo.Services/Services/DeviceContextService.cs b/src/Mavrylo.Services/Services/DeviceContextService.cs
+index b2f5c1b..0a47339 100644
+--- a/src/Mavrylo.Services/Services/DeviceContextService.cs
++++ b/src/Mavrylo.Services/Services/DeviceContextService.cs
+@@ -32,10 +32,20 @@ public sealed class DeviceContextService(AppDbContext db, EntitlementService ent
+ 
+         var access = await new MobilePurchaseAccessResolver(db, entitlements).ResolveAsync(keyId, ct);
+         var (ent, account) = await ResolveEntitlementAsync(access!.Subscription, ct, access.Entitlement);
+-        return new DeviceContext(keyId, device, access.Subscription, ent)
++        var usesAccount = account != null && !AccountEntitlementService.IsActive(access.Entitlement.Status);
++        var selected = access.Subscription;
++        if (usesAccount)
+         {
+-            AccountId = account, Authority = account != null && !AccountEntitlementService.IsActive(access.Entitlement.Status)
+-                ? "account" : access.Authority, GrantValidUntil = access.GrantValidUntil
++            var accountRows = await db.Subscriptions.AsNoTracking()
++                .Where(x => x.OwnerAccountId == account && x.ClaimedAt != null).ToListAsync(ct);
++            selected = accountRows.Where(entitlements.IsApplicable)
++                .OrderByDescending(x => EntitlementService.Rank(entitlements.ToEntitlement(x).Status))
++                .ThenByDescending(x => x.ExpiresAt).FirstOrDefault();
++        }
++        return new DeviceContext(keyId, device, selected, ent)
++        {
++            AccountId = account, Authority = usesAccount ? "account" : access.Authority,
++            GrantValidUntil = usesAccount ? null : access.GrantValidUntil
+         };
+     }
+ 
+@@ -81,6 +91,11 @@ public sealed class DeviceContextService(AppDbContext db, EntitlementService ent
+             };
+         }
+         var persisted = await entitlements.UpsertAsync(canonical, ct, relinkDevice: false);
++        if (persisted.TokenConflictDetectedAt != null)
++        {
++            await tx.CommitAsync(ct);
++            return persisted;
++        }
+         if (db.Entry(binding).State == EntityState.Detached) db.ApplePurchaseBindings.Add(binding);
+         await db.SaveChangesAsync(ct);
+         await tx.CommitAsync(ct);
+diff --git a/src/Mavrylo.Services/Services/EntitlementService.cs b/src/Mavrylo.Services/Services/EntitlementService.cs
+index 2cfb42b..a5b3c1f 100644
+--- a/src/Mavrylo.Services/Services/EntitlementService.cs
++++ b/src/Mavrylo.Services/Services/EntitlementService.cs
+@@ -1,6 +1,7 @@
+ using Mavrylo.Data;
+ using Mavrylo.Models;
+ using Microsoft.EntityFrameworkCore;
++using System.Security.Cryptography;
+ 
+ namespace Mavrylo.Services;
+ 
+@@ -51,6 +52,41 @@ public sealed class EntitlementService(AppDbContext db, TimeProvider timeProvide
+         return result;
+     }
+ 
++    public async Task<bool> RecordTokenConflictAsync(string originalTransactionId, string environment,
++        Guid? observedToken, CancellationToken ct = default)
++    {
++        if (observedToken == null) return false;
++        var ownsTransaction = db.Database.IsNpgsql() && db.Database.CurrentTransaction == null;
++        await using var tx = ownsTransaction ? await db.Database.BeginTransactionAsync(ct) : null;
++        if (db.Database.IsNpgsql())
++            await db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({originalTransactionId}, 431))", ct);
++        var existing = await db.Subscriptions.SingleOrDefaultAsync(x => x.OriginalTransactionId == originalTransactionId
++            && x.Environment == environment, ct);
++        if (existing == null) return false;
++        if (db.Database.IsNpgsql()) await db.Entry(existing).ReloadAsync(ct);
++        var conflict = await ObserveTokenConflictAsync(existing, observedToken, ct);
++        if (conflict) await db.SaveChangesAsync(ct);
++        if (tx != null) await tx.CommitAsync(ct);
++        return conflict;
++    }
++
++    private async Task<bool> ObserveTokenConflictAsync(SubscriptionEntity existing, Guid? observedToken, CancellationToken ct)
++    {
++        if (observedToken is not { } observed) return existing.TokenConflictDetectedAt != null;
++        var binding = await db.ApplePurchaseBindings.AsNoTracking().SingleOrDefaultAsync(x =>
++            x.Environment == existing.Environment && x.OriginalTransactionId == existing.OriginalTransactionId, ct);
++        if ((existing.AppAccountToken is { } saved && saved != observed)
++            || (binding?.BoundAppAccountToken is { } bound && bound != observed))
++        {
++            if (existing.TokenConflictDetectedAt == null)
++            {
++                existing.TokenConflictDetectedAt = timeProvider.GetUtcNow().UtcDateTime;
++                existing.TokenConflictObservedHash = Convert.ToHexString(SHA256.HashData(observed.ToByteArray()));
++            }
++        }
++        return existing.TokenConflictDetectedAt != null;
++    }
++
+     private async Task<SubscriptionEntity> UpsertCoreAsync(SubscriptionEntity incoming, bool relinkDevice, CancellationToken ct)
+     {
+         var existing = await db.Subscriptions
+@@ -76,9 +112,12 @@ public sealed class EntitlementService(AppDbContext db, TimeProvider timeProvide
+         // never convert Sandbox history or an unvalidated paid marker into production history.
+         if (!IsApplicable(existing)) throw new SubscriptionReconciliationRequiredException();
+ 
++        await ObserveTokenConflictAsync(existing, incoming.AppAccountToken, ct);
++
+         if (existing.LastAppleEventAt != null
+             && (incoming.LastAppleEventAt == null || existing.LastAppleEventAt >= incoming.LastAppleEventAt))
+         {
++            if (existing.TokenConflictDetectedAt != null) await db.SaveChangesAsync(ct);
+             return existing;
+         }
+         if (incoming.LastAppleEventAt != null) existing.LastAppleEventAt = incoming.LastAppleEventAt;
+@@ -123,6 +162,8 @@ public sealed class EntitlementService(AppDbContext db, TimeProvider timeProvide
+             return Entitlement.Free();
+         if (!IsApplicable(sub))
+             return new Entitlement(Status.Invalid, sub.ProductId, sub.ExpiresAt, false, false, false);
++        if (sub.TokenConflictDetectedAt != null)
++            return new Entitlement(Status.Invalid, sub.ProductId, sub.ExpiresAt, false, false, sub.WasEverPaid);
+         var status = ComputeStatus(sub, timeProvider.GetUtcNow().UtcDateTime);
+         return new Entitlement(status, sub.ProductId, sub.ExpiresAt, sub.IsTrial, sub.AutoRenew, sub.WasEverPaid);
+     }
+diff --git a/src/Mavrylo.Services/Services/IapService.cs b/src/Mavrylo.Services/Services/IapService.cs
+index 18b2d11..5b04983 100644
+--- a/src/Mavrylo.Services/Services/IapService.cs
++++ b/src/Mavrylo.Services/Services/IapService.cs
+@@ -41,11 +41,14 @@ public sealed class IapService(
+ 
+         await RefreshIfNeededAsync(context.Subscription, ct);
+         context = (await deviceContext.ResolveAsync(keyId, ct))!;
++        if (context.Subscription?.TokenConflictDetectedAt != null)
++            return Code(503, new { code = "subscription_reconciliation_required", error = "Stored purchase needs reconciliation." });
+         var (token, expiresAt) = tokens.CreateDeviceToken(keyId, context.Entitlement.Status, context.Subscription?.OriginalTransactionId);
+         return Success(new IapTokenResponse(token, SecondsUntil(expiresAt),
+             ToDto(context.Entitlement, context.AccountId, context.Subscription, context.Authority),
+             context.Authority == "account" ? "none" : context.Authority,
+-            context.Authority == "mobile_restore" ? context.GrantValidUntil?.ToUniversalTime().ToString("O") : null));
++            context.Authority == "mobile_restore" && context.GrantValidUntil is { } until
++                ? DateTime.SpecifyKind(until, DateTimeKind.Utc).ToString("O") : null));
+     }
+ 
+     public async Task<IapResult> EntitlementAsync(string? keyId, CancellationToken ct)
+@@ -59,6 +62,8 @@ public sealed class IapService(
+ 
+         await RefreshIfNeededAsync(context.Subscription, ct);
+         context = (await deviceContext.ResolveAsync(keyId, ct))!;
++        if (context.Subscription?.TokenConflictDetectedAt != null)
++            return Code(503, new { code = "subscription_reconciliation_required", error = "Stored purchase needs reconciliation." });
+         return Success(new IapEntitlementResponse(ToDto(context.Entitlement, context.AccountId,
+             context.Subscription, context.Authority)));
+     }
+diff --git a/tests/AccountClaimHttpValidationTests.cs b/tests/AccountClaimHttpValidationTests.cs
+index 4dfbe11..53ea6fa 100644
+--- a/tests/AccountClaimHttpValidationTests.cs
++++ b/tests/AccountClaimHttpValidationTests.cs
+@@ -66,12 +66,18 @@ public sealed class AccountClaimHttpValidationTests(PostgresContainerFixture pos
+         {
+             valid[..^1] + ",\"anonymous_owner_id\":\"foreign\"}",
+             valid[..^1] + ",\"account_id\":\"" + session.Profile.Id + "\"}",
+-            "{", "null", "{}", "{\"account_id\":42,\"jws_transaction\":\"signed\"}"
++            "{", "null", "{}", "{\"account_id\":42,\"jws_transaction\":\"signed\"}",
++            "{\"account_id\":\" \" ,\"jws_transaction\":\"signed\"}",
++            "{\"account_id\":\"" + new string('a', 101) + "\",\"jws_transaction\":\"signed\"}",
++            "{\"account_id\":\"" + session.Profile.Id + "\",\"jws_transaction\":\" \"}",
++            "{\"account_id\":\"" + session.Profile.Id + "\",\"jws_transaction\":\"" + new string('j', 30_001) + "\"}"
+         })
+         {
++            var appleCalls = apple.VerifyTransactionCallCount;
+             using var rejected = await client.PostAsync(url, new StringContent(invalid, Encoding.UTF8, "application/json"));
+             Assert.Equal(HttpStatusCode.BadRequest, rejected.StatusCode);
+             Assert.Equal("invalid_purchase_request", (await rejected.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("code").GetString());
++            Assert.Equal(appleCalls, apple.VerifyTransactionCallCount);
+         }
+     }
+ }
+diff --git a/tests/AppStoreServerClientTests.cs b/tests/AppStoreServerClientTests.cs
+index f8fc3b2..03bad0a 100644
+--- a/tests/AppStoreServerClientTests.cs
++++ b/tests/AppStoreServerClientTests.cs
+@@ -25,6 +25,7 @@ public class AppStoreServerClientTests
+         var now = DateTimeOffset.Parse("2026-06-13T12:00:00Z");
+         using var client = new HttpClient(new FakeHttpMessageHandler(_ => FakeHttpMessageHandler.Json("{}")));
+         var appStore = Client(client, "Development", now);
++        var purchaseToken = Guid.NewGuid();
+         var jws = JwtFixture.UnsignedJws(new
+         {
+             originalTransactionId = "otid-1",
+@@ -33,7 +34,7 @@ public class AppStoreServerClientTests
+             offerType = 1,
+             type = "Auto-Renewable Subscription",
+             environment = "LocalTesting",
+-            appAccountToken = "device-from-token"
++            appAccountToken = purchaseToken.ToString("D")
+         });
+ 
+         var result = appStore.VerifyTransaction(jws, "device-fallback");
+@@ -41,7 +42,8 @@ public class AppStoreServerClientTests
+         Assert.True(result.Ok);
+         Assert.False(result.SignatureVerified);
+         Assert.Equal("otid-1", result.Subscription?.OriginalTransactionId);
+-        Assert.Equal("device-from-token", result.Subscription?.DeviceUuid);
++        Assert.Equal(purchaseToken, result.Subscription?.AppAccountToken);
++        Assert.Equal("", result.Subscription?.DeviceUuid);
+         Assert.True(result.Subscription?.IsTrial);
+         Assert.False(result.Subscription?.WasEverPaid);
+     }
+diff --git a/tests/AppleJwsTests.cs b/tests/AppleJwsTests.cs
+index 14d8a40..cce2103 100644
+--- a/tests/AppleJwsTests.cs
++++ b/tests/AppleJwsTests.cs
+@@ -114,6 +114,38 @@ public sealed class AppleJwsTests
+         }
+     }
+ 
++    [Theory]
++    [InlineData(false)]
++    [InlineData(true)]
++    public void StrictSignedTransactionRequiresValidSignedDate(bool invalidType)
++    {
++        var now = DateTime.UtcNow;
++        using var rootKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
++        using var root = Request("CN=Root", rootKey, true, null).CreateSelfSigned(now.AddDays(-30), now.AddDays(30));
++        using var intermediateKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
++        using var intermediateWithoutKey = Request("CN=Intermediate", intermediateKey, true, "1.2.840.113635.100.6.2.1")
++            .Create(root, now.AddDays(-10), now.AddDays(10), [3]);
++        using var intermediate = intermediateWithoutKey.CopyWithPrivateKey(intermediateKey);
++        using var leafKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
++        using var leaf = Request("CN=Leaf", leafKey, false, "1.2.840.113635.100.6.11.1")
++            .Create(intermediate, now.AddDays(-1), now.AddDays(1), [4]);
++        string Sign(object payload)
++        {
++            var header = Base64Url.Encode(JsonSerializer.SerializeToUtf8Bytes(new { alg = "ES256", x5c = new[]
++            {
++                Convert.ToBase64String(leaf.RawData), Convert.ToBase64String(intermediate.RawData), Convert.ToBase64String(root.RawData)
++            } }));
++            var encoded = Base64Url.Encode(JsonSerializer.SerializeToUtf8Bytes(payload));
++            var input = header + "." + encoded;
++            return input + "." + Base64Url.Encode(leafKey.SignData(Encoding.ASCII.GetBytes(input),
++                HashAlgorithmName.SHA256, DSASignatureFormat.IeeeP1363FixedFieldConcatenation));
++        }
++        var valid = Sign(new { signedDate = new DateTimeOffset(now).ToUnixTimeMilliseconds() });
++        var invalid = Sign(invalidType ? new { signedDate = "not-a-date" } : new { unrelated = true });
++        Assert.True(AppleJws.DecodeCore(valid, true, root).Ok);
++        Assert.False(AppleJws.DecodeCore(invalid, true, root).Ok);
++    }
++
+     private static CertificateRequest Request(string name, ECDsa key, bool ca, string? purpose)
+     {
+         var request = new CertificateRequest(name, key, HashAlgorithmName.SHA256);
+diff --git a/tests/MobilePurchaseRestoreTests.cs b/tests/MobilePurchaseRestoreTests.cs
+index cd952df..8985f9d 100644
+--- a/tests/MobilePurchaseRestoreTests.cs
++++ b/tests/MobilePurchaseRestoreTests.cs
+@@ -214,6 +214,148 @@ public sealed class MobilePurchaseRestoreTests
+         Assert.Equal("expired_paid", token.Entitlement.Status);
+     }
+ 
++    [Theory]
++    [InlineData("owned-a-granted-b")]
++    [InlineData("granted-a-owned-b")]
++    [InlineData("two-grants")]
++    public async Task ProcessingExpiredPurchaseReportsSelectedActivePurchaseConsistently(string scenario)
++    {
++        using var fixture = TestDb.Create();
++        var ownsA = scenario == "owned-a-granted-b";
++        var ownsB = scenario == "granted-a-owned-b";
++        var installationOwner = Guid.NewGuid();
++        var otherOwner = Guid.NewGuid();
++        var purchaseToken = Guid.NewGuid();
++        var device = new DeviceEntity { KeyId = "selected-key", DeviceUuid = "private-library", AnonymousOwnerId = installationOwner };
++        fixture.Db.AnonymousPurchaseOwners.AddRange(new AnonymousPurchaseOwnerEntity { Id = installationOwner },
++            new AnonymousPurchaseOwnerEntity { Id = otherOwner });
++        if (ownsA) fixture.Db.AnonymousPurchaseTokens.Add(new AnonymousPurchaseTokenEntity
++            { AnonymousOwnerId = installationOwner, AppAccountToken = purchaseToken });
++        fixture.Db.Devices.Add(device);
++        var expired = Purchase("");
++        expired.OriginalTransactionId = "expired-owned-a";
++        expired.ExpiresAt = DateTime.UtcNow.AddDays(-1);
++        if (ownsA)
++        {
++            expired.AppAccountToken = purchaseToken;
++            expired.ClaimedAt = DateTime.UtcNow.AddDays(-2);
++        }
++        var selected = Purchase("");
++        selected.OriginalTransactionId = "selected-grant-b";
++        selected.ExpiresAt = DateTime.UtcNow.AddDays(2);
++        if (ownsB)
++        {
++            fixture.Db.Users.Add(new AppUser { Id = "selected-account", Email = "selected@example.test" });
++            selected.OwnerAccountId = "selected-account";
++            selected.ClaimedAt = DateTime.UtcNow.AddDays(-1);
++        }
++        var grantUntil = DateTime.UtcNow.AddHours(20);
++        fixture.Db.Subscriptions.AddRange(expired, selected);
++        fixture.Db.ApplePurchaseBindings.AddRange(
++            new ApplePurchaseBindingEntity { Environment = "Production", OriginalTransactionId = expired.OriginalTransactionId,
++                AnonymousOwnerId = ownsA ? installationOwner : otherOwner,
++                BindingKind = ownsA ? "server_token" : "legacy_unproven",
++                BoundAppAccountToken = ownsA ? purchaseToken : null },
++            new ApplePurchaseBindingEntity { Environment = "Production", OriginalTransactionId = selected.OriginalTransactionId,
++                AnonymousOwnerId = ownsB ? installationOwner : otherOwner,
++                BindingKind = ownsB ? "server_token" : "legacy_unproven" });
++        if (!ownsB) fixture.Db.MobilePurchaseGrants.Add(new MobilePurchaseGrantEntity { DeviceId = device.Id,
++            Environment = "Production", OriginalTransactionId = selected.OriginalTransactionId,
++            ValidUntil = grantUntil, VerifiedAt = DateTime.UtcNow, EvidenceKind = "paired_device", LastEvidenceHash = "fixture" });
++        if (!ownsA) fixture.Db.MobilePurchaseGrants.Add(new MobilePurchaseGrantEntity { DeviceId = device.Id,
++            Environment = "Production", OriginalTransactionId = expired.OriginalTransactionId,
++            ValidUntil = DateTime.UtcNow.AddDays(-1), VerifiedAt = DateTime.UtcNow,
++            EvidenceKind = "paired_device", LastEvidenceHash = "fixture-a" });
++        await fixture.Db.SaveChangesAsync();
++
++        var (apple, request) = AppleEvidence(expired);
++        var before = await new MobilePurchaseAccessResolver(fixture.Db, Entitlements(fixture)).ResolveAsync(device.KeyId, default);
++        Assert.Equal(selected.OriginalTransactionId, before!.Subscription!.OriginalTransactionId);
++        apple.VerifyTransactionResult.Subscription!.OriginalTransactionId = expired.OriginalTransactionId;
++        apple.VerifyTransactionResult.Subscription.AppAccountToken = ownsA ? purchaseToken : null;
++        apple.VerifyTransactionResult.Subscription.ExpiresAt = expired.ExpiresAt;
++        var iap = IapTestFactory.Create(fixture.Db, apple);
++        IapVerifyResponse? verify = ownsA ? Assert.IsType<IapVerifyResponse>((await iap.VerifyAsync(device.KeyId,
++            new IapVerifyRequest("signed-transaction"), default)).Body) : null;
++        var restore = Assert.IsType<IapVerifyResponse>((await iap.RestoreAsync(device.KeyId, request, default)).Body);
++        var token = Assert.IsType<IapTokenResponse>((await iap.TokenAsync(device.KeyId, default)).Body);
++        var responses = new List<(EntitlementDto Entitlement, string AccessToken, string PurchaseAuthority, string? MobileGrantExpiresAt)>
++        {
++            (restore.Entitlement, restore.AccessToken, restore.PurchaseAuthority, restore.MobileGrantExpiresAt),
++            (token.Entitlement, token.AccessToken, token.PurchaseAuthority, token.MobileGrantExpiresAt)
++        };
++        if (verify != null) responses.Add((verify.Entitlement, verify.AccessToken, verify.PurchaseAuthority, verify.MobileGrantExpiresAt));
++        foreach (var response in responses)
++        {
++            Assert.Equal("premium", response.Entitlement.Status);
++            Assert.Equal(ownsB ? "owner" : "mobile_restore", response.PurchaseAuthority);
++            Assert.Equal(ownsB ? "device" : "mobile_restore", response.Entitlement.ResolutionSource);
++            Assert.Equal(ownsB, response.Entitlement.PurchaseIsLinked);
++            Assert.Equal(ownsB ? null : grantUntil.ToString("O"), response.MobileGrantExpiresAt);
++            var jwt = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().ReadJwtToken(response.AccessToken);
++            Assert.Equal(selected.OriginalTransactionId, jwt.Claims.Single(x => x.Type == "otid").Value);
++        }
++    }
++
++    [Theory]
++    [InlineData(0)]
++    [InlineData(1)]
++    [InlineData(2)]
++    public async Task VerifiedTokenDriftRequiresReconciliationInsteadOfSilentlyAdvancingPurchase(int canonicalTokenKind)
++    {
++        using var fixture = TestDb.Create();
++        var owner = Guid.NewGuid();
++        var originalToken = Guid.NewGuid();
++        var conflictingToken = Guid.NewGuid();
++        fixture.Db.AnonymousPurchaseOwners.Add(new AnonymousPurchaseOwnerEntity { Id = owner });
++        fixture.Db.AnonymousPurchaseTokens.Add(new AnonymousPurchaseTokenEntity
++            { AnonymousOwnerId = owner, AppAccountToken = originalToken });
++        fixture.Db.Devices.Add(new DeviceEntity { KeyId = "drift-key", DeviceUuid = "private-drift", AnonymousOwnerId = owner });
++        var original = Purchase("");
++        original.AppAccountToken = originalToken;
++        original.LastAppleEventAt = DateTime.UtcNow.AddMinutes(-2);
++        fixture.Db.Subscriptions.Add(original);
++        fixture.Db.ApplePurchaseBindings.Add(new ApplePurchaseBindingEntity { Environment = "Production",
++            OriginalTransactionId = original.OriginalTransactionId, AnonymousOwnerId = owner,
++            BindingKind = "server_token", BoundAppAccountToken = originalToken });
++        await fixture.Db.SaveChangesAsync();
++
++        var canonical = Purchase("");
++        canonical.AppAccountToken = canonicalTokenKind switch
++        {
++            0 => conflictingToken,
++            1 => null,
++            _ => originalToken
++        };
++        canonical.LastAppleEventAt = original.LastAppleEventAt.Value.AddMinutes(1);
++        canonical.ExpiresAt = original.ExpiresAt!.Value.AddDays(1);
++        var (apple, restoreRequest) = AppleEvidence(canonical);
++        apple.VerifyTransactionResult.Subscription!.AppAccountToken = conflictingToken;
++        var iap = IapTestFactory.Create(fixture.Db, apple);
++
++        Assert.Equal(503, (await iap.VerifyAsync("drift-key", new IapVerifyRequest("signed"), default)).Status);
++        Assert.Equal(503, (await iap.RestoreAsync("drift-key", restoreRequest, default)).Status);
++        fixture.Db.ChangeTracker.Clear();
++        var saved = await fixture.Db.Subscriptions.AsNoTracking().SingleAsync();
++        Assert.Equal(originalToken, saved.AppAccountToken);
++        Assert.NotNull(saved.TokenConflictDetectedAt);
++        Assert.Equal(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(conflictingToken.ToByteArray())),
++            saved.TokenConflictObservedHash);
++        Assert.Equal(canonicalTokenKind == 2 ? original.ExpiresAt : canonical.ExpiresAt, saved.ExpiresAt);
++        Assert.Equal(originalToken, (await fixture.Db.ApplePurchaseBindings.AsNoTracking().SingleAsync()).BoundAppAccountToken);
++        Assert.Empty(await fixture.Db.MobilePurchaseGrants.ToListAsync());
++        Assert.Equal(503, (await iap.TokenAsync("drift-key", default)).Status);
++        Assert.Equal(503, (await iap.EntitlementAsync("drift-key", default)).Status);
++        Assert.Equal(503, (await iap.PurchaseContextAsync("drift-key", new IapPurchaseContextRequest("monthly"), default)).Status);
++
++        apple.VerifyTransactionResult.Subscription!.AppAccountToken = null;
++        canonical.AppAccountToken = null;
++        canonical.LastAppleEventAt = canonical.LastAppleEventAt!.Value.AddMinutes(1);
++        Assert.Equal(503, (await iap.RestoreAsync("drift-key", restoreRequest, default)).Status);
++        fixture.Db.ChangeTracker.Clear();
++        Assert.NotNull((await fixture.Db.Subscriptions.AsNoTracking().SingleAsync()).TokenConflictDetectedAt);
++    }
++
+     private static AnonymousPurchaseService RestoreService(TestDb fixture, FakeAppStoreServerClient apple)
+     {
+         var entitlements = Entitlements(fixture);
+diff --git a/tests/RestorationPostgresTests.cs b/tests/RestorationPostgresTests.cs
+index 25b0114..b9a668b 100644
+--- a/tests/RestorationPostgresTests.cs
++++ b/tests/RestorationPostgresTests.cs
+@@ -5,6 +5,8 @@ using Mavrylo.Models;
+ using Mavrylo.Services;
+ using Mavrylo.Tests.TestSupport;
+ using Microsoft.EntityFrameworkCore;
++using Microsoft.EntityFrameworkCore.Infrastructure;
++using Microsoft.EntityFrameworkCore.Migrations;
+ using Xunit;
+ 
+ namespace Mavrylo.Tests;
+@@ -14,6 +16,164 @@ public sealed class RestorationPostgresTests(PostgresContainerFixture postgres)
+     private AppDbContext Database() => new(new DbContextOptionsBuilder<AppDbContext>()
+         .UseNpgsql(postgres.ConnectionString).Options);
+ 
++    [Fact]
++    public async Task TokenConflictMigrationPreservesPopulatedPurchaseAndIsIdempotent()
++    {
++        var originalId = Guid.NewGuid().ToString("N");
++        var originalToken = Guid.NewGuid();
++        var claimedAt = DateTime.UtcNow.AddDays(-3);
++        var expiresAt = DateTime.UtcNow.AddDays(2);
++        await using var db = Database();
++        var migrator = db.GetService<IMigrator>();
++        await migrator.MigrateAsync("20260928211822_AddAnonymousPurchaseRestore");
++        await db.Database.ExecuteSqlInterpolatedAsync($"""
++            INSERT INTO subscriptions ("OriginalTransactionId", "DeviceUuid", "AppAccountToken", "ProductId",
++                "Status", "ExpiresAt", "IsTrial", "WasEverPaid", "AutoRenew", "Environment",
++                "LastCheckedAt", "ClaimedAt")
++            VALUES ({originalId}, 'historical-library', {originalToken}, 'monthly', 'premium', {expiresAt},
++                FALSE, TRUE, TRUE, 'Production', {DateTime.UtcNow}, {claimedAt})
++            """);
++        await db.Database.MigrateAsync();
++        await db.Database.MigrateAsync();
++        var saved = await db.Subscriptions.AsNoTracking().SingleAsync(x => x.OriginalTransactionId == originalId);
++        Assert.Equal("historical-library", saved.DeviceUuid);
++        Assert.Equal(originalToken, saved.AppAccountToken);
++        Assert.True(saved.WasEverPaid);
++        Assert.NotNull(saved.ClaimedAt);
++        Assert.Null(saved.OwnerAccountId);
++        Assert.Null(saved.TokenConflictDetectedAt);
++        Assert.Null(saved.TokenConflictObservedHash);
++        Assert.Equal(1, await db.Subscriptions.CountAsync(x => x.OriginalTransactionId == originalId));
++    }
++
++    [Fact]
++    public async Task DesktopClaimRejectsCanonicalStateSupersededByRevocationBeforeLock()
++    {
++        var originalId = Guid.NewGuid().ToString("N");
++        var accountId = "claim-" + originalId;
++        var key = "key-" + originalId;
++        var owner = Guid.NewGuid();
++        var token = Guid.NewGuid();
++        var staleEvent = DateTime.UtcNow.AddMinutes(-2);
++        await using (var setup = Database())
++        {
++            await setup.Database.MigrateAsync();
++            setup.Users.Add(new AppUser { Id = accountId, Email = accountId + "@example.test", GoogleSub = accountId });
++            setup.AnonymousPurchaseOwners.Add(new AnonymousPurchaseOwnerEntity { Id = owner });
++            setup.AnonymousPurchaseTokens.Add(new AnonymousPurchaseTokenEntity { AnonymousOwnerId = owner, AppAccountToken = token });
++            setup.Devices.Add(new DeviceEntity { KeyId = key, DeviceUuid = "private-" + originalId, AnonymousOwnerId = owner });
++            setup.ApplePurchaseBindings.Add(new ApplePurchaseBindingEntity { Environment = "Production",
++                OriginalTransactionId = originalId, AnonymousOwnerId = owner,
++                BindingKind = "server_token", BoundAppAccountToken = token });
++            var active = Purchase(originalId, token);
++            active.LastAppleEventAt = staleEvent;
++            setup.Subscriptions.Add(active);
++            await setup.SaveChangesAsync();
++        }
++
++        var canonicalFetched = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
++        var releaseCanonical = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
++        var stale = Purchase(originalId, token);
++        stale.LastAppleEventAt = staleEvent;
++        var apple = new FakeAppStoreServerClient
++        {
++            VerifyTransactionResult = new(true, stale, true, null),
++            SubscriptionStatusesResult = new(true, stale, null),
++            BeforeRefreshAsync = async () =>
++            {
++                canonicalFetched.SetResult();
++                await releaseCanonical.Task.WaitAsync(TimeSpan.FromSeconds(10));
++            }
++        };
++        await using var claimDb = Database();
++        var claim = new AccountEntitlementService(claimDb,
++            new(claimDb, TimeProvider.System, TestConfig.SubscriptionPolicy()), apple,
++            new(claimDb, TimeProvider.System), TimeProvider.System)
++            .ClaimAsync(accountId, key, "signed-proof", default);
++        await canonicalFetched.Task.WaitAsync(TimeSpan.FromSeconds(10));
++        await using (var notificationDb = Database())
++        {
++            var revoked = Purchase(originalId, token);
++            revoked.RevokedAt = DateTime.UtcNow;
++            revoked.LastAppleEventAt = staleEvent.AddMinutes(1);
++            await new EntitlementService(notificationDb, TimeProvider.System, TestConfig.SubscriptionPolicy())
++                .UpsertAsync(revoked);
++        }
++        releaseCanonical.SetResult();
++        Assert.Equal(402, (await claim).Status);
++
++        await using var check = Database();
++        var saved = await check.Subscriptions.AsNoTracking().SingleAsync(x => x.OriginalTransactionId == originalId);
++        Assert.NotNull(saved.RevokedAt);
++        Assert.True(saved.LastAppleEventAt > staleEvent);
++        Assert.Null(saved.OwnerAccountId);
++        Assert.Null(saved.ClaimedAt);
++        Assert.False((await check.Devices.AsNoTracking().SingleAsync(x => x.KeyId == key)).RequiresAccountSubscription);
++    }
++
++    [Fact]
++    public async Task TokenConflictSurvivesRestoreTransactionAndLaterMissingTokenCannotClearIt()
++    {
++        var originalId = Guid.NewGuid().ToString("N");
++        var oldToken = Guid.NewGuid();
++        var newToken = Guid.NewGuid();
++        var owner = Guid.NewGuid();
++        var restoredOwner = Guid.NewGuid();
++        var key = "restored-" + originalId;
++        await using (var setup = Database())
++        {
++            await setup.Database.MigrateAsync();
++            setup.AnonymousPurchaseOwners.AddRange(new AnonymousPurchaseOwnerEntity { Id = owner },
++                new AnonymousPurchaseOwnerEntity { Id = restoredOwner });
++            setup.AnonymousPurchaseTokens.Add(new AnonymousPurchaseTokenEntity
++                { AnonymousOwnerId = owner, AppAccountToken = oldToken });
++            setup.Devices.Add(new DeviceEntity { KeyId = key, DeviceUuid = "private-" + originalId,
++                AnonymousOwnerId = restoredOwner });
++            setup.Subscriptions.Add(Purchase(originalId, oldToken));
++            setup.ApplePurchaseBindings.Add(new ApplePurchaseBindingEntity { Environment = "Production",
++                OriginalTransactionId = originalId, AnonymousOwnerId = owner,
++                BindingKind = "server_token", BoundAppAccountToken = oldToken });
++            await setup.SaveChangesAsync();
++        }
++
++        var (apple, request) = Evidence(originalId, newToken);
++        await using (var restoring = Database())
++        {
++            Assert.Equal(503, (await IapTestFactory.Create(restoring, apple).RestoreAsync(key, request, default)).Status);
++        }
++        await using (var check = Database())
++        {
++            var saved = await check.Subscriptions.AsNoTracking().SingleAsync(x => x.OriginalTransactionId == originalId);
++            Assert.NotNull(saved.TokenConflictDetectedAt);
++            Assert.Equal(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(newToken.ToByteArray())),
++                saved.TokenConflictObservedHash);
++            Assert.Equal(oldToken, saved.AppAccountToken);
++            Assert.Equal(oldToken, (await check.ApplePurchaseBindings.AsNoTracking().SingleAsync(x =>
++                x.OriginalTransactionId == originalId)).BoundAppAccountToken);
++            Assert.Empty(await check.MobilePurchaseGrants.Where(x => x.OriginalTransactionId == originalId).ToListAsync());
++        }
++
++        apple.VerifyTransactionResult.Subscription!.AppAccountToken = null;
++        apple.SubscriptionStatusesResult.Subscription!.AppAccountToken = null;
++        await using (var retry = Database())
++        {
++            Assert.Equal(503, (await IapTestFactory.Create(retry, apple).RestoreAsync(key, request, default)).Status);
++        }
++        apple.VerifyTransactionResult.Subscription!.AppAccountToken = oldToken;
++        apple.SubscriptionStatusesResult.Subscription!.AppAccountToken = oldToken;
++        await using (var originalTokenRetry = Database())
++        {
++            Assert.Equal(503, (await IapTestFactory.Create(originalTokenRetry, apple)
++                .RestoreAsync(key, request, default)).Status);
++        }
++        await using (var check = Database())
++        {
++            Assert.NotNull((await check.Subscriptions.AsNoTracking().SingleAsync(x =>
++                x.OriginalTransactionId == originalId)).TokenConflictDetectedAt);
++            Assert.Empty(await check.MobilePurchaseGrants.Where(x => x.OriginalTransactionId == originalId).ToListAsync());
++        }
++    }
++
+     [Fact]
+     public async Task NotificationFirstStateDoesNotEnrollInstallationAndConcurrentVerifyRestoreBindOnce()
+     {
+diff --git a/tests/SharedSubscriptionPostgresTests.cs b/tests/SharedSubscriptionPostgresTests.cs
+index 5c589d7..eaa1238 100644
+--- a/tests/SharedSubscriptionPostgresTests.cs
++++ b/tests/SharedSubscriptionPostgresTests.cs
+@@ -271,6 +271,59 @@ public class SharedSubscriptionPostgresTests(PostgresContainerFixture postgres)
+         return token;
+     }
+ 
++    [Fact]
++    public async Task AccountFallbackTokenIdentifiesSelectedAccountPurchaseInsteadOfExpiredDevicePurchase()
++    {
++        var id = Guid.NewGuid().ToString("N");
++        await using var factory = new ApiFactory(postgres.ConnectionString, services =>
++        {
++            services.RemoveAll<IAppStoreServerClient>();
++            services.AddSingleton<IAppStoreServerClient>(new FakeAppStoreServerClient { IsServerApiConfigured = false });
++            services.RemoveAll<IAppAttestVerifier>();
++            services.AddSingleton<IAppAttestVerifier>(new FakeAppAttestVerifier { IsDevelopmentBypassEnabled = true });
++        });
++        using var client = factory.CreateClient();
++        using var scope = factory.Services.CreateScope();
++        var session = await scope.ServiceProvider.GetRequiredService<AccountService>()
++            .SignInAsync(new("fallback-" + id, null, "Owner"), default, allowCreation: true);
++        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
++        var key = "SIMULATOR-" + id;
++        var owner = Guid.NewGuid();
++        db.AnonymousPurchaseOwners.Add(new AnonymousPurchaseOwnerEntity { Id = owner });
++        db.Devices.Add(new DeviceEntity { KeyId = key, DeviceUuid = "private-" + id, AnonymousOwnerId = owner });
++        var expiredId = "expired-" + id;
++        var activeId = "account-" + id;
++        db.Subscriptions.AddRange(
++            new SubscriptionEntity { OriginalTransactionId = expiredId, ProductId = "monthly", Environment = "Production",
++                ExpiresAt = DateTime.UtcNow.AddDays(-1), WasEverPaid = true },
++            new SubscriptionEntity { OriginalTransactionId = activeId, ProductId = "monthly", Environment = "Production",
++                OwnerAccountId = session.Profile.Id, ClaimedAt = DateTime.UtcNow.AddDays(-2),
++                ExpiresAt = DateTime.UtcNow.AddDays(10), WasEverPaid = true });
++        db.ApplePurchaseBindings.Add(new ApplePurchaseBindingEntity { Environment = "Production",
++            OriginalTransactionId = expiredId, AnonymousOwnerId = owner, BindingKind = "server_token" });
++        await db.SaveChangesAsync();
++        client.DefaultRequestHeaders.Authorization = new("Bearer",
++            scope.ServiceProvider.GetRequiredService<JwtTokenService>().CreateDeviceToken(key, "free").Token);
++        client.DefaultRequestHeaders.Add("X-Account-Authorization", "Bearer " + session.AccessToken);
++
++        var response = await client.PostAsJsonAsync("/owlai/iap/token", new { });
++        Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
++        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
++        Assert.Equal("premium", body.GetProperty("entitlement").GetProperty("status").GetString());
++        Assert.Equal("account", body.GetProperty("entitlement").GetProperty("resolution_source").GetString());
++        Assert.True(body.GetProperty("entitlement").GetProperty("purchase_is_linked").GetBoolean());
++        var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler()
++            .ReadJwtToken(body.GetProperty("access_token").GetString()!);
++        Assert.Equal(activeId, token.Claims.Single(x => x.Type == "otid").Value);
++
++        client.DefaultRequestHeaders.Remove("X-Account-Authorization");
++        var guest = await client.PostAsJsonAsync("/owlai/iap/token", new { });
++        Assert.True(guest.IsSuccessStatusCode, await guest.Content.ReadAsStringAsync());
++        var guestBody = await guest.Content.ReadFromJsonAsync<JsonElement>();
++        Assert.Equal("expired_paid", guestBody.GetProperty("entitlement").GetProperty("status").GetString());
++        Assert.Equal("device", guestBody.GetProperty("entitlement").GetProperty("resolution_source").GetString());
++    }
++
+     [Fact]
+     public async Task ClaimApiRequiresBothIdentities_ThenLogoutAndDeletionCloseSharedAccess()
+     {
+diff --git a/tests/SubscriptionLifecycleTests.cs b/tests/SubscriptionLifecycleTests.cs
+index 8dcf3b1..718aa7c 100644
+--- a/tests/SubscriptionLifecycleTests.cs
++++ b/tests/SubscriptionLifecycleTests.cs
+@@ -191,6 +191,38 @@ public sealed class SubscriptionLifecycleTests
+         Assert.Equal(2, await fixture.Db.Subscriptions.CountAsync());
+     }
+ 
++    [Fact]
++    public async Task NotificationTokenDriftQuarantinesOnlyThatPurchaseWhileRetainingNewerRevocation()
++    {
++        using var fixture = TestDb.Create();
++        var service = Entitlements(fixture.Db);
++        var oldToken = Guid.NewGuid();
++        var newToken = Guid.NewGuid();
++        fixture.Db.Devices.Add(new DeviceEntity { KeyId = "key", DeviceUuid = "private" });
++        var a = Purchase("A"); a.AppAccountToken = oldToken; a.LastAppleEventAt = Now.AddDays(-1);
++        await service.UpsertAsync(a);
++        await service.UpsertAsync(Purchase("B"));
++        await OwnerPurchaseFixture.BindAsync(fixture.Db, "key", "A");
++        await OwnerPurchaseFixture.BindAsync(fixture.Db, "key", "B");
++        oldToken = (await fixture.Db.Subscriptions.SingleAsync(x => x.OriginalTransactionId == "A")).AppAccountToken!.Value;
++        var refund = Purchase("A");
++        refund.AppAccountToken = newToken;
++        refund.RevokedAt = Now;
++        refund.LastAppleEventAt = Now;
++        var apple = Notification(refund, refund);
++        Assert.Equal(200, await new AppStoreNotificationService(apple, service, Clock,
++            NullLogger<AppStoreNotificationService>.Instance).HandleAsync(new("proof"), default));
++        fixture.Db.ChangeTracker.Clear();
++        var saved = await fixture.Db.Subscriptions.AsNoTracking().SingleAsync(x => x.OriginalTransactionId == "A");
++        Assert.Equal(oldToken, saved.AppAccountToken);
++        Assert.NotNull(saved.TokenConflictDetectedAt);
++        Assert.NotNull(saved.RevokedAt);
++        Assert.Equal(Now, saved.LastAppleEventAt);
++        Assert.Equal("invalid_subscription", service.ToEntitlement(saved).Status);
++        Assert.Equal("premium", (await new DeviceContextService(fixture.Db, service).ResolveAsync("key"))!.Entitlement.Status);
++        Assert.Equal("B", (await new DeviceContextService(fixture.Db, service).ResolveAsync("key"))!.Subscription!.OriginalTransactionId);
++    }
++
+     [Fact]
+     public async Task LifecycleNotificationPreservesRestoredDeviceLink()
+     {
+@@ -245,9 +277,11 @@ public sealed class SubscriptionLifecycleTests
+         using var fixture = TestDb.Create(); var service = Entitlements(fixture.Db);
+         fixture.Db.Devices.Add(new DeviceEntity { KeyId = "key", DeviceUuid = "device" });
+         var row = Purchase("A"); row.LastCheckedAt = Now.AddHours(-1); await service.UpsertAsync(row);
++        await OwnerPurchaseFixture.BindAsync(fixture.Db, "key", "A");
+         var apple = new FakeAppStoreServerClient { SubscriptionStatusesResult = new(true, Purchase("B"), null) };
+         var iap = IapTestFactory.Create(fixture.Db, apple, Clock, entitlements: service);
+         if (token) await iap.TokenAsync("key", default); else await iap.EntitlementAsync("key", default);
++        Assert.Equal(1, apple.RefreshCallCount);
+         Assert.Null(await service.FindByOriginalTransactionAsync("B")); Assert.Single(await fixture.Db.Subscriptions.ToListAsync());
+     }
+ 
+diff --git a/tests/TestSupport/FakeAppStoreServerClient.cs b/tests/TestSupport/FakeAppStoreServerClient.cs
+index 072f1d8..713bfec 100644
+--- a/tests/TestSupport/FakeAppStoreServerClient.cs
++++ b/tests/TestSupport/FakeAppStoreServerClient.cs
+@@ -16,9 +16,14 @@ internal sealed class FakeAppStoreServerClient : IAppStoreServerClient
+     public AppleJws.DecodeResult DecodeNotificationResult { get; set; } =
+         AppleJws.DecodeResult.Fail("not configured");
+     public Func<Task>? BeforeRefreshAsync { get; set; }
++    public int RefreshCallCount { get; private set; }
++    public int VerifyTransactionCallCount { get; private set; }
+ 
+-    public AppStoreServerClient.VerifiedTransaction VerifyTransaction(string jwsTransaction, string? deviceUuid) =>
+-        VerifyTransactionResult;
++    public AppStoreServerClient.VerifiedTransaction VerifyTransaction(string jwsTransaction, string? deviceUuid)
++    {
++        VerifyTransactionCallCount++;
++        return VerifyTransactionResult;
++    }
+     public AppStoreServerClient.VerifiedAppTransaction VerifyAppTransaction(string jwsAppTransaction) => AppTransactionResult;
+ 
+     public Task<AppStoreServerClient.VerifiedTransaction> GetTransactionInfoAsync(
+@@ -38,6 +43,7 @@ internal sealed class FakeAppStoreServerClient : IAppStoreServerClient
+         string? deviceUuid = null,
+         CancellationToken ct = default)
+     {
++        RefreshCallCount++;
+         if (BeforeRefreshAsync != null) await BeforeRefreshAsync();
+         return SubscriptionStatusesResult;
+     }

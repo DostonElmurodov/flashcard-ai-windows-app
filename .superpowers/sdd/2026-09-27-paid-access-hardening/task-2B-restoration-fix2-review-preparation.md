@@ -1,0 +1,18 @@
+# Task 2B.2 fix round 2 — review preparation
+
+Preparation, not acceptance. Base: `b7eed82092508141631ab41d48a758120c41647f`. Final head and evidence will be supplied after implementation. Required reviewer: fresh clean-context GPT-6 Astra xhigh. Read the complete fix diff and affected callers against `task-2B-restoration-fix1-review.md`, `anonymous-restore-contract.md` sections 1–6 and `task-2B-restoration-brief.md`.
+
+## Required findings and behavioral evidence
+
+- R1: Claim reconciles both verified signed and canonical non-null tokens against stored metadata and immutable binding under user-before-purchase lock ordering. Signed T2 with canonical T1 or null must durably quarantine before any first-claim/device writes. Cover first claim and same-account idempotent retry, fresh-context persistence, former/missing-token retry, unchanged original owner/token/claim/tombstone fields. Inspect transaction commit boundaries, not merely in-memory flags.
+- R2: Verify, restore and token use one coherent final selection, including a genuinely authenticated account fallback when independent mobile access is inactive. Check selected entitlement/source/authority/link/JWT original ID and grant expiry together. Test expired and revoked owned A with active account B, logged-out controls and active independent B winning over an unrelated account. Processed transaction acknowledgement must remain distinct from the selected entitlement.
+- R3: A request's own account refresh may change its previously selected mobile purchase. The final selection must reread/reselect current state before any consumer authorizes it. Require actual local HTTP AI tests for both conflict and revocation discovered by this request: a healthy otherwise-equivalent control reaches the fake provider, denied cases have providerCalls=0, and synthetic spend configuration permits the control. Default-denied budgets are not proof of entitlement enforcement. Preserve usable independent purchase B and inspect other consumers of the same resolver for coherent state.
+- R4: After identity validation, token disagreement on an existing purchase must persist ordered canonical lifecycle evidence together with quarantine before returning 503. Newer revocation/event must survive older and missing/former-token retries across fresh contexts. No new owner/binding/grant/claim/device authority; mismatched original ID/environment/product must not import lifecycle state.
+
+Prior I1 and M1–M3 were closed in fix1; verify that fixes preserve their coverage rather than reopening or waiving them. Foundation bootstrap M3 is distinct and remains on the carryover list. No new migration is presumed necessary; assess actual schema/model changes and applicable drift evidence.
+
+## Evidence and boundaries
+
+Inspect actual RED/GREEN logs/TRX, intermediate failures, full final Release, build and any relevant Debug checks. Label fixture/setup failures accurately. Require the recorded manual simplify decisions for each coding iteration. Passing counters alone do not close the four behavioral findings. Return explicit per-finding disposition and concrete source/runtime limits.
+
+`final-review-carryover.md` and `legacy-migration-preflight.md` remain binding. Shared quotas/B4 and unapproved numeric D2 are separate; local historical-marker migration behavior is not waived to production inventory. Physical Apple, production migration/deployment, exceptional first desktop owner recovery, operational quarantine repair, live spend, signing and release remain unexecuted gates. The approved bounded paired-envelope replay residual is unchanged. Do not add mandatory mobile login or old-key prerequisites. Do not implement client/next quota tasks during this review.
