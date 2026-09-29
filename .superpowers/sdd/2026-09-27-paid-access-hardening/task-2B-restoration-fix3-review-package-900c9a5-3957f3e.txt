@@ -1,0 +1,202 @@
+ .../Services/AccountEntitlementService.cs          |   4 +-
+ .../Services/AnonymousPurchaseService.cs           |   4 +-
+ tests/RestorationPostgresTests.cs                  | 100 +++++++++++++++++++--
+ 3 files changed, 98 insertions(+), 10 deletions(-)
+
+diff --git a/src/Mavrylo.Services/Services/AccountEntitlementService.cs b/src/Mavrylo.Services/Services/AccountEntitlementService.cs
+index 866afde..24c01bb 100644
+--- a/src/Mavrylo.Services/Services/AccountEntitlementService.cs
++++ b/src/Mavrylo.Services/Services/AccountEntitlementService.cs
+@@ -74,6 +74,8 @@ public sealed class AccountEntitlementService(AppDbContext db, EntitlementServic
+                 && x.OriginalTransactionId == sub.OriginalTransactionId && x.BindingKind == "server_token"
+                 && x.AnonymousOwnerId == device.AnonymousOwnerId, ct))
+             return (403, new { code = "desktop_owner_proof_required", error = "Original purchase owner proof is required." });
++        var tokenConflict = await entitlements.RecordTokenConflictAsync(sub.OriginalTransactionId,
++            sub.Environment, proof.Subscription.AppAccountToken, ct);
+         sub.DeviceUuid = "";
+         SubscriptionEntity persisted;
+         try { persisted = await entitlements.UpsertAsync(sub, ct); }
+@@ -81,8 +83,6 @@ public sealed class AccountEntitlementService(AppDbContext db, EntitlementServic
+         {
+             return (503, new { code = "subscription_reconciliation_required", error = "Stored subscription needs reconciliation." });
+         }
+-        var tokenConflict = await entitlements.RecordTokenConflictAsync(sub.OriginalTransactionId,
+-            sub.Environment, proof.Subscription.AppAccountToken, ct);
+         if (tokenConflict || persisted.TokenConflictDetectedAt != null)
+         {
+             await tx.CommitAsync(ct);
+diff --git a/src/Mavrylo.Services/Services/AnonymousPurchaseService.cs b/src/Mavrylo.Services/Services/AnonymousPurchaseService.cs
+index 3aac798..85a7489 100644
+--- a/src/Mavrylo.Services/Services/AnonymousPurchaseService.cs
++++ b/src/Mavrylo.Services/Services/AnonymousPurchaseService.cs
+@@ -205,14 +205,14 @@ public sealed class AnonymousPurchaseService(
+             return Error(503, "apple_identity_mismatch", "Apple subscription identity mismatch.");
+         // Persist the ordered Apple lifecycle and both token observations atomically. Neither owner
+         // bindings nor mobile grants are written on this disagreement path.
++        await entitlements.RecordTokenConflictAsync(signed.OriginalTransactionId,
++            signed.Environment, signed.AppAccountToken, ct);
+         canonical.DeviceUuid = "";
+         try { await entitlements.UpsertAsync(canonical, ct, relinkDevice: false); }
+         catch (SubscriptionReconciliationRequiredException)
+         {
+             return Error(503, "subscription_reconciliation_required", "Stored purchase needs reconciliation.");
+         }
+-        await entitlements.RecordTokenConflictAsync(signed.OriginalTransactionId,
+-            signed.Environment, signed.AppAccountToken, ct);
+         await tx.CommitAsync(ct);
+         return Error(503, "subscription_reconciliation_required", "Stored purchase needs reconciliation.");
+     }
+diff --git a/tests/RestorationPostgresTests.cs b/tests/RestorationPostgresTests.cs
+index e3614a2..8b3cf5b 100644
+--- a/tests/RestorationPostgresTests.cs
++++ b/tests/RestorationPostgresTests.cs
+@@ -181,6 +181,8 @@ public sealed class RestorationPostgresTests(PostgresContainerFixture postgres)
+     [InlineData(true, true, false)]
+     [InlineData(false, false, true)]
+     [InlineData(true, false, true)]
++    [InlineData(false, true, true)]
++    [InlineData(true, true, true)]
+     public async Task TokenDisagreementPersistsNewerCanonicalRevocationWithConflictBeforeDeny(
+         bool verify, bool signedTokenDiffers, bool storedTokenMissing)
+     {
+@@ -224,6 +226,8 @@ public sealed class RestorationPostgresTests(PostgresContainerFixture postgres)
+         {
+             var saved = await check.Subscriptions.AsNoTracking().SingleAsync(x => x.OriginalTransactionId == originalId);
+             Assert.NotNull(saved.TokenConflictDetectedAt);
++            Assert.Equal(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(otherToken.ToByteArray())),
++                saved.TokenConflictObservedHash);
+             Assert.Equal(storedTokenMissing ? null : oldToken, saved.AppAccountToken);
+             Assert.Equal(canonical.LastAppleEventAt, saved.LastAppleEventAt);
+             Assert.Equal(canonical.RevokedAt, saved.RevokedAt);
+@@ -249,6 +253,7 @@ public sealed class RestorationPostgresTests(PostgresContainerFixture postgres)
+         {
+             var saved = await check.Subscriptions.AsNoTracking().SingleAsync(x => x.OriginalTransactionId == originalId);
+             Assert.NotNull(saved.TokenConflictDetectedAt);
++            Assert.Equal(storedTokenMissing ? null : oldToken, saved.AppAccountToken);
+             Assert.Equal(oldEvent.AddHours(1), saved.LastAppleEventAt);
+             Assert.NotNull(saved.RevokedAt);
+             Assert.Empty(await check.MobilePurchaseGrants.Where(x => x.OriginalTransactionId == originalId).ToListAsync());
+@@ -315,12 +320,14 @@ public sealed class RestorationPostgresTests(PostgresContainerFixture postgres)
+     }
+ 
+     [Theory]
+-    [InlineData(false, false)]
+-    [InlineData(false, true)]
+-    [InlineData(true, false)]
+-    [InlineData(true, true)]
++    [InlineData(false, false, false)]
++    [InlineData(false, true, false)]
++    [InlineData(true, false, false)]
++    [InlineData(true, true, false)]
++    [InlineData(false, false, true)]
++    [InlineData(true, false, true)]
+     public async Task ClaimRecordsSignedTokenConflictBeforeFirstOrIdempotentOwnershipWrite(
+-        bool alreadyLinked, bool canonicalTokenMissing)
++        bool alreadyLinked, bool canonicalTokenMissing, bool storedTokenMissing)
+     {
+         var originalId = Guid.NewGuid().ToString("N");
+         var accountId = "claim-" + originalId;
+@@ -339,6 +346,7 @@ public sealed class RestorationPostgresTests(PostgresContainerFixture postgres)
+             setup.Devices.Add(new DeviceEntity { KeyId = key, DeviceUuid = "private-" + originalId,
+                 AnonymousOwnerId = owner, RequiresAccountSubscription = alreadyLinked });
+             var saved = Purchase(originalId, originalToken);
++            if (storedTokenMissing) saved.AppAccountToken = null;
+             if (alreadyLinked) { saved.OwnerAccountId = accountId; saved.ClaimedAt = claimedAt; }
+             setup.Subscriptions.Add(saved);
+             setup.ApplePurchaseBindings.Add(new ApplePurchaseBindingEntity { Environment = "Production",
+@@ -364,7 +372,7 @@ public sealed class RestorationPostgresTests(PostgresContainerFixture postgres)
+         }
+         await using var check = Database();
+         var persisted = await check.Subscriptions.AsNoTracking().SingleAsync(x => x.OriginalTransactionId == originalId);
+-        Assert.Equal(originalToken, persisted.AppAccountToken);
++        Assert.Equal(storedTokenMissing ? null : originalToken, persisted.AppAccountToken);
+         Assert.NotNull(persisted.TokenConflictDetectedAt);
+         Assert.Equal(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(observedToken.ToByteArray())),
+             persisted.TokenConflictObservedHash);
+@@ -375,6 +383,86 @@ public sealed class RestorationPostgresTests(PostgresContainerFixture postgres)
+             .RequiresAccountSubscription);
+         Assert.Equal(originalToken, (await check.ApplePurchaseBindings.AsNoTracking().SingleAsync(x =>
+             x.OriginalTransactionId == originalId)).BoundAppAccountToken);
++        if (storedTokenMissing)
++        {
++            foreach (var retryToken in new Guid?[] { null, originalToken })
++            {
++                signed.AppAccountToken = retryToken;
++                canonical.AppAccountToken = retryToken;
++                await using var retryDb = Database();
++                var retryClaim = new AccountEntitlementService(retryDb,
++                    new(retryDb, TimeProvider.System, TestConfig.SubscriptionPolicy()), apple,
++                    new(retryDb, TimeProvider.System), TimeProvider.System);
++                Assert.Equal(503, (await retryClaim.ClaimAsync(accountId, key, "signed", default)).Status);
++            }
++            await using var afterRetry = Database();
++            var unchanged = await afterRetry.Subscriptions.AsNoTracking().SingleAsync(x => x.OriginalTransactionId == originalId);
++            Assert.Null(unchanged.AppAccountToken);
++            Assert.Equal(persisted.TokenConflictObservedHash, unchanged.TokenConflictObservedHash);
++            Assert.Equal(alreadyLinked ? accountId : null, unchanged.OwnerAccountId);
++            Assert.Equal(alreadyLinked, (await afterRetry.Devices.AsNoTracking().SingleAsync(x => x.KeyId == key))
++                .RequiresAccountSubscription);
++        }
++    }
++
++    [Theory]
++    [InlineData("verify")]
++    [InlineData("restore")]
++    [InlineData("claim-first")]
++    [InlineData("claim-linked")]
++    public async Task MatchingSignedAndCanonicalTokenMayPopulateNullMetadata(string operation)
++    {
++        var originalId = Guid.NewGuid().ToString("N");
++        var accountId = "matching-" + originalId;
++        var key = "matching-key-" + originalId;
++        var owner = Guid.NewGuid();
++        var token = Guid.NewGuid();
++        var linked = operation == "claim-linked";
++        await using (var setup = Database())
++        {
++            await setup.Database.MigrateAsync();
++            setup.Users.Add(new AppUser { Id = accountId, Email = accountId + "@example.test" });
++            setup.AnonymousPurchaseOwners.Add(new AnonymousPurchaseOwnerEntity { Id = owner });
++            setup.AnonymousPurchaseTokens.Add(new AnonymousPurchaseTokenEntity { AnonymousOwnerId = owner,
++                AppAccountToken = token });
++            setup.Devices.Add(new DeviceEntity { KeyId = key, DeviceUuid = "private-" + originalId,
++                AnonymousOwnerId = owner, RequiresAccountSubscription = linked });
++            var purchase = Purchase(originalId, token);
++            purchase.AppAccountToken = null;
++            purchase.LastAppleEventAt = DateTime.UtcNow.AddMinutes(-2);
++            if (linked) { purchase.OwnerAccountId = accountId; purchase.ClaimedAt = DateTime.UtcNow.AddDays(-1); }
++            setup.Subscriptions.Add(purchase);
++            setup.ApplePurchaseBindings.Add(new ApplePurchaseBindingEntity { Environment = "Production",
++                OriginalTransactionId = originalId, AnonymousOwnerId = owner, BindingKind = "server_token",
++                BoundAppAccountToken = token });
++            await setup.SaveChangesAsync();
++        }
++        var (apple, request) = Evidence(originalId, token);
++        apple.SubscriptionStatusesResult.Subscription!.LastAppleEventAt = DateTime.UtcNow;
++        await using (var processing = Database())
++        {
++            if (operation.StartsWith("claim", StringComparison.Ordinal))
++            {
++                var claim = new AccountEntitlementService(processing,
++                    new(processing, TimeProvider.System, TestConfig.SubscriptionPolicy()), apple,
++                    new(processing, TimeProvider.System), TimeProvider.System);
++                Assert.Equal(200, (await claim.ClaimAsync(accountId, key, "signed", default)).Status);
++            }
++            else
++            {
++                var iap = IapTestFactory.Create(processing, apple);
++                Assert.Equal(200, operation == "verify"
++                    ? (await iap.VerifyAsync(key, new IapVerifyRequest("signed-transaction"), default)).Status
++                    : (await iap.RestoreAsync(key, request, default)).Status);
++            }
++        }
++        await using (var check = Database())
++        {
++            var saved = await check.Subscriptions.AsNoTracking().SingleAsync(x => x.OriginalTransactionId == originalId);
++            Assert.Equal(token, saved.AppAccountToken);
++            Assert.Null(saved.TokenConflictDetectedAt);
++            Assert.Equal(linked || operation == "claim-first" ? accountId : null, saved.OwnerAccountId);
++        }
+     }
+ 
+     [Fact]

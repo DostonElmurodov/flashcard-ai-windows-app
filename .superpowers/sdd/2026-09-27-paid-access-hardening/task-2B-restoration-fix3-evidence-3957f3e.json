@@ -1,0 +1,77 @@
+{
+  "base": "900c9a50799adb3d991fc97a4adf86045b8c13a9",
+  "head": "3957f3e08c6317ff1495939e5c0cfbe7fea4f110",
+  "createdUtc": "2026-09-29T03:20:41.0498018Z",
+  "files": [
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-2B-restoration-fix2-review.md",
+      "bytes": 23193,
+      "sha256": "8D96806DC3AAB72DFBD98E71A4ED228EEBF816819AA71B55819A3573381732FB"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-2B-restoration-fix3-report-snapshot-3957f3e.md",
+      "bytes": 4551,
+      "sha256": "763BCFF849A8151AF89910AAF6B481F40BCB53488FE5DDD36C9BDF76D9683361"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-2B-restoration-fix3-review-package-900c9a5-3957f3e.txt",
+      "bytes": 12257,
+      "sha256": "9A2FF75F28A77EBD50E8B1A0A10126CF6BBDEDCA92E81C813C585674FC54BCA8"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-fix3-results\\fix3-covering-release.log",
+      "bytes": 2166,
+      "sha256": "11970EB554AF07DB45FA2241F32375E42464F8BF2901190A2D2E134E863A3355"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-fix3-results\\fix3-covering-release.trx",
+      "bytes": 105159,
+      "sha256": "EDE2AEC9F5DBAF23B0CFA48B4CF014B3DAE86A0DDE866BD2607E9382FDC66145"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-fix3-results\\fix3-full-release.log",
+      "bytes": 2433,
+      "sha256": "7855DC845536FC5623E12A47D651402332A2CF15BBC952AA7E0CBEE182284322"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-fix3-results\\fix3-full-release.trx",
+      "bytes": 1070739,
+      "sha256": "E046ECAA650F6F273B5DE76A9AFC02115EC6B0DE7AD8C5BA90C2A29AD960EEBC"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-fix3-results\\fix3-release-build.log",
+      "bytes": 2810,
+      "sha256": "64C4F829294D6C026A6A5D500853C9BBD09342BAFAF1AFAFDDD5398C898ACCB9"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-fix3-results\\n1-green.log",
+      "bytes": 2153,
+      "sha256": "6984BD7520ABC91C020A810BBBC2D8FD07F24635181E8908D2C2DBC4FAD9BF92"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-fix3-results\\n1-green.trx",
+      "bytes": 29509,
+      "sha256": "E102937C0873A70AE4BDC3ADF265AAFCAEAC584805FE3A6A4BD87816E768199B"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-fix3-results\\n1-positive-baseline.log",
+      "bytes": 2165,
+      "sha256": "346315AE717C834BBAB58FB4C034C46725C59AF9CD12C1DF112D2ECB41FEB81B"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-fix3-results\\n1-positive-baseline.trx",
+      "bytes": 7414,
+      "sha256": "505ED900C05E64D0BE11778C8BE18AC9AED7680030DC04E3F7B0FE0821099328"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-fix3-results\\n1-red.log",
+      "bytes": 7043,
+      "sha256": "9C58707BA6591BEB5A5DB6EC81D8175366B1468A5992397D6C29443A8CA21683"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-fix3-results\\n1-red.trx",
+      "bytes": 32973,
+      "sha256": "72F3DE491E678BE7FB60FE8429C714300143361B7FBC3323A597EAB3D69764B6"
+    }
+  ]
+}

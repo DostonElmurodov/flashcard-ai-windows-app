@@ -4,6 +4,8 @@
 
 **Base:** I `f6a9e194505dfd27ec28b3fbde11bfcb8eca095e` plus any explicitly accepted upstream changes; backend accepted 2B.2 SHA recorded before integration. iOS 17 deployment target stays. Root owns private feature-branch push and Mac workflow dispatch/evidence; do not substitute Windows source inspection for Swift RED/GREEN.
 
+**Accepted backend handoff:** `3957f3e08c6317ff1495939e5c0cfbe7fea4f110`, after fresh fix3 review closed the last scoped restoration finding. Full server Release: 729 passed, one known B4 skip. Foundation/local migration/quota and physical/release carryovers remain separate; see progress.md and final-review-carryover.md.
+
 **Goal:** purchase on iPhone without login; automatic entitlement discovery after install/launch; explicit Restore permits normal Apple authentication. Losing our old App Attest key never requires support/login for ordinary mobile restore. Optional Windows linking remains a distinct account operation.
 
 ## Exact client boundaries
