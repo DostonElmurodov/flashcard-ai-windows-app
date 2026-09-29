@@ -1,0 +1,592 @@
+{
+  "base": "72c072d8d6a0cf798a831a96ed00d2023103879c",
+  "head": "faeec095aed5ca49af3e80404ae95abd9bee6341",
+  "createdUtc": "2026-09-29T01:28:43.3564954Z",
+  "files": [
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-2B-restoration-report-snapshot-faeec09.md",
+      "bytes": 26997,
+      "sha256": "F94283B71E1E1EB836DFB59B8949C4C109933A37767333973368D97C77A97FDD"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-2B-restoration-review-package-72c072d-faeec09.txt",
+      "bytes": 168271,
+      "sha256": "3871C58992728533EF3D91EBDE7584505E09E1645DF9882D112541D1F6820E2A"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\backend\\tests\\TestResults\\task2b-owner-green.trx",
+      "bytes": 7280,
+      "sha256": "2BC33B3027CE25A545D6BC8B5008AC79207AB60EBF4548202292B17FE5DBFF51"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\backend\\tests\\TestResults\\task2b-owner-red.trx",
+      "bytes": 6996,
+      "sha256": "B41D44BE0D231A5BB5AD070EF86EA7A86E04C91EB7130C7926BBBAF836A6C858"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\backend\\tests\\TestResults\\task2b-resolver-green.trx",
+      "bytes": 11513,
+      "sha256": "5F23009EDBAD760427031A4179390B39A1530BBFD8F9F03DE0E75F8C913D8458"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\backend\\tests\\TestResults\\task2b-resolver-red.trx",
+      "bytes": 10504,
+      "sha256": "136F7E7BCB99054C699E1FDAA45204F110D06141CBB9DAC987123817B8F22FE5"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\backend\\tests\\TestResults\\task2b-restoration-b2-green.trx",
+      "bytes": 6157,
+      "sha256": "229B34B988A3C6F99CC70C8BB6D432DF031F11C0830CAB645CD8C51366A2DED5"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\backend\\tests\\TestResults\\task2b-restoration-b2-green2.trx",
+      "bytes": 4494,
+      "sha256": "F715EC7A99BAA9D752ABE6D0BEB53EA783D54EA75DC0BB72A8B4DD83D0078A5A"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\backend\\tests\\TestResults\\task2b-restoration-b2-red.trx",
+      "bytes": 7332,
+      "sha256": "3EB63A0BFD9D55718E288CBD57797D09D8C4790C57F371665BE72B83EB44B258"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\backend\\tests\\TestResults\\task2b-stateonly-red.trx",
+      "bytes": 4634,
+      "sha256": "940026DA5BDF7E2F4760AAE51E66C7C8772A87380FD37D4BC28AF7F7EE386DDC"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-b2-green.log",
+      "bytes": 2926,
+      "sha256": "CE55C8A9DC4143930C8D888BCCE6A12B931824FCA51C1BD1FE2526FC2857D29F"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-b2-red.log",
+      "bytes": 3532,
+      "sha256": "4B1A80D792D45ADF37C10F971CB0D12D9B1E1BD03748533FD3F02E322F88164E"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\appdate-green.log",
+      "bytes": 2421,
+      "sha256": "21823718968209BE81FAE0B09FA88F872C87C166D2FA03D833FE02F27E124CF6"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\appdate-green.trx",
+      "bytes": 2993,
+      "sha256": "D8266FBAC42DDBA5E44EEB7458507311DFF1DB0486D774B0D2C2A2F4D7220C1E"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\appdate-red.log",
+      "bytes": 3273,
+      "sha256": "2AA68A2122EF59B80B5545CFBCC5F51481E493F185692CF9301859170FCF7023"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\appdate-red.trx",
+      "bytes": 4780,
+      "sha256": "70910F3277001B96DA1ED91876B981ED4163D8E39041B7FE373AB108086312BD"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\appidentity-green.log",
+      "bytes": 2160,
+      "sha256": "564451DFAE666C3F4515F37882E4F3ADFE77E7CE88942973ADB7F18014D7F4E1"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\appidentity-green.trx",
+      "bytes": 2993,
+      "sha256": "E6F08CD88B409430A711D3E1B326FC2276BCEC1D7E2E71EC19CD65E8127C2A71"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\b2-green2.log",
+      "bytes": 2167,
+      "sha256": "067252EE0966CCFDCF48BA82C7411D20C9B67073C606F1F08D64BC8547F6459D"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\claim-malformed-green.log",
+      "bytes": 2161,
+      "sha256": "3F2671AC79B19CAD6FC760F1BB50D3D6C051A323AD5A671674B27CF189689C7C"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\claim-malformed-green.trx",
+      "bytes": 3038,
+      "sha256": "BB8F883C496AD5532BE94CA3955974ECE873FE602F8C0D10215B1DD56DD74112"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\claim-shape-green1.log",
+      "bytes": 2158,
+      "sha256": "695CF85F63D34E52E5EA299BC6E7116F61F0EA71E4AAFD7FA683FA3F00150688"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\claim-shape-green1.trx",
+      "bytes": 9230,
+      "sha256": "E310169F06AA9541DA828B60ADA0BB8A5E4A7B5163922B1BB493B984B2293A30"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\claim-shape-red.log",
+      "bytes": 6599,
+      "sha256": "D06ECCFE77DF46BD51BDD393AF079C28A0F552EBA57B96F4C86DCF396180DD70"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\claim-shape-red.trx",
+      "bytes": 12923,
+      "sha256": "4D444A81C265158667873CC238DF0C9BF698F919BB69D8B950F3CAFD5FCBCC05"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\claim-shape-red2.log",
+      "bytes": 3081,
+      "sha256": "B4A174013AF2F4421313E3588F059DD5AF9E7B04E0091661208A259F444438F9"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\claim-shape-red2.trx",
+      "bytes": 4995,
+      "sha256": "AF1CA8E75CEF800C7111221D7F0734DC28B14744FDE6840F2B885A5ED64E8F33"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\covering-first.log",
+      "bytes": 11166,
+      "sha256": "8039A834E10B87D68DFD75D83C1D345F9D576224BD892D5A12AC138409EF33BA"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\covering-first.trx",
+      "bytes": 135523,
+      "sha256": "E97190113271FA1D76397C08596FA22F8946B9BDFF16D434C9BD54FC4ADB1B42"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\covering-second.log",
+      "bytes": 3420,
+      "sha256": "7FF2C9037606DED589BBA04116620B85DFA6EDCA14E9481DFF15742EC2137D50"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\covering-second.trx",
+      "bytes": 127304,
+      "sha256": "E8531CBDF27705020E15E7DBA9BCCA9EDAE6834B839994222838F9993DCA2900"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\delegate-first.log",
+      "bytes": 2421,
+      "sha256": "09FD972E4C4E73BAD3041E68C34934EEAF941FA2F3B586B54DD06D03AA52A71B"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\delegate-first.trx",
+      "bytes": 23620,
+      "sha256": "B19A647032987742064776860AC18C78936080938DF1BA6F7CB7025CA91BE9BA"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\fixture-migration-http-first.log",
+      "bytes": 2168,
+      "sha256": "5FBCB9F209F411B3C4459FDC9CD1FCED3CBC3DD6F82B59915C94824BFCFFEFED"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\fixture-migration-http-first.trx",
+      "bytes": 26012,
+      "sha256": "FA93ED182F969DFF4F3249DBB1629D75169AA0A714223582D0D53E70896745D8"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\fixture-migration-life-first.log",
+      "bytes": 2171,
+      "sha256": "75F3C6042D2EED19F38165A90D6F8DC66156265012AEDEF5437B77EB7A4F9EAA"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\fixture-migration-life-first.trx",
+      "bytes": 14827,
+      "sha256": "25E4722DEEC7C38386F7F5FE4147112747AD940D480375B6AB4F2158D08ADDC2"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\http-restore-shape-green1.log",
+      "bytes": 2165,
+      "sha256": "CA32D4A737D258D029864BC78D5B0B15614FDE596BA2A565D70DD8DB6285C0F5"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\http-restore-shape-green1.trx",
+      "bytes": 9194,
+      "sha256": "2C7DB1FA03655AAA114221F9CCD6DC66DF04E566984F0513E58041CE5ECF6153"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\http-shape-final-green.log",
+      "bytes": 2162,
+      "sha256": "85F76C77677E6D812C3291458C6641ECF315DDB3BDDFE2351836D9F3401BC1EB"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\http-shape-final-green.trx",
+      "bytes": 4910,
+      "sha256": "3FC95390CCCD08C0FF72D11CE1A3ACBD0B1DA435DB8297AC19CAD39C56DECC0D"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\http-shape-green.log",
+      "bytes": 2156,
+      "sha256": "13BA9E98F48138559C2A5301CA30AE70A38C10A8B66AE8DA8DB805032573FB76"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\http-shape-green.trx",
+      "bytes": 4910,
+      "sha256": "B1C88CBD4B7170DC05C30885314DE3BA338D1495F3507A0859B21B7270055201"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\http-shape-red.log",
+      "bytes": 4448,
+      "sha256": "A433C4C17508CEF80B3464461E48C2A48256973B5EC77399372A3850F27C7E8D"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\http-shape-red.trx",
+      "bytes": 9248,
+      "sha256": "836AE494B197198A3D5EDF0617CCCDA9679E589446DBAD5CE62B881BC2A9BBA7"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\http-shape-reverted-red.log",
+      "bytes": 4280,
+      "sha256": "C867B416F15038F60A1B71E57E7CE53B32A9C85CE7BC40F5444BC5FE5BABD62A"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\http-shape-reverted-red.trx",
+      "bytes": 8932,
+      "sha256": "DBA9F11B99059D657FA474FEF363CB0E4FA13A6D13A9DA6D37FC97B645474BA2"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\http-valid-context-green1.log",
+      "bytes": 2165,
+      "sha256": "B492A3A877215DA9BC4ECB7A62FF7F0C65B15A8FDF68A1B39C62D8753CB55D5D"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\http-valid-context-green1.trx",
+      "bytes": 7786,
+      "sha256": "7C0A463C08046561917C0180674B2D8A0636514554E65CA6D08D8F3D0CF07DE6"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\http-valid-context-red.log",
+      "bytes": 2997,
+      "sha256": "30151954EDB1A2676D21CE1C8CF3BC67A6613124A8D0F699579D7AD546D41CF0"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\http-valid-context-red.trx",
+      "bytes": 4815,
+      "sha256": "167E1525FD1FDAEBD97E9C8EC3AAAEBBA7B0D3C5EF4D5FFBD9A1579771F5754F"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\malformed-wire-green1.log",
+      "bytes": 2161,
+      "sha256": "AF71FB97041C9735A87C261910BA9805DFF00DB9749610CD5B573660D80E93A1"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\malformed-wire-green1.trx",
+      "bytes": 34293,
+      "sha256": "1ED18B9DFBEF2C4BD71A169E69BAA06E0740B679E64A0F6E58647B6E7404A82E"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\malformed-wire-red.log",
+      "bytes": 8453,
+      "sha256": "D213775A96A1FBC8F2C38C1812D0918ADBFA0E9EA0B7829599E8964E64285ECF"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\malformed-wire-red.trx",
+      "bytes": 23067,
+      "sha256": "2B82DE3F2524A86EF55963FB39D1C97EAC1BC4A292F24034E6E5D8556F607BC4"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\nostore-early-green.log",
+      "bytes": 2159,
+      "sha256": "1417053E62718BC980158D558E678B5A763EEA9E52621AF3CC6C70DD2635D900"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\nostore-early-green.trx",
+      "bytes": 7410,
+      "sha256": "86603387A6BE429BB6FFDEFCEA2A9E233A4A1A45E1C51586C22F28C0A6EFD061"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\nostore-early-red.log",
+      "bytes": 4851,
+      "sha256": "C791573B50210D0F2E7F95ACF337BDF88A40D14F7B7133E6C27A6601DCA125A0"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\nostore-early-red.trx",
+      "bytes": 12957,
+      "sha256": "92A4D7FE207481F465ABC71AED85E7F134576D48B05E1378903CDF9F2D8B0924"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\nostore-trailing-green.log",
+      "bytes": 2162,
+      "sha256": "17B7DCAC42B742ED82406189F996880CBD2811EE0D1B31E9079BB72484573A54"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\nostore-trailing-green.trx",
+      "bytes": 10340,
+      "sha256": "821D272882567B33B01798EEA1F3FED40087CD3FCCE28F9DF965FACBEE33A2EE"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\nostore-trailing-red.log",
+      "bytes": 3082,
+      "sha256": "F6369AAD3ED2AA53924152BB1B6F5FA8D9448BCE41A32B125634E73ED561E51E"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\nostore-trailing-red.trx",
+      "bytes": 12221,
+      "sha256": "4C431D6C79373221398760FAFADA593B1280910D2CFE5BDC1A1114EF37630521"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\owner-green.log",
+      "bytes": 2157,
+      "sha256": "A1EBB7BF679C4063E0A3B0DBBCB95308C470170F87FA07AEAC26F11F7ADF307E"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\owner-red.log",
+      "bytes": 3396,
+      "sha256": "AE98D1E5AC92A0D230116551DAAF081772FCBE3EA61CAFAB7756508EC1DA8902"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\paidaccess-migrated.log",
+      "bytes": 2429,
+      "sha256": "A1A5A3FB44F8807042023FBE8876F8AD9249FD4C8254BF97F95ACDA054262833"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\paidaccess-migrated.trx",
+      "bytes": 25844,
+      "sha256": "BEB6502E43A5F74DA7E7721E361A54315BB5C3386D18D204C326BD22A06863DC"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\paired-green.log",
+      "bytes": 2421,
+      "sha256": "C737727D3472E5F1B9D7200BC4B0EA6D8CD2E32D424A543ABACB63F755DE95CA"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\paired-green.trx",
+      "bytes": 9516,
+      "sha256": "B17B45022987708AA3A6CA7F20AB94C7926053D2D3AFA4846B159340AA4F5473"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\populated-startup-first.log",
+      "bytes": 2163,
+      "sha256": "7206300412434919D1E829A9AB933773AFB83C9BD194B28470BF9E840AF1D924"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\populated-startup-first.trx",
+      "bytes": 3005,
+      "sha256": "A56AD9B5CACDCD97771E0C2E530EE678F9ED2E4D32E75E61C52B83EC55CD855A"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\residual-order-first.log",
+      "bytes": 2160,
+      "sha256": "2B73257CC10A20868C2A2A782C60B026B0278ED6630E6BE3D0B527D05C152C68"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\residual-order-first.trx",
+      "bytes": 4419,
+      "sha256": "D55F5A4F3B9E7BA5C64406A701586A4DD16F4811BC13C870E099EE65519806D9"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\resolver-green.log",
+      "bytes": 2426,
+      "sha256": "2802217645022834015BD19C14216A1C08B501F2B8AC93FEA897FAA532C014B5"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\resolver-red.log",
+      "bytes": 4525,
+      "sha256": "869F522F3D80B130115D13216D9E078A979DB44159BAF9EDB37236BB7C34E9CE"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\restore-concurrency-first.log",
+      "bytes": 2165,
+      "sha256": "8D3B434994B874DD155A04D9A61C343B467391C4ACAE244CF2BC20EB2ED6D1EB"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\restore-concurrency-first.trx",
+      "bytes": 3062,
+      "sha256": "5F1F29E6DD024EAF867A735004F62E19330F3B1C149258CE5F82497F0CD5ED70"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\restore-family-history-first.log",
+      "bytes": 2168,
+      "sha256": "2617CDC1AA4726EC1F708A30C881BCAEA3B772E355F5F5A910025409BFCD0F84"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\restore-family-history-first.trx",
+      "bytes": 22233,
+      "sha256": "E66C5B2FDEADAB9D2E08EBA8774AEAFEA006935DD6ECE7E9714647DE2203E168"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\restore-flow-first.log",
+      "bytes": 2425,
+      "sha256": "D20B94C99BFA8D83D48FE4D5D686306C33E20820C9A20021D177561D040D8727"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\restore-flow-first.trx",
+      "bytes": 16523,
+      "sha256": "C7BB34C9E426F8BFDE82674399F664C18C77ECF2118A2443658D757B3123D7B8"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\restore-http-proof-diagnose.log",
+      "bytes": 3021,
+      "sha256": "7AA322764216608FC6B9E4E9EC1C479E27E14793C060240693907F69FD36AB77"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\restore-http-proof-diagnose.trx",
+      "bytes": 4777,
+      "sha256": "10D2E287AE7D07643BBD97C2A3A5ADC75B1B18E22EFEE6F4AAD2CA366089B12B"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\restore-http-proof-first.log",
+      "bytes": 3022,
+      "sha256": "7F161EE4973B056F3E7F05E61E2F78F3AE229C2F8697B9F4FB58AF0C0D27411E"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\restore-http-proof-first.trx",
+      "bytes": 4861,
+      "sha256": "0C16BECF23D757422E1CC34B3705E6DEE3959369BBDC4E3742BBEE9752ADE264"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\restore-http-proof-green.log",
+      "bytes": 2164,
+      "sha256": "0AEBA0F7D637E41A158571417A17361E111EB1C7EAD68EA1C86A6A5E1A95EAE0"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\restore-http-proof-green.trx",
+      "bytes": 3002,
+      "sha256": "8D5A31C5EE6BEF5E44E88EE05110672436AD4A6B358C1B89E71FB3EE340D0E9F"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\restore-postgres-barrier.log",
+      "bytes": 2164,
+      "sha256": "BE83D2D3963DED0B154BCD1549E2BD6AE367EC0CCDF84A9C644F1E920ECB2CBB"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\restore-postgres-barrier.trx",
+      "bytes": 4479,
+      "sha256": "0BDE215B7DE2D1ACFA9DE2A7DF81DA9A1AD9F6A1C62ADA7B932057F6DA6A197E"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\restore-postgres-second.log",
+      "bytes": 2163,
+      "sha256": "3C2B15BB8F2751B09713F9A9E3C3AF53152DB3DE81B3E8D97F6B0852E12FE7AE"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\restore-postgres-second.trx",
+      "bytes": 4479,
+      "sha256": "B3620CD6A5387D5DD5C7D7060F43FA898EC0B3BB07A56E92B8FDB2D9BFD80564"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\shared-migrated-first.log",
+      "bytes": 2812,
+      "sha256": "4A53AC5593BC7E7956D0C51EDDA3F9608772F4DD5172221F9E1CE43707432813"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\shared-migrated-green.log",
+      "bytes": 2161,
+      "sha256": "5DFCB899EB95E3811909934A3C105AC379837931B89CD8F2C455146C35BE1B51"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\shared-migrated-green.trx",
+      "bytes": 8904,
+      "sha256": "399E1117718B65E27DCEF14434A7A171C3E2DDFA45CCA8688986E3484E9DFDBD"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\shared-migrated-second.log",
+      "bytes": 4055,
+      "sha256": "57B415BA23D9775520BAECFB11043C6EC3D4F93C21C64E224B03F9AFB26B6B17"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\shared-migrated-second.trx",
+      "bytes": 12807,
+      "sha256": "227AB48979C0876422858A295A391B72BE84A216656C1CF053E160093FDAEA4D"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\stateonly-green.log",
+      "bytes": 2421,
+      "sha256": "6FA08C7082D5A11EADA76EFF3BD7D8B0036E363DFA4C3714A3B126E49D65D4D6"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\stateonly-green.trx",
+      "bytes": 12924,
+      "sha256": "708F3F1915EF5113954F4445BC285AF3B53294B505064EEBEDC63ECDDD17C720"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\stateonly-red.log",
+      "bytes": 3154,
+      "sha256": "33A0FFB3243370FE57082BD6EAC3825C822202BED1F5A574C40E20EA88CA7091"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\task2b-restoration-final-build.log",
+      "bytes": 1259,
+      "sha256": "B730D1329606370404FCB66ABB1DC43E0D384E16ABED9AF0B09983FB1F582922"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\task2b-restoration-final-diffcheck.log",
+      "bytes": 2037,
+      "sha256": "9DFDED78C497BE6FE05DE30408FE8C67331F53D17F4E0DC905A933356F7258BE"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\task2b-restoration-final-model-drift.log",
+      "bytes": 66,
+      "sha256": "C924DA1693AD60EB6A78717DDD333946A8A61A056C2CE2868AE514384F01C866"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\task2b-restoration-final-release.log",
+      "bytes": 2443,
+      "sha256": "0670D1CB360B1E86677424806DC500BC1F3B9ABD1F77098DD791A6E4980ACA6B"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\task2b-restoration-final-release.trx",
+      "bytes": 1005536,
+      "sha256": "E5F05E8712DC1FA83059FA8B2FBFB1879ABCD37694660743FA94C535587B7AD2"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\task2b-restoration-full-release.log",
+      "bytes": 21557,
+      "sha256": "A8E99923A85730D0DEE12D362864F2D727FECFAEEBD9EBA36189D04C29129BE9"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\task2b-restoration-full-release.trx",
+      "bytes": 1024171,
+      "sha256": "19213EA72D5CAEC97BC1C97D644C9623D88006B5956B7A82BDC678DF9E46E7DC"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\task2b-restoration-full-release2.log",
+      "bytes": 2443,
+      "sha256": "F7CE21AB17922B78AAD0C544C51D6A835D1B68F05F36CC48911E81A49C894401"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\task2b-restoration-full-release2.trx",
+      "bytes": 1000929,
+      "sha256": "50E7D806614E53431CE2C8EB2720E9A1BE2D7C58A0B265DD982B1AE8EB9B034B"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\task2b-restoration-release-build.log",
+      "bytes": 1259,
+      "sha256": "DBC6B88E4F0669249F4081AD26037E7A3FA562C01ECA18CB84B1964739C5EE81"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\token-source-green.log",
+      "bytes": 2425,
+      "sha256": "91D1B5AC77123D3E82D7F403186D4F387E4EB6C1D045A7772CA4D0C7DB318E93"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\token-source-green.trx",
+      "bytes": 10120,
+      "sha256": "CBCC5FD2DFA2704506B289F6092CB3FB40C3306936090F8ACF94F7777C8344B7"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\token-source-red.log",
+      "bytes": 3152,
+      "sha256": "84AC6702B4C98B511CF0A95ACC76D459ECB4A0447565C07A7FF96B67DD2C8C70"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\token-source-red.trx",
+      "bytes": 4634,
+      "sha256": "FAB8A17CFACB82F6DFCD5C791B68BF673030D9AE3C3394C98E900C67A6AC443F"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\trailing-shape-green.log",
+      "bytes": 2160,
+      "sha256": "386E275710E0F70B739BB354F984AED958702EC0BF915A0365776698EBA207B7"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\trailing-shape-green.trx",
+      "bytes": 12335,
+      "sha256": "EC2FCC472B17F3AFE061390A550B1B9CFFE5B5AD7F990C6C709917D3DC9FE9B7"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\trailing-shape-red.log",
+      "bytes": 3224,
+      "sha256": "FD7AB520643943EA058700F4F40150A529DE59584A641D4ED71EB83DF60C7F8C"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task2b-restoration-results\\trailing-shape-red.trx",
+      "bytes": 14331,
+      "sha256": "D20E96AC8283E77B40D9210A9B2F8EB12EAD4372DA51401567593DC8368A11FC"
+    }
+  ]
+}

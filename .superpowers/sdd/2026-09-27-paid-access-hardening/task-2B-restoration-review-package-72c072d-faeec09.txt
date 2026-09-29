@@ -1,0 +1,2710 @@
+Task2B.2 full restoration review
+BASE 72c072d8d6a0cf798a831a96ed00d2023103879c
+HEAD faeec095aed5ca49af3e80404ae95abd9bee6341
+COMMITS
+faeec09 Complete owner-bound mobile restore backend validation
+fae7af6 wip: checkpoint anonymous purchase restore before pause
+ Areas/OwlAI/Controllers/IapController.cs           |  35 ++-
+ Filters/AppAttestAssertionFilter.cs                |  20 ++
+ Filters/PurchaseRequestFields.cs                   |  39 +++
+ Program.cs                                         |  13 +
+ docs/paid-access-policy.md                         |  25 +-
+ docs/paid-access-rollout.md                        |  43 ++-
+ src/Mavrylo.Services/Dtos/IapDtos.cs               |  10 +-
+ .../Services/AccountEntitlementService.cs          |  12 +-
+ .../Services/AnonymousPurchaseService.cs           | 179 ++++++++++++
+ .../Services/AppStoreServerClient.cs               |  62 +++-
+ src/Mavrylo.Services/Services/AppleJws.cs          |  14 +-
+ .../Services/AppleMobileRestoreVerifier.cs         |  59 ++++
+ .../Services/DeviceContextService.cs               |  67 ++++-
+ .../Services/EntitlementService.cs                 |  17 +-
+ .../Services/IAppStoreServerClient.cs              |   2 +
+ src/Mavrylo.Services/Services/IapService.cs        | 112 +++-----
+ .../Services/MobilePurchaseAccessResolver.cs       |  72 +++++
+ tests/AccountClaimHttpValidationTests.cs           |  77 +++++
+ tests/AiProtectionFilterTests.cs                   |   1 +
+ tests/AiSpendRouteTests.cs                         |   1 +
+ tests/AnonymousPurchaseMigrationTests.cs           |  10 +
+ tests/AnonymousPurchaseOwnershipTests.cs           | 107 +++++++
+ tests/AppleJwsTests.cs                             |  42 +++
+ tests/EntitlementServiceTests.cs                   |   4 +-
+ tests/IapHttpValidationTests.cs                    | 261 +++++++++++++++++
+ tests/MobilePurchaseRestoreTests.cs                | 318 +++++++++++++++++++++
+ tests/PaidAccessAuditRegressionTests.cs            |  26 +-
+ tests/PaidAccessBoundaryHttpTests.cs               |   4 +-
+ tests/RestorationPostgresTests.cs                  | 142 +++++++++
+ tests/SharedSubscriptionPostgresTests.cs           |  61 +++-
+ tests/SubscriptionLifecycleTests.cs                |  22 +-
+ tests/TestModeRouteTests.cs                        |   1 +
+ tests/TestSupport/FakeAppStoreServerClient.cs      |  13 +-
+ tests/TestSupport/IapTestFactory.cs                |  25 ++
+ tests/TestSupport/OwnerPurchaseFixture.cs          |  37 +++
+ 35 files changed, 1766 insertions(+), 167 deletions(-)
+diff --git a/Areas/OwlAI/Controllers/IapController.cs b/Areas/OwlAI/Controllers/IapController.cs
+index 96aa619..acb58c3 100644
+--- a/Areas/OwlAI/Controllers/IapController.cs
++++ b/Areas/OwlAI/Controllers/IapController.cs
+@@ -8,9 +8,9 @@ namespace Mavrylo.Areas.OwlAI.Controllers;
+ /// <summary>
+ /// In-app purchase verification and device-JWT (re)issuance.
+ ///
+-/// Identity comes from the device-JWT (aud=device) minted at registration: its <c>keyId</c> claim
+-/// names the device, and we look up the device's <c>DeviceUuid</c> to find the subscription. All
+-/// routes require the device scheme (a valid device-JWT). Assertion enforcement is added in Phase 2.
++/// The device JWT identifies an App Attest key. Server-owned purchase bindings and finite mobile
++/// grants resolve entitlement; the historical DeviceUuid is never purchase owner proof. All
++/// routes require a device JWT, and the resource filter verifies a fresh assertion for mutations.
+ /// </summary>
+ [ApiController]
+ [Area("OwlAI")]
+@@ -23,17 +23,40 @@ public class IapController(IapService iap) : ControllerBase
+     [HttpPost("verify")]
+     [RequestSizeLimit(256_000)]
+     public async Task<IActionResult> Verify([FromBody] IapVerifyRequest request, CancellationToken ct)
+-        => Map(await iap.VerifyAsync(KeyId(), request, ct));
++    {
++        Response.Headers.CacheControl = "no-store";
++        return Map(await iap.VerifyAsync(KeyId(), request, ct));
++    }
++
++    [HttpPost("purchase-context"), RequestSizeLimit(16_000)]
++    public async Task<IActionResult> PurchaseContext([FromBody] IapPurchaseContextRequest request, CancellationToken ct)
++    {
++        Response.Headers.CacheControl = "no-store";
++        return Map(await iap.PurchaseContextAsync(KeyId(), request, ct));
++    }
++
++    [HttpPost("restore"), RequestSizeLimit(80_000)]
++    public async Task<IActionResult> Restore([FromBody] IapRestoreRequest request, CancellationToken ct)
++    {
++        Response.Headers.CacheControl = "no-store";
++        return Map(await iap.RestoreAsync(KeyId(), request, ct));
++    }
+ 
+     /// <summary>Refresh the device-JWT with the device's current entitlement.</summary>
+     [HttpPost("token")]
+     public async Task<IActionResult> Token(CancellationToken ct)
+-        => Map(await iap.TokenAsync(KeyId(), ct));
++    {
++        Response.Headers.CacheControl = "no-store";
++        return Map(await iap.TokenAsync(KeyId(), ct));
++    }
+ 
+     /// <summary>Return the device's canonical entitlement.</summary>
+     [HttpGet("entitlement")]
+     public async Task<IActionResult> Entitlement(CancellationToken ct)
+-        => Map(await iap.EntitlementAsync(KeyId(), ct));
++    {
++        Response.Headers.CacheControl = "no-store";
++        return Map(await iap.EntitlementAsync(KeyId(), ct));
++    }
+ 
+     private string? KeyId()
+     {
+diff --git a/Filters/AppAttestAssertionFilter.cs b/Filters/AppAttestAssertionFilter.cs
+index 1bf56c6..fbcfdeb 100644
+--- a/Filters/AppAttestAssertionFilter.cs
++++ b/Filters/AppAttestAssertionFilter.cs
+@@ -30,6 +30,18 @@ public sealed class AppAttestAssertionFilter(
+         var isSimulator = keyId.StartsWith("SIMULATOR-", StringComparison.Ordinal);
+         if (verifier.IsDevelopmentBypassEnabled && isSimulator)
+         {
++            byte[] simulatedBody;
++            try { simulatedBody = await ReadAndRewindBodyAsync(http); }
++            catch (IOException)
++            {
++                context.Result = Problem(StatusCodes.Status413PayloadTooLarge, "request body too large");
++                return;
++            }
++            if (!PurchaseRequestFields.ValidForPath(http.Request.Path, simulatedBody))
++            {
++                context.Result = InvalidPurchaseRequest();
++                return;
++            }
+             await next();
+             return;
+         }
+@@ -69,6 +81,11 @@ public sealed class AppAttestAssertionFilter(
+             context.Result = Problem(StatusCodes.Status403Forbidden, result.Code ?? "invalid_device_proof");
+             return;
+         }
++        if (!PurchaseRequestFields.ValidForPath(http.Request.Path, body))
++        {
++            context.Result = InvalidPurchaseRequest();
++            return;
++        }
+         await next();
+     }
+ 
+@@ -95,4 +112,7 @@ public sealed class AppAttestAssertionFilter(
+             },
+             error = detail == "invalid_device_proof" ? "Device proof was rejected." : detail
+         }) { StatusCode = status };
++
++    private static BadRequestObjectResult InvalidPurchaseRequest()
++        => new(new { code = "invalid_purchase_request", error = "Purchase request fields are invalid." });
+ }
+diff --git a/Filters/PurchaseRequestFields.cs b/Filters/PurchaseRequestFields.cs
+new file mode 100644
+index 0000000..35b0c7b
+--- /dev/null
++++ b/Filters/PurchaseRequestFields.cs
+@@ -0,0 +1,39 @@
++using System.Text.Json;
++
++namespace Mavrylo.Filters;
++
++internal static class PurchaseRequestFields
++{
++    public static bool ValidForPath(PathString path, byte[] rawBody)
++        => path.Value?.TrimEnd('/').ToLowerInvariant() switch
++        {
++            "/owlai/iap/verify" => Valid(rawBody, 256_000, ["jws_transaction"], ["device_uuid"]),
++            "/owlai/iap/purchase-context" => Valid(rawBody, 16_000, ["product_id"], []),
++            "/owlai/iap/restore" => Valid(rawBody, 80_000,
++                ["jws_transaction", "jws_app_transaction", "device_verification_id"], []),
++            "/owlai/account/subscription/apple/claim" => Valid(rawBody, 40_000,
++                ["account_id", "jws_transaction"], []),
++            _ => true
++        };
++
++    private static bool Valid(byte[] rawBody, int maxBytes, string[] required, string[] optional)
++    {
++        if (rawBody.Length > maxBytes) return false;
++        try
++        {
++            using var doc = JsonDocument.Parse(rawBody);
++            if (doc.RootElement.ValueKind != JsonValueKind.Object) return false;
++            var allowed = required.Concat(optional).ToHashSet(StringComparer.Ordinal);
++            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
++            foreach (var property in doc.RootElement.EnumerateObject())
++            {
++                if (!allowed.Contains(property.Name) || !seen.Add(property.Name)) return false;
++                if (property.Value.ValueKind != JsonValueKind.String
++                    && !(optional.Contains(property.Name, StringComparer.Ordinal)
++                        && property.Value.ValueKind == JsonValueKind.Null)) return false;
++            }
++            return required.All(seen.Contains);
++        }
++        catch (JsonException) { return false; }
++    }
++}
+diff --git a/Program.cs b/Program.cs
+index ba644eb..a72903a 100644
+--- a/Program.cs
++++ b/Program.cs
+@@ -47,6 +47,9 @@ builder.Services.AddScoped<IAppStoreServerClient>(sp => sp.GetRequiredService<Ap
+ builder.Services.AddScoped<EntitlementService>();
+ builder.Services.AddSingleton<SubscriptionValidationPolicy>();
+ builder.Services.AddScoped<DeviceContextService>();
++builder.Services.AddScoped<MobilePurchaseAccessResolver>();
++builder.Services.AddScoped<AppleMobileRestoreVerifier>();
++builder.Services.AddScoped<AnonymousPurchaseService>();
+ builder.Services.AddScoped<AiUsageService>();
+ builder.Services.AddScoped<DeviceWordService>();
+ builder.Services.AddScoped<PublicFlashcardSetService>();
+@@ -258,6 +261,16 @@ using (var scope = app.Services.CreateScope())
+ }
+ 
+ app.UseForwardedHeaders();
++app.Use(async (http, next) =>
++{
++    var path = http.Request.Path;
++    var normalizedPath = path.Value?.TrimEnd('/');
++    if (path.StartsWithSegments("/owlai/iap", StringComparison.OrdinalIgnoreCase)
++        || string.Equals(normalizedPath, "/owlai/app-attest/resume", StringComparison.OrdinalIgnoreCase)
++        || string.Equals(normalizedPath, "/owlai/account/subscription/apple/claim", StringComparison.OrdinalIgnoreCase))
++        http.Response.Headers.CacheControl = "no-store";
++    await next();
++});
+ app.UseCors();
+ app.UseAuthentication();
+ app.UseRateLimiter();
+diff --git a/docs/paid-access-policy.md b/docs/paid-access-policy.md
+index 40ac866..ac14c81 100644
+--- a/docs/paid-access-policy.md
++++ b/docs/paid-access-policy.md
+@@ -1,10 +1,10 @@
+ # Paid access contract (local hardening baseline)
+ 
+-Decision ledger: 2026-09-27. This document states the intended contract; it does not claim the audit baseline implements it.
++Decision ledger: 2026-09-27, with the Task 2B backend ownership and mobile restore contract implemented locally on 2026-09-28. Client rollout and physical-device verification remain separate gates.
+ 
+ ## Approved and pending decisions
+ 
+-- **D1 = B, approved:** iOS purchases and paid use remain available without an account. An account is required for desktop paid access. Attestation, a client UUID, and possession of a copied receipt are different proofs: none alone establishes transferable anonymous ownership. The independent anonymous owner, key recovery, legitimate restore and optional desktop linking contract is pending design. Do not require an account on iOS to resolve this uncertainty.
++- **D1 = B, approved:** iOS purchases and paid use remain available without an account. An account is required for desktop paid access. Each registered installation has a server-owned anonymous owner; a pre-purchase `appAccountToken` maps to that owner. A copied JWS or legacy `DeviceUuid` alone never transfers ownership. A new iPhone can restore mobile access from matching locally verified Apple transaction and app-transaction evidence without the old App Attest key or an Owl login. First desktop linking still requires original owner proof or an already linked Owl account.
+ - **D2 pending:** numerical limits for free, trial, premium and grace, global guest limits, and monetary budgets are not approved. Synthetic test quotas of zero or one and existing ten-word audit fixtures are test inputs, not proposed commercial defaults.
+ - **D3 approved:** previously paid content remains readable and reviewable after paid expiry. New AI, adding and content editing are forbidden; deletion and export remain permitted. `review` here means reviewing saved content; AI enrichment is `new_ai` and is forbidden after expiry.
+ 
+@@ -28,9 +28,20 @@ The 10-card content boundary above records the scoped client implementation
+ ruling from Tasks8/9. The count and first-ten order apply once across the saved
+ library, including all collections. This content rule is separate from D2's
+ still-unapproved daily/minute AI limits and monetary budget. D1=B and D3 are
+-explicit user decisions. This
+-intended matrix is not a claim that pending backend ownership, quota, spend or
+-anonymous-recovery work already enforces every cell.
++explicit user decisions. This intended matrix is not a claim that pending quota,
++spend, client, or release work already enforces every cell.
++
++## Backend purchase and restore protocol
++
++All IAP mutation routes use a device JWT and a fresh App Attest assertion over the exact request body and path. `POST /owlai/iap/purchase-context` accepts `{"product_id":"monthly"}` and returns `{"app_account_token":"<server GUID>"}` for that installation's anonymous owner. Retries return the same token. The client supplies it to StoreKit when purchasing. `POST /owlai/iap/verify` accepts `{"jws_transaction":"<signed JWS>"}` and establishes or refreshes a strong owner binding only when the signed token maps to the requesting installation's owner. Its optional legacy `device_uuid` field is ignored for authorization.
++
++`POST /owlai/iap/restore` accepts `{"jws_transaction":"<signed JWS>","jws_app_transaction":"<signed app JWS>","device_verification_id":"<canonical UUID>"}`. Both signed envelopes must match the submitted local device-verification ID, app identity and environment; canonical Apple status for the same original transaction must be available. A successful restore returns current or historical entitlement plus a finite mobile grant. No Owl login or old installation key is required. Existing owner bindings never move, and restore alone cannot first-claim desktop access or expose account data. `POST /owlai/iap/token` and verify/restore responses include `purchase_authority` (`owner`, `mobile_restore`, or `none`) and nullable `mobile_grant_expires_at`. Protected operations recheck database state rather than trusting JWT hints. Expiry and revocation immediately stop paid creation/AI; historical paid status remains visible.
++
++Missing `appAccountToken` is valid for mobile restore and lifecycle evidence, including Family Sharing, but never proves original owner authority. Account claim uses the account session, device proof, and an existing `server_token` binding for a first claim. A restored phone with no original owner proof receives `desktop_owner_proof_required`; its mobile access remains usable. A deleted account leaves the purchase claim timestamp as a tombstone and preserves mobile grant history. The exceptional first-desktop case after total original-key loss has no automated backend override; support recovery needs a separately verified process.
++
++A complete captured matching Apple envelope plus a fresh attacker installation proof can still obtain a finite mobile grant referencing the same purchase. App Attest does not bind the submitted StoreKit device ID to its key. Stable shared quota enforcement remains Task 6A/B4; this backend chunk does not yet cap aggregate consumption across such grants. The residual does not confer original owner, desktop claim, account-data, or other-installation word authority. Physical iPhone/reinstall/Family Sharing tests, client wiring, deployed `AppAppleId`, old-data inventory and migration rehearsal, D2 limits and release approval remain open gates.
++
++The new response fields are additive for existing clients, but old clients that send only a UUID or raw transaction JWS cannot obtain new owner/mobile authority. A coordinated iOS release must send the full locally verified restore envelope and a fresh assertion. The backend does not revive the unsafe UUID fallback to make old clients appear compatible. Inventory affected installed clients and legacy purchases before enforcement.
+ 
+ ## Server denial contract
+ 
+@@ -54,10 +65,10 @@ Run `dotnet test tests/Mavrylo.Tests.csproj --filter FullyQualifiedName~PaidAcce
+ | Audit | Safe expectation / controls |
+ |---|---|
+ | B1 | Newly attested key claiming another device UUID stays free; exhausted synthetic free quota gives 429 and zero provider calls. Valid registration itself remains allowed. |
+-| B2 | Unrelated canonical transaction gives 503 without persistence. Copied receipt cannot transfer an existing guest purchase to an unrelated key/device or first-claim desktop ownership without prior independent owner proof (403). Same-device legitimate purchase/restore without account stays allowed; existing account-owner conflict remains 409. Legitimate cross-device anonymous restore/recovery proof mechanism is pending design. |
++| B2 | Unrelated canonical transaction gives 503 without persistence. Copied receipt alone cannot transfer an existing purchase or first-claim desktop ownership (403). Mapped server-token owner purchase and paired Apple-envelope mobile restore are positive controls; new-phone restore grants only bounded mobile access. Existing foreign account/tombstone conflict remains 409. |
+ | B3 | `word` and `Word` both reserve the same ten-word audit fixture; eleventh request gives 402 without another provider call. Lowercase case is a positive control. |
+ | B4 | Independently authenticated account subject shares usage across consumers; a different account remains independent. Anonymous key rotation/global guest guard contract is explicitly skipped pending proof design and D2. Never merge subjects because client UUID strings match. |
+ | B5 | Cached Sandbox/LocalTesting cannot grant production AI: 402 and zero provider calls. Production active purchase is a positive control. |
+ | B6 | REFUND with unrelated canonical purchase returns 503 for retry and cannot insert that other purchase. Matching canonical active/revoked state remains authoritative. |
+ 
+-Initial red tests are evidence for later fixes. Skipped future contracts are missing coverage, not verified security. This baseline does not test real Apple signatures, real StoreKit restores, device acceptance, production deployment, or actual monetary budgets.
++Initial red tests are evidence for later fixes. Skipped future contracts are missing coverage, not verified security. Local synthetic signed certificates and fake Apple status exercise backend validation, but do not prove real StoreKit restores, physical-device acceptance, production deployment, or actual monetary budgets.
+diff --git a/docs/paid-access-rollout.md b/docs/paid-access-rollout.md
+index 8d54240..a7de5ec 100644
+--- a/docs/paid-access-rollout.md
++++ b/docs/paid-access-rollout.md
+@@ -4,14 +4,24 @@ The local provider-spend machinery is described in [the expenditure runbook](ai-
+ It is disabled without explicit valid configuration and approved cumulative
+ allowances. Unknown outcomes retain money and concurrency slots; review that
+ runbook's reconciliation/availability boundary before enabling it. This local
+-implementation does not resolve the anonymous-owner/shared-quota gates below.
++implementation includes the Task 2B anonymous-owner/mobile-grant contract.
++Shared quota identity and the global guest guard remain Task 6A/B4; numeric D2
++limits remain unapproved.
+ 
+ This is a preparation runbook, not a record of a live inventory, restore drill,
+ deployment, purchase, or release decision. The intended iPhone purchase and paid
+ use path remains account optional (D1=B). A desktop account is required for paid
+-desktop access. The independent anonymous-owner proof and cross-device recovery
+-contract remain to be designed and verified; a copied receipt or the mutable
+-`DeviceUuid` field cannot establish ownership.
++desktop access. The backend maps a server-issued pre-purchase `appAccountToken`
++to an installation owner and accepts paired locally signed Apple evidence for
++a finite, account-free mobile restore. A copied receipt or mutable `DeviceUuid`
++cannot establish owner authority. Physical new/reinstalled iPhone, old purchase,
++and Family Sharing compatibility remain release tests; first desktop link after
++total original-key loss still requires a separately validated support process.
++Response DTO additions are compatible with old parsers, but old UUID/raw-JWS-only
++clients cannot obtain new owner or mobile authority. Coordinate the new iOS
++full-envelope restore flow with backend rollout; inventory installed clients and
++legacy purchase classes before deployment. Do not restore the unsafe UUID path
++as a compatibility fallback.
+ 
+ ## Inventory before a data or authorization change
+ 
+@@ -58,11 +68,11 @@ each legitimate affected purchase from independently verified Apple history and
+ preserved ownership evidence. Prove that any repair is precise, repeatable,
+ logged and non-destructive on a restored copy; do not require repurchase or
+ erase quarantine rows as a shortcut. Preserve already claimed owners. A legacy
+-unclaimed purchase needs a verified recovery route before stricter ownership
+-enforcement. If live Production has no such rows, record that result and avoid
+-unneeded legacy handling. If it has them, close the individual or automated
+-routes before switching. No anonymous-owner table or additive migration exists
+-in this bounded preparation; its design and old-data startup test are pending.
++unclaimed purchase may receive mobile restore from paired Apple evidence, but
++that does not upgrade it to original-owner or desktop-claim authority. If live
++Production has such rows, validate recovery and reconciliation for each affected
++class before production rollout. The additive anonymous-owner/binding/grant migration
++exists locally; old-data startup and production inventory remain release gates.
+ 
+ ## Separate environments and client distribution
+ 
+@@ -83,9 +93,14 @@ restore and entitlement isolation on that route. Sandbox data must never grant
+ Production rights. Document the final distribution mapping before submission.
+ 
+ Deploy compatible backend contracts and a global AI spend guard before new
+-clients; then release iOS and Windows and verify legacy transitions. Only after
+-the anonymous-owner proof and optional desktop linking protocol are settled
+-should stricter ownership enforcement be enabled. Numeric D2 AI quotas and
++clients; then release iOS and Windows and verify legacy transitions. The Task 2B
++backend routes are `POST /owlai/iap/purchase-context`, `POST /owlai/iap/verify`,
++and `POST /owlai/iap/restore`; the account claim route remains
++`/owlai/account/subscription/apple/claim`. Configure
++`Apple:AppStoreServer:AppAppleId` to the real positive App Store app ID in each
++deployment before enabling production AppTransaction verification. Do not guess
++this value or accept a client-supplied override. Validate client wiring and
++physical restore as deployment gates. Numeric D2 AI quotas and
+ money budgets remain unapproved. Existing example numbers and synthetic test
+ values are not release authorization. Validate provider-attempt counters and a
+ safe server-side kill switch for *new* AI calls. On failure, stop new AI spend
+@@ -94,6 +109,6 @@ without restoring vulnerable authorization or dropping purchase/claim records.
+ The current backend `api-ci-cd.yml` manual workflow publishes images and
+ deploys; it is not a test-only validation route. A separate safe test route
+ or revised workflow and explicit release decision are required before remote
+-validation or deployment. Task1 ownership regressions and the B4 global guest
+-case remain unresolved gates. Do not infer release readiness from this local
++validation or deployment. The B4 global guest
++case remains an unresolved gate. Do not infer release readiness from this local
+ inventory or a health check.
+diff --git a/src/Mavrylo.Services/Dtos/IapDtos.cs b/src/Mavrylo.Services/Dtos/IapDtos.cs
+index 666c3dc..19d1525 100644
+--- a/src/Mavrylo.Services/Dtos/IapDtos.cs
++++ b/src/Mavrylo.Services/Dtos/IapDtos.cs
+@@ -16,11 +16,17 @@ public record EntitlementDto(
+ /// <summary>POST /iap/verify request: a signed StoreKit transaction JWS.</summary>
+ public record IapVerifyRequest(string JwsTransaction, string? DeviceUuid = null);
+ 
++public record IapPurchaseContextRequest(string ProductId);
++public record IapPurchaseContextResponse(Guid AppAccountToken);
++public record IapRestoreRequest(string JwsTransaction, string JwsAppTransaction, string DeviceVerificationId);
++
+ /// <summary>POST /iap/verify response: entitlement + refreshed device-JWT.</summary>
+-public record IapVerifyResponse(EntitlementDto Entitlement, string AccessToken, int ExpiresIn);
++public record IapVerifyResponse(EntitlementDto Entitlement, string AccessToken, int ExpiresIn,
++    string PurchaseAuthority = "none", string? MobileGrantExpiresAt = null);
+ 
+ /// <summary>POST /iap/token response: a refreshed device-JWT + current entitlement.</summary>
+-public record IapTokenResponse(string AccessToken, int ExpiresIn, EntitlementDto Entitlement);
++public record IapTokenResponse(string AccessToken, int ExpiresIn, EntitlementDto Entitlement,
++    string PurchaseAuthority = "none", string? MobileGrantExpiresAt = null);
+ 
+ /// <summary>GET /iap/entitlement response.</summary>
+ public record IapEntitlementResponse(EntitlementDto Entitlement);
+diff --git a/src/Mavrylo.Services/Services/AccountEntitlementService.cs b/src/Mavrylo.Services/Services/AccountEntitlementService.cs
+index 0e742a8..0e5b63d 100644
+--- a/src/Mavrylo.Services/Services/AccountEntitlementService.cs
++++ b/src/Mavrylo.Services/Services/AccountEntitlementService.cs
+@@ -45,6 +45,8 @@ public sealed class AccountEntitlementService(AppDbContext db, EntitlementServic
+         var proof = apple.VerifyTransactionForClaim(jws, device.DeviceUuid);
+         if (!proof.Ok || !proof.SignatureVerified || proof.Subscription == null)
+             return (400, new { code = "invalid_transaction", error = "Apple transaction verification failed." });
++        if (proof.Subscription.InAppOwnershipType == "FAMILY_SHARED")
++            return (403, new { code = "desktop_owner_proof_required", error = "Family shared access cannot first claim desktop ownership." });
+         var canonical = await apple.RefreshSubscriptionForClaimAsync(proof.Subscription.OriginalTransactionId, device.DeviceUuid, ct);
+         if (!canonical.Ok || canonical.Subscription == null)
+             return (503, new { code = "apple_unavailable", error = "Apple subscription status could not be refreshed." });
+@@ -62,7 +64,15 @@ public sealed class AccountEntitlementService(AppDbContext db, EntitlementServic
+             if (user == null) return (401, new { code = "invalid_account" });
+             await db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({sub.OriginalTransactionId}, 431))", ct);
+         }
+-        sub.DeviceUuid = device.DeviceUuid;
++        var existing = await db.Subscriptions.AsNoTracking().SingleOrDefaultAsync(x => x.OriginalTransactionId == sub.OriginalTransactionId, ct);
++        if (existing?.ClaimedAt != null && existing.OwnerAccountId != accountId)
++            return (409, new { code = "subscription_already_linked", error = "This subscription is already linked to an account." });
++        if (existing?.OwnerAccountId != accountId &&
++            !await db.ApplePurchaseBindings.AsNoTracking().AnyAsync(x => x.Environment == sub.Environment
++                && x.OriginalTransactionId == sub.OriginalTransactionId && x.BindingKind == "server_token"
++                && x.AnonymousOwnerId == device.AnonymousOwnerId, ct))
++            return (403, new { code = "desktop_owner_proof_required", error = "Original purchase owner proof is required." });
++        sub.DeviceUuid = "";
+         try { await entitlements.UpsertAsync(sub, ct); }
+         catch (SubscriptionReconciliationRequiredException)
+         {
+diff --git a/src/Mavrylo.Services/Services/AnonymousPurchaseService.cs b/src/Mavrylo.Services/Services/AnonymousPurchaseService.cs
+new file mode 100644
+index 0000000..61d9c1f
+--- /dev/null
++++ b/src/Mavrylo.Services/Services/AnonymousPurchaseService.cs
+@@ -0,0 +1,179 @@
++using Mavrylo.Data;
++using Mavrylo.Dtos;
++using Mavrylo.Models;
++using Microsoft.EntityFrameworkCore;
++
++namespace Mavrylo.Services;
++
++public sealed class AnonymousPurchaseService(
++    AppDbContext db,
++    IAppStoreServerClient apple,
++    EntitlementService entitlements,
++    SubscriptionValidationPolicy validation,
++    AppleMobileRestoreVerifier verifier,
++    MobilePurchaseAccessResolver resolver,
++    DeviceContextService deviceContext,
++    JwtTokenService tokens,
++    TimeProvider clock)
++{
++    private static IapService.IapResult Error(int status, string code, string message)
++        => new(status, new { code, error = message });
++
++    public async Task<IapService.IapResult> GetPurchaseContextAsync(string keyId, string productId, CancellationToken ct)
++    {
++        if (!validation.AllowsProduct(productId))
++            return Error(400, "invalid_purchase_request", "Product is not available.");
++        var device = await db.Devices.AsNoTracking().SingleOrDefaultAsync(x => x.KeyId == keyId, ct);
++        if (device?.AnonymousOwnerId is not { } ownerId)
++            return Error(401, "invalid_device", "Unknown device.");
++        var access = await resolver.ResolveAsync(keyId, ct);
++        if (access?.Authority == "mobile_restore" && AccountEntitlementService.IsActive(access.Entitlement.Status))
++            return Error(409, "subscription_already_active", "A restored subscription is already active.");
++
++        await using var tx = await db.Database.BeginTransactionAsync(ct);
++        if (db.Database.IsNpgsql())
++            await db.AnonymousPurchaseOwners.FromSqlInterpolated($"SELECT * FROM anonymous_purchase_owners WHERE \"Id\" = {ownerId} FOR UPDATE").SingleAsync(ct);
++        var token = await db.AnonymousPurchaseTokens.AsNoTracking().SingleOrDefaultAsync(x => x.AnonymousOwnerId == ownerId, ct);
++        if (token == null)
++        {
++            token = new AnonymousPurchaseTokenEntity { AppAccountToken = Guid.NewGuid(), AnonymousOwnerId = ownerId,
++                CreatedAt = clock.GetUtcNow().UtcDateTime };
++            db.AnonymousPurchaseTokens.Add(token);
++            await db.SaveChangesAsync(ct);
++        }
++        await tx.CommitAsync(ct);
++        return new(200, new IapPurchaseContextResponse(token.AppAccountToken));
++    }
++
++    public async Task<IapService.IapResult> VerifyOwnerPurchaseAsync(string keyId, IapVerifyRequest request, CancellationToken ct)
++    {
++        if (request == null || string.IsNullOrWhiteSpace(request.JwsTransaction) || request.JwsTransaction.Length > 30_000)
++            return Error(400, "invalid_purchase_request", "Signed transaction is required.");
++        var context = await deviceContext.ResolveAsync(keyId, ct);
++        if (context == null) return Error(401, "invalid_device", "Unknown device.");
++        var signed = apple.VerifyTransaction(request.JwsTransaction, null);
++        if (!signed.Ok || signed.Subscription == null || (!signed.SignatureVerified && !apple.IsLocalVerifyEnabled))
++            return Error(400, "invalid_transaction", "Apple transaction verification failed.");
++        var local = signed.Subscription;
++        if (local.InAppOwnershipType == "FAMILY_SHARED")
++            return Error(403, "purchase_owner_proof_required", "Family shared access requires mobile restore.");
++        var refreshed = await apple.RefreshSubscriptionAsync(local.OriginalTransactionId, null, ct);
++        if (!refreshed.Ok || refreshed.Subscription == null)
++            return Error(503, "apple_unavailable", "Apple subscription status is unavailable.");
++        var canonical = refreshed.Subscription;
++        if (canonical.OriginalTransactionId != local.OriginalTransactionId
++            || canonical.Environment != local.Environment || canonical.ProductId != local.ProductId
++            || !entitlements.IsApplicable(canonical)
++            || (local.AppAccountToken != null && canonical.AppAccountToken != null
++                && local.AppAccountToken != canonical.AppAccountToken))
++            return Error(503, "apple_identity_mismatch", "Apple subscription identity mismatch.");
++        if (!await deviceContext.HasOwnerPurchaseProofAsync(context.Device, local, ct))
++            return Error(403, "purchase_owner_proof_required", "Purchase owner proof is required.");
++        canonical.DeviceUuid = "";
++        SubscriptionEntity state;
++        try { state = await deviceContext.BindOwnerPurchaseAsync(context.Device, local, canonical, ct); }
++        catch (SubscriptionReconciliationRequiredException)
++        {
++            return Error(503, "subscription_reconciliation_required", "Stored purchase needs reconciliation.");
++        }
++        var access = await resolver.ResolveAsync(keyId, ct);
++        var entitlement = access!.Entitlement;
++        var now = clock.GetUtcNow().UtcDateTime;
++        var (jwt, jwtExpiry) = tokens.CreateDeviceToken(keyId, entitlement.Status, state.OriginalTransactionId);
++        var dto = new EntitlementDto(entitlement.Status, entitlement.ProductId, entitlement.ExpiresAt?.ToString("O"),
++            entitlement.IsTrial, entitlement.AutoRenew, entitlement.WasEverPaid, "device", state.ClaimedAt != null);
++        return new(200, new IapVerifyResponse(dto, jwt, Math.Max(0, (int)(jwtExpiry - now).TotalSeconds), "owner"));
++    }
++
++    public async Task<IapService.IapResult> RestoreMobileAsync(string keyId, IapRestoreRequest request, CancellationToken ct)
++    {
++        var device = await db.Devices.AsNoTracking().SingleOrDefaultAsync(x => x.KeyId == keyId, ct);
++        if (device == null) return Error(401, "invalid_device", "Unknown device.");
++        var evidence = verifier.Verify(request);
++        if (!evidence.Ok || evidence.Evidence == null)
++            return Error(evidence.Code == "invalid_purchase_request" ? 400 : 403,
++                evidence.Code ?? "restore_evidence_unavailable", "Apple restore evidence could not be verified.");
++        var local = evidence.Evidence.Transaction;
++        if (!entitlements.IsApplicable(local))
++            return Error(403, "restore_evidence_mismatch", "Purchase identity is not applicable.");
++
++        var refreshed = await apple.RefreshSubscriptionAsync(local.OriginalTransactionId, null, ct);
++        if (!refreshed.Ok || refreshed.Subscription == null)
++            return Error(503, "apple_unavailable", "Apple subscription status is unavailable.");
++        var canonical = refreshed.Subscription;
++        if (canonical.OriginalTransactionId != local.OriginalTransactionId
++            || canonical.Environment != local.Environment || canonical.ProductId != local.ProductId
++            || !entitlements.IsApplicable(canonical)
++            || (local.AppAccountToken != null && canonical.AppAccountToken != null
++                && local.AppAccountToken != canonical.AppAccountToken))
++            return Error(503, "apple_identity_mismatch", "Apple subscription identity mismatch.");
++        canonical.DeviceUuid = "";
++
++        await using var tx = await db.Database.BeginTransactionAsync(ct);
++        if (db.Database.IsNpgsql())
++            await db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({local.OriginalTransactionId}, 431))", ct);
++        SubscriptionEntity state;
++        try { state = await entitlements.UpsertAsync(canonical, ct, relinkDevice: false); }
++        catch (SubscriptionReconciliationRequiredException)
++        {
++            return Error(503, "subscription_reconciliation_required", "Stored purchase needs reconciliation.");
++        }
++        var binding = await db.ApplePurchaseBindings.SingleOrDefaultAsync(x => x.Environment == state.Environment
++            && x.OriginalTransactionId == state.OriginalTransactionId, ct);
++        if (binding == null)
++        {
++            var mappedToken = local.AppAccountToken ?? canonical.AppAccountToken;
++            var token = mappedToken is { } t ? await db.AnonymousPurchaseTokens.AsNoTracking()
++                .SingleOrDefaultAsync(x => x.AppAccountToken == t, ct) : null;
++            Guid ownerId;
++            if (token != null) ownerId = token.AnonymousOwnerId;
++            else
++            {
++                var owner = new AnonymousPurchaseOwnerEntity { Id = Guid.NewGuid(), Provenance = "legacy_unproven",
++                    CreatedAt = clock.GetUtcNow().UtcDateTime };
++                db.AnonymousPurchaseOwners.Add(owner);
++                ownerId = owner.Id;
++            }
++            binding = new ApplePurchaseBindingEntity
++            {
++                Environment = state.Environment, OriginalTransactionId = state.OriginalTransactionId,
++                AnonymousOwnerId = ownerId, BindingKind = token != null ? "server_token" : "legacy_unproven",
++                BoundAppAccountToken = token?.AppAccountToken,
++                VerifiedAppTransactionId = evidence.Evidence.AppTransactionId,
++                CreatedAt = clock.GetUtcNow().UtcDateTime
++            };
++            db.ApplePurchaseBindings.Add(binding);
++        }
++        var now = clock.GetUtcNow().UtcDateTime;
++        var canonicalEntitlement = entitlements.ToEntitlement(state);
++        var validUntil = state.ExpiresAt!.Value;
++        if (!AccountEntitlementService.IsActive(canonicalEntitlement.Status) && validUntil > now)
++            validUntil = now.AddTicks(-1);
++        var grant = await db.MobilePurchaseGrants.SingleOrDefaultAsync(x => x.DeviceId == device.Id
++            && x.Environment == state.Environment && x.OriginalTransactionId == state.OriginalTransactionId, ct);
++        if (grant == null)
++        {
++            grant = new MobilePurchaseGrantEntity { DeviceId = device.Id, Environment = state.Environment,
++                OriginalTransactionId = state.OriginalTransactionId };
++            db.MobilePurchaseGrants.Add(grant);
++        }
++        grant.ValidUntil = validUntil;
++        grant.VerifiedAt = now;
++        grant.EvidenceKind = evidence.Evidence.EvidenceKind;
++        grant.VerifiedAppTransactionId = evidence.Evidence.AppTransactionId;
++        grant.LastEvidenceHash = evidence.Evidence.EvidenceHash;
++        await db.SaveChangesAsync(ct);
++        await tx.CommitAsync(ct);
++
++        var access = await resolver.ResolveAsync(keyId, ct);
++        var entitlement = access!.Entitlement;
++        var (jwt, jwtExpiry) = tokens.CreateDeviceToken(keyId, entitlement.Status, state.OriginalTransactionId);
++        var authority = access.Authority;
++        var dto = new EntitlementDto(entitlement.Status, entitlement.ProductId, entitlement.ExpiresAt?.ToString("O"),
++            entitlement.IsTrial, entitlement.AutoRenew, entitlement.WasEverPaid,
++            authority == "owner" ? "device" : "mobile_restore", state.ClaimedAt != null);
++        return new(200, new IapVerifyResponse(dto, jwt,
++            Math.Max(0, (int)(jwtExpiry - now).TotalSeconds), authority,
++            authority == "mobile_restore" ? validUntil.ToString("O") : null));
++    }
++}
+diff --git a/src/Mavrylo.Services/Services/AppStoreServerClient.cs b/src/Mavrylo.Services/Services/AppStoreServerClient.cs
+index 6813c96..8cbe182 100644
+--- a/src/Mavrylo.Services/Services/AppStoreServerClient.cs
++++ b/src/Mavrylo.Services/Services/AppStoreServerClient.cs
+@@ -25,7 +25,9 @@ public sealed class AppStoreServerClient(
+         bool Ok,
+         SubscriptionEntity? Subscription,
+         bool SignatureVerified,
+-        string? Error)
++        string? Error,
++        string? DeviceVerification = null,
++        string? DeviceVerificationNonce = null)
+     {
+         public static VerifiedTransaction Fail(string error) => new(false, null, false, error);
+     }
+@@ -38,6 +40,13 @@ public sealed class AppStoreServerClient(
+         public static SubscriptionStatusesResult Fail(string error) => new(false, null, error);
+     }
+ 
++    public sealed record VerifiedAppTransaction(
++        bool Ok, string? Environment, string? AppTransactionId, string? DeviceVerification,
++        string? DeviceVerificationNonce, string? Error)
++    {
++        public static VerifiedAppTransaction Fail(string error) => new(false, null, null, null, null, error);
++    }
++
+     /// <summary>
+     /// True only when DEBUG build AND Development environment — allows trusting StoreKitTest JWS
+     /// without chain verification so the Simulator flow works. NEVER true in Release or non-Dev.
+@@ -81,7 +90,8 @@ public sealed class AppStoreServerClient(
+             var sub = ProjectTransaction(decoded.Payload, deviceUuid);
+             return sub is null
+                 ? VerifiedTransaction.Fail("transaction missing originalTransactionId/productId")
+-                : new VerifiedTransaction(true, sub, decoded.SignatureVerified, null);
++                : new VerifiedTransaction(true, sub, decoded.SignatureVerified, null,
++                    GetString(decoded.Payload, "deviceVerification"), GetString(decoded.Payload, "deviceVerificationNonce"));
+         }
+         catch (InvalidOperationException ex)
+         {
+@@ -201,6 +211,34 @@ public sealed class AppStoreServerClient(
+         }
+     }
+ 
++    public VerifiedAppTransaction VerifyAppTransaction(string jwsAppTransaction)
++    {
++        var decoded = AppleJws.DecodeAppTransaction(jwsAppTransaction);
++        if (!decoded.Ok || !decoded.SignatureVerified)
++            return VerifiedAppTransaction.Fail(decoded.Error ?? "App transaction signature not verified");
++        return ProjectAppTransaction(decoded.Payload);
++    }
++
++    internal VerifiedAppTransaction ProjectAppTransaction(JsonElement payload)
++    {
++        var environment = GetString(payload, "receiptType") switch
++        {
++            "Production" or "ProductionVPP" => "Production",
++            "Sandbox" or "SandboxVPP" => "Sandbox",
++            _ => null
++        };
++        if (environment == null || !validation.AllowsEnvironment(environment))
++            return VerifiedAppTransaction.Fail("app transaction environment mismatch");
++        try { ValidateBundleId(payload); }
++        catch (InvalidOperationException ex) { return VerifiedAppTransaction.Fail(ex.Message); }
++        if (environment == "Production"
++            && (!long.TryParse(Opt("AppAppleId"), out var expected) || expected <= 0
++                || GetLong(payload, "appAppleId") != expected))
++            return VerifiedAppTransaction.Fail("app transaction appAppleId mismatch");
++        return new VerifiedAppTransaction(true, environment, GetString(payload, "appTransactionId"),
++            GetString(payload, "deviceVerification"), GetString(payload, "deviceVerificationNonce"), null);
++    }
++
+     private async Task<JsonElement?> SendAppleGetCoreAsync(string path, CancellationToken ct)
+     {
+         using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(new Uri(BaseUrl()), path));
+@@ -356,14 +394,22 @@ public sealed class AppStoreServerClient(
+         ValidateEnvironment(environment);
+         var isTrial = GetInt(p, "offerType") == 1;
+         var revokedAt = GetUnixMs(p, "revocationDate");
+-        var appAccountToken = GetString(p, "appAccountToken");
+-        if (string.IsNullOrWhiteSpace(appAccountToken) && !IsLocalVerifyEnabled)
+-            throw new InvalidOperationException("appAccountToken is required");
++        var tokenText = GetString(p, "appAccountToken");
++        Guid? appAccountToken = null;
++        if (tokenText != null)
++        {
++            if (!Guid.TryParseExact(tokenText, "D", out var parsed))
++                throw new InvalidOperationException("transaction appAccountToken invalid");
++            appAccountToken = parsed;
++        }
+ 
+         return new SubscriptionEntity
+         {
+             OriginalTransactionId = originalTxId!,
+-            DeviceUuid = !string.IsNullOrWhiteSpace(appAccountToken) ? appAccountToken! : (deviceUuid ?? ""),
++            DeviceUuid = "",
++            AppAccountToken = appAccountToken,
++            AppTransactionId = GetString(p, "appTransactionId"),
++            InAppOwnershipType = GetString(p, "inAppOwnershipType"),
+             ProductId = productId!,
+             ExpiresAt = expiresAt,
+             IsTrial = isTrial,
+@@ -423,6 +469,10 @@ public sealed class AppStoreServerClient(
+         return v.GetInt32();
+     }
+ 
++    private static long? GetLong(JsonElement e, string name)
++        => e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number && v.TryGetInt64(out var value)
++            ? value : null;
++
+     private static DateTime? GetUnixMs(JsonElement e, string name)
+     {
+         if (!e.TryGetProperty(name, out var v) || v.ValueKind != JsonValueKind.Number)
+diff --git a/src/Mavrylo.Services/Services/AppleJws.cs b/src/Mavrylo.Services/Services/AppleJws.cs
+index 2180c36..478c9da 100644
+--- a/src/Mavrylo.Services/Services/AppleJws.cs
++++ b/src/Mavrylo.Services/Services/AppleJws.cs
+@@ -35,7 +35,14 @@ public static class AppleJws
+     public static DecodeResult Decode(string jws, bool verifySignature)
+         => DecodeCore(jws, verifySignature, AppleRootCaG3.Value);
+ 
+-    internal static DecodeResult DecodeCore(string jws, bool verifySignature, X509Certificate2 trustedRoot)
++    public static DecodeResult DecodeAppTransaction(string jws)
++        => DecodeCore(jws, true, AppleRootCaG3.Value, appTransaction: true);
++
++    internal static DecodeResult DecodeAppTransactionCore(string jws, X509Certificate2 trustedRoot)
++        => DecodeCore(jws, true, trustedRoot, appTransaction: true);
++
++    internal static DecodeResult DecodeCore(string jws, bool verifySignature, X509Certificate2 trustedRoot,
++        bool appTransaction = false)
+     {
+         if (string.IsNullOrWhiteSpace(jws))
+             return DecodeResult.Fail("empty JWS");
+@@ -79,7 +86,10 @@ public static class AppleJws
+             var leaf = chainCerts[0];
+             // Offline verification follows Apple's reference: certificates must be valid when
+             // the payload was signed. This date is trusted only after the signature also succeeds.
+-            var effectiveDate = payload.TryGetProperty("signedDate", out var signedDate)
++            var dateField = appTransaction ? "receiptCreationDate" : "signedDate";
++            if (appTransaction && (!payload.TryGetProperty(dateField, out var receiptDate) || receiptDate.ValueKind != JsonValueKind.Number))
++                return DecodeResult.Fail("app transaction missing receiptCreationDate");
++            var effectiveDate = payload.TryGetProperty(dateField, out var signedDate)
+                 ? DateTimeOffset.FromUnixTimeMilliseconds(signedDate.GetInt64()).UtcDateTime : DateTime.UtcNow;
+             if (!VerifyCertificateChain(leaf, [chainCerts[1]], trustedRoot, effectiveDate, out var error))
+                 return DecodeResult.Fail(error!);
+diff --git a/src/Mavrylo.Services/Services/AppleMobileRestoreVerifier.cs b/src/Mavrylo.Services/Services/AppleMobileRestoreVerifier.cs
+new file mode 100644
+index 0000000..d010e31
+--- /dev/null
++++ b/src/Mavrylo.Services/Services/AppleMobileRestoreVerifier.cs
+@@ -0,0 +1,59 @@
++using System.Security.Cryptography;
++using System.Text;
++using Mavrylo.Dtos;
++using Mavrylo.Models;
++
++namespace Mavrylo.Services;
++
++public sealed record VerifiedAppleRestoreEvidence(SubscriptionEntity Transaction, string? AppTransactionId,
++    string EvidenceKind, string EvidenceHash);
++
++public sealed record AppleRestoreEvidenceResult(bool Ok, VerifiedAppleRestoreEvidence? Evidence, string? Code)
++{
++    public static AppleRestoreEvidenceResult Fail(string code) => new(false, null, code);
++}
++
++public sealed class AppleMobileRestoreVerifier(IAppStoreServerClient apple)
++{
++    public AppleRestoreEvidenceResult Verify(IapRestoreRequest request)
++    {
++        if (request == null || string.IsNullOrWhiteSpace(request.JwsTransaction)
++            || string.IsNullOrWhiteSpace(request.JwsAppTransaction)
++            || request.JwsTransaction.Length > 30_000 || request.JwsAppTransaction.Length > 30_000
++            || !Guid.TryParseExact(request.DeviceVerificationId, "D", out var deviceId)
++            || request.DeviceVerificationId != deviceId.ToString("D"))
++            return AppleRestoreEvidenceResult.Fail("invalid_purchase_request");
++
++        var transaction = apple.VerifyTransactionForClaim(request.JwsTransaction, null);
++        var app = apple.VerifyAppTransaction(request.JwsAppTransaction);
++        if (!transaction.Ok || !transaction.SignatureVerified || transaction.Subscription == null
++            || !app.Ok)
++            return AppleRestoreEvidenceResult.Fail("restore_evidence_unavailable");
++        if (transaction.Subscription.Environment != app.Environment
++            || !MatchesDevice(transaction.DeviceVerification, transaction.DeviceVerificationNonce, request.DeviceVerificationId)
++            || !MatchesDevice(app.DeviceVerification, app.DeviceVerificationNonce, request.DeviceVerificationId)
++            || transaction.Subscription.AppTransactionId is { } signedAppId
++                && app.AppTransactionId is { } appId && signedAppId != appId)
++            return AppleRestoreEvidenceResult.Fail("restore_evidence_mismatch");
++
++        var kind = transaction.Subscription.AppTransactionId != null && app.AppTransactionId != null
++            ? "paired_device" : "paired_device_legacy";
++        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(request.JwsTransaction + "\x1f"
++            + request.JwsAppTransaction + "\x1f" + request.DeviceVerificationId));
++        return new(true, new(transaction.Subscription, app.AppTransactionId ?? transaction.Subscription.AppTransactionId,
++            kind, Convert.ToHexStringLower(hash)), null);
++    }
++
++    private static bool MatchesDevice(string? encoded, string? nonceText, string deviceId)
++    {
++        if (!Guid.TryParseExact(nonceText, "D", out var nonce) || encoded == null) return false;
++        try
++        {
++            var actual = Convert.FromBase64String(encoded);
++            if (actual.Length != 48) return false;
++            var expected = SHA384.HashData(Encoding.ASCII.GetBytes(nonce.ToString("D") + deviceId));
++            return CryptographicOperations.FixedTimeEquals(actual, expected);
++        }
++        catch (FormatException) { return false; }
++    }
++}
+diff --git a/src/Mavrylo.Services/Services/DeviceContextService.cs b/src/Mavrylo.Services/Services/DeviceContextService.cs
+index 1cb06ba..b2f5c1b 100644
+--- a/src/Mavrylo.Services/Services/DeviceContextService.cs
++++ b/src/Mavrylo.Services/Services/DeviceContextService.cs
+@@ -17,6 +17,8 @@ public sealed class DeviceContextService(AppDbContext db, EntitlementService ent
+         EntitlementService.Entitlement Entitlement)
+     {
+         public string? AccountId { get; init; }
++        public string Authority { get; init; } = "none";
++        public DateTime? GrantValidUntil { get; init; }
+     }
+ 
+     public async Task<DeviceContext?> ResolveAsync(string keyId, CancellationToken ct = default)
+@@ -28,13 +30,13 @@ public sealed class DeviceContextService(AppDbContext db, EntitlementService ent
+         if (device is null)
+             return null;
+ 
+-        var sub = await entitlements.FindForDeviceAsync(device.DeviceUuid, ct);
+-        var (ent, account) = await ResolveEntitlementAsync(sub, ct);
+-        if (sub?.ClaimedAt != null && !device.RequiresAccountSubscription)
+-            await MarkClaimedPurchaseAsync(keyId, ct);
+-        if (sub == null && device.RequiresAccountSubscription && account == null)
+-            ent = ent with { Status = "account_required" };
+-        return new DeviceContext(keyId, device, sub, ent) { AccountId = account };
++        var access = await new MobilePurchaseAccessResolver(db, entitlements).ResolveAsync(keyId, ct);
++        var (ent, account) = await ResolveEntitlementAsync(access!.Subscription, ct, access.Entitlement);
++        return new DeviceContext(keyId, device, access.Subscription, ent)
++        {
++            AccountId = account, Authority = account != null && !AccountEntitlementService.IsActive(access.Entitlement.Status)
++                ? "account" : access.Authority, GrantValidUntil = access.GrantValidUntil
++        };
+     }
+ 
+     public async Task MarkClaimedPurchaseAsync(string keyId, CancellationToken ct)
+@@ -44,7 +46,49 @@ public sealed class DeviceContextService(AppDbContext db, EntitlementService ent
+         if (tracked != null) tracked.RequiresAccountSubscription = true;
+     }
+ 
+-    public async Task<(EntitlementService.Entitlement Entitlement, string? AccountId)> ResolveEntitlementAsync(SubscriptionEntity? sub, CancellationToken ct)
++    public async Task<bool> HasOwnerPurchaseProofAsync(DeviceEntity device, SubscriptionEntity purchase, CancellationToken ct)
++    {
++        if (device.AnonymousOwnerId is not { } ownerId) return false;
++        var binding = await db.ApplePurchaseBindings.AsNoTracking().SingleOrDefaultAsync(x =>
++            x.Environment == purchase.Environment && x.OriginalTransactionId == purchase.OriginalTransactionId, ct);
++        if (binding != null)
++            return binding.BindingKind == "server_token" && binding.AnonymousOwnerId == ownerId;
++        return purchase.AppAccountToken is { } token && await db.AnonymousPurchaseTokens.AsNoTracking()
++            .AnyAsync(x => x.AppAccountToken == token && x.AnonymousOwnerId == ownerId, ct);
++    }
++
++    public async Task<SubscriptionEntity> BindOwnerPurchaseAsync(DeviceEntity device, SubscriptionEntity signed,
++        SubscriptionEntity canonical, CancellationToken ct)
++    {
++        if (device.AnonymousOwnerId is not { } ownerId) throw new InvalidOperationException("Device has no anonymous owner.");
++        await using var tx = await db.Database.BeginTransactionAsync(ct);
++        if (db.Database.IsNpgsql())
++            await db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({canonical.OriginalTransactionId}, 431))", ct);
++        var binding = await db.ApplePurchaseBindings.SingleOrDefaultAsync(x => x.Environment == canonical.Environment
++            && x.OriginalTransactionId == canonical.OriginalTransactionId, ct);
++        if (binding != null && (binding.BindingKind != "server_token" || binding.AnonymousOwnerId != ownerId))
++            throw new InvalidOperationException("Purchase binding conflict.");
++        if (binding == null)
++        {
++            if (signed.AppAccountToken is not { } token || !await db.AnonymousPurchaseTokens.AsNoTracking()
++                    .AnyAsync(x => x.AppAccountToken == token && x.AnonymousOwnerId == ownerId, ct))
++                throw new InvalidOperationException("Purchase owner token mapping was lost.");
++            binding = new ApplePurchaseBindingEntity
++            {
++                Environment = canonical.Environment, OriginalTransactionId = canonical.OriginalTransactionId,
++                AnonymousOwnerId = ownerId, BindingKind = "server_token", BoundAppAccountToken = token,
++                VerifiedAppTransactionId = signed.AppTransactionId
++            };
++        }
++        var persisted = await entitlements.UpsertAsync(canonical, ct, relinkDevice: false);
++        if (db.Entry(binding).State == EntityState.Detached) db.ApplePurchaseBindings.Add(binding);
++        await db.SaveChangesAsync(ct);
++        await tx.CommitAsync(ct);
++        return persisted;
++    }
++
++    public async Task<(EntitlementService.Entitlement Entitlement, string? AccountId)> ResolveEntitlementAsync(
++        SubscriptionEntity? sub, CancellationToken ct, EntitlementService.Entitlement? independent = null)
+     {
+         var http = accessor?.HttpContext;
+         if (http != null && http.Request.Headers.TryGetValue("X-Account-Authorization", out var header))
+@@ -53,10 +97,13 @@ public sealed class DeviceContextService(AppDbContext db, EntitlementService ent
+             if (account != null)
+             {
+                 var shared = await http.RequestServices.GetRequiredService<AccountEntitlementService>().GetAsync(account, ct);
+-                if (AccountEntitlementService.IsActive(shared.Status) || sub?.OwnerAccountId == account)
++                if (sub?.OwnerAccountId == account && AccountEntitlementService.IsActive(independent?.Status ?? ""))
++                    return (independent!, account);
++                if (!AccountEntitlementService.IsActive(independent?.Status ?? "") &&
++                    (AccountEntitlementService.IsActive(shared.Status) || sub?.OwnerAccountId == account))
+                     return (new(shared.Status, shared.ProductId, shared.ExpiresAt, shared.IsTrial, shared.AutoRenew, shared.WasEverPaid), account);
+             }
+         }
+-        return (entitlements.ToDeviceEntitlement(sub), null);
++        return (independent ?? entitlements.ToDeviceEntitlement(sub), null);
+     }
+ }
+diff --git a/src/Mavrylo.Services/Services/EntitlementService.cs b/src/Mavrylo.Services/Services/EntitlementService.cs
+index 49630a6..2cfb42b 100644
+--- a/src/Mavrylo.Services/Services/EntitlementService.cs
++++ b/src/Mavrylo.Services/Services/EntitlementService.cs
+@@ -38,7 +38,7 @@ public sealed class EntitlementService(AppDbContext db, TimeProvider timeProvide
+         public static Entitlement Free() => new(EntitlementService.Status.Free, null, null, false, false, false);
+     }
+ 
+-    /// <summary>Upsert a verified subscription (keyed by OriginalTransactionId) and re-link the device.</summary>
++    /// <summary>Upsert verified Apple state only. The legacy relink flag is ignored for compatibility.</summary>
+     public async Task<SubscriptionEntity> UpsertAsync(SubscriptionEntity incoming, CancellationToken ct = default, bool relinkDevice = true)
+     {
+         if (!IsApplicable(incoming)) throw new InvalidOperationException("Subscription identity, environment, product and finite expiry must be valid.");
+@@ -79,13 +79,6 @@ public sealed class EntitlementService(AppDbContext db, TimeProvider timeProvide
+         if (existing.LastAppleEventAt != null
+             && (incoming.LastAppleEventAt == null || existing.LastAppleEventAt >= incoming.LastAppleEventAt))
+         {
+-            // A repeat canonical proof may restore a device, but must not replay lifecycle fields.
+-            if (relinkDevice && incoming.LastAppleEventAt == existing.LastAppleEventAt
+-                && !string.IsNullOrWhiteSpace(incoming.DeviceUuid) && incoming.DeviceUuid != existing.DeviceUuid)
+-            {
+-                existing.DeviceUuid = incoming.DeviceUuid;
+-                await db.SaveChangesAsync(ct);
+-            }
+             return existing;
+         }
+         if (incoming.LastAppleEventAt != null) existing.LastAppleEventAt = incoming.LastAppleEventAt;
+@@ -98,8 +91,12 @@ public sealed class EntitlementService(AppDbContext db, TimeProvider timeProvide
+         existing.Environment = incoming.Environment;
+         existing.LastCheckedAt = timeProvider.GetUtcNow().UtcDateTime;
+         existing.RevokedAt = incoming.RevokedAt;
+-        if (relinkDevice && !string.IsNullOrWhiteSpace(incoming.DeviceUuid))
+-            existing.DeviceUuid = incoming.DeviceUuid; // re-link on restore to a new device
++        if (incoming.AppAccountToken != null && existing.AppAccountToken == null)
++            existing.AppAccountToken = incoming.AppAccountToken;
++        if (incoming.AppTransactionId != null && existing.AppTransactionId == null)
++            existing.AppTransactionId = incoming.AppTransactionId;
++        if (incoming.InAppOwnershipType != null)
++            existing.InAppOwnershipType = incoming.InAppOwnershipType;
+         existing.Status = ComputeStatus(existing, timeProvider.GetUtcNow().UtcDateTime);
+         await db.SaveChangesAsync(ct);
+         return existing;
+diff --git a/src/Mavrylo.Services/Services/IAppStoreServerClient.cs b/src/Mavrylo.Services/Services/IAppStoreServerClient.cs
+index 014874e..857b1d3 100644
+--- a/src/Mavrylo.Services/Services/IAppStoreServerClient.cs
++++ b/src/Mavrylo.Services/Services/IAppStoreServerClient.cs
+@@ -6,6 +6,8 @@ public interface IAppStoreServerClient
+     bool IsServerApiConfigured { get; }
+ 
+     AppStoreServerClient.VerifiedTransaction VerifyTransaction(string jwsTransaction, string? deviceUuid);
++    AppStoreServerClient.VerifiedAppTransaction VerifyAppTransaction(string jwsAppTransaction)
++        => AppStoreServerClient.VerifiedAppTransaction.Fail("App transaction verification unavailable");
+     AppStoreServerClient.VerifiedTransaction VerifyTransactionForClaim(string jwsTransaction, string? deviceUuid)
+         => VerifyTransaction(jwsTransaction, deviceUuid);
+     Task<AppStoreServerClient.SubscriptionStatusesResult> RefreshSubscriptionForClaimAsync(string originalTransactionId, string? deviceUuid, CancellationToken ct)
+diff --git a/src/Mavrylo.Services/Services/IapService.cs b/src/Mavrylo.Services/Services/IapService.cs
+index f68bf7d..18b2d11 100644
+--- a/src/Mavrylo.Services/Services/IapService.cs
++++ b/src/Mavrylo.Services/Services/IapService.cs
+@@ -10,6 +10,7 @@ public sealed class IapService(
+     IAppStoreServerClient appStore,
+     EntitlementService entitlements,
+     DeviceContextService deviceContext,
++    AnonymousPurchaseService purchases,
+     JwtTokenService tokens,
+     TimeProvider timeProvider,
+     ILogger<IapService> logger)
+@@ -18,64 +19,17 @@ public sealed class IapService(
+     private static IapResult Success(object body) => new(200, body);
+     private static IapResult Code(int code, object body) => new(code, body);
+ 
+-    public async Task<IapResult> VerifyAsync(string? keyId, IapVerifyRequest request, CancellationToken ct)
+-    {
+-        if (request is null || string.IsNullOrWhiteSpace(request.JwsTransaction))
+-            return Code(400, new { error = "jws_transaction is required" });
++    public Task<IapResult> VerifyAsync(string? keyId, IapVerifyRequest request, CancellationToken ct)
++        => keyId == null ? Task.FromResult(Code(401, new { code = "invalid_device", error = "Invalid device token." }))
++            : purchases.VerifyOwnerPurchaseAsync(keyId, request, ct);
+ 
+-        if (keyId is null)
+-            return Code(401, new { error = "invalid device token" });
+-
+-        var context = await deviceContext.ResolveAsync(keyId, ct);
+-        if (context is null)
+-            return Code(401, new { error = "unknown device" });
+-        var deviceUuid = context.Device.DeviceUuid;
+-
+-        var verified = appStore.VerifyTransaction(request.JwsTransaction, deviceUuid);
+-        if (!verified.Ok || verified.Subscription is null)
+-        {
+-            logger.LogWarning("iap/verify rejected for {KeyId}: {Error}", keyId, verified.Error);
+-            return Code(400, new { error = verified.Error ?? "transaction verification failed" });
+-        }
+-
+-        var tokenDeviceUuid = verified.Subscription.DeviceUuid;
+-        var requiresRelink = !string.Equals(tokenDeviceUuid, deviceUuid, StringComparison.Ordinal);
+-        var canonical = await appStore.RefreshSubscriptionAsync(verified.Subscription.OriginalTransactionId, deviceUuid, ct);
+-        if (canonical.Ok && canonical.Subscription is not null)
+-        {
+-            if (canonical.Subscription.OriginalTransactionId != verified.Subscription.OriginalTransactionId
+-                || !entitlements.IsApplicable(canonical.Subscription))
+-                return Code(503, new { error = "Apple subscription identity or state mismatch" });
+-            canonical.Subscription.DeviceUuid = deviceUuid;
+-            verified = new AppStoreServerClient.VerifiedTransaction(
+-                true,
+-                canonical.Subscription,
+-                verified.SignatureVerified,
+-                null);
+-        }
+-        else if (requiresRelink || appStore.IsServerApiConfigured || !appStore.IsLocalVerifyEnabled)
+-        {
+-            logger.LogWarning("iap/verify could not refresh Apple canonical status for {Otid}: {Error}",
+-                verified.Subscription.OriginalTransactionId, canonical.Error);
+-            return Code(400, new { error = canonical.Error ?? "Apple subscription refresh failed" });
+-        }
+-
+-        var subscription = verified.Subscription
+-            ?? throw new InvalidOperationException("verified transaction lost its subscription payload");
+-        subscription.DeviceUuid = deviceUuid;
+-        SubscriptionEntity sub;
+-        try { sub = await entitlements.UpsertAsync(subscription, ct); }
+-        catch (SubscriptionReconciliationRequiredException)
+-        {
+-            return Code(503, new { code = "subscription_reconciliation_required", error = "Stored subscription needs reconciliation." });
+-        }
+-        if (sub.ClaimedAt != null) await deviceContext.MarkClaimedPurchaseAsync(keyId, ct);
+-        var (ent, accountId) = await deviceContext.ResolveEntitlementAsync(sub, ct);
+-
+-        var (token, expiresAt) = tokens.CreateDeviceToken(keyId, ent.Status, sub.OriginalTransactionId);
+-        return Success(new IapVerifyResponse(ToDto(ent, accountId, sub), token, SecondsUntil(expiresAt)));
+-    }
++    public Task<IapResult> PurchaseContextAsync(string? keyId, IapPurchaseContextRequest request, CancellationToken ct)
++        => keyId == null ? Task.FromResult(Code(401, new { code = "invalid_device", error = "Invalid device token." }))
++            : purchases.GetPurchaseContextAsync(keyId, request.ProductId, ct);
+ 
++    public Task<IapResult> RestoreAsync(string? keyId, IapRestoreRequest request, CancellationToken ct)
++        => keyId == null ? Task.FromResult(Code(401, new { code = "invalid_device", error = "Invalid device token." }))
++            : purchases.RestoreMobileAsync(keyId, request, ct);
+     public async Task<IapResult> TokenAsync(string? keyId, CancellationToken ct)
+     {
+         if (keyId is null)
+@@ -85,13 +39,13 @@ public sealed class IapService(
+         if (context is null)
+             return Code(401, new { error = "unknown device" });
+ 
+-        var sub = await RefreshIfNeededAsync(context.Subscription, context.Device.DeviceUuid, ct);
+-        var (ent, accountId) = await deviceContext.ResolveEntitlementAsync(sub, ct);
+-        if (sub == null && context.Device.RequiresAccountSubscription && !AccountEntitlementService.IsActive(ent.Status))
+-            ent = ent with { Status = "account_required" };
+-
+-        var (token, expiresAt) = tokens.CreateDeviceToken(keyId, ent.Status, sub?.OriginalTransactionId);
+-        return Success(new IapTokenResponse(token, SecondsUntil(expiresAt), ToDto(ent, accountId, sub)));
++        await RefreshIfNeededAsync(context.Subscription, ct);
++        context = (await deviceContext.ResolveAsync(keyId, ct))!;
++        var (token, expiresAt) = tokens.CreateDeviceToken(keyId, context.Entitlement.Status, context.Subscription?.OriginalTransactionId);
++        return Success(new IapTokenResponse(token, SecondsUntil(expiresAt),
++            ToDto(context.Entitlement, context.AccountId, context.Subscription, context.Authority),
++            context.Authority == "account" ? "none" : context.Authority,
++            context.Authority == "mobile_restore" ? context.GrantValidUntil?.ToUniversalTime().ToString("O") : null));
+     }
+ 
+     public async Task<IapResult> EntitlementAsync(string? keyId, CancellationToken ct)
+@@ -103,34 +57,34 @@ public sealed class IapService(
+         if (context is null)
+             return Code(401, new { error = "unknown device" });
+ 
+-        var sub = await RefreshIfNeededAsync(context.Subscription, context.Device.DeviceUuid, ct);
+-        var (ent, accountId) = await deviceContext.ResolveEntitlementAsync(sub, ct);
+-        if (sub == null && context.Device.RequiresAccountSubscription && !AccountEntitlementService.IsActive(ent.Status))
+-            ent = ent with { Status = "account_required" };
+-        return Success(new IapEntitlementResponse(ToDto(ent, accountId, sub)));
++        await RefreshIfNeededAsync(context.Subscription, ct);
++        context = (await deviceContext.ResolveAsync(keyId, ct))!;
++        return Success(new IapEntitlementResponse(ToDto(context.Entitlement, context.AccountId,
++            context.Subscription, context.Authority)));
+     }
+ 
+-    private async Task<SubscriptionEntity?> RefreshIfNeededAsync(SubscriptionEntity? sub, string? deviceUuid, CancellationToken ct)
++    private async Task RefreshIfNeededAsync(SubscriptionEntity? sub, CancellationToken ct)
+     {
+         if (sub is null || !appStore.IsServerApiConfigured || !NeedsRefresh(sub))
+-            return sub;
++            return;
+ 
+-        var refreshed = await appStore.RefreshSubscriptionAsync(sub.OriginalTransactionId, deviceUuid, ct);
++        var refreshed = await appStore.RefreshSubscriptionAsync(sub.OriginalTransactionId, null, ct);
+         if (!refreshed.Ok || refreshed.Subscription is null
+             || refreshed.Subscription.OriginalTransactionId != sub.OriginalTransactionId
++            || refreshed.Subscription.Environment != sub.Environment
++            || refreshed.Subscription.ProductId != sub.ProductId
+             || !entitlements.IsApplicable(refreshed.Subscription))
+         {
+             logger.LogWarning("Apple subscription refresh failed for {Otid}: {Error}", sub.OriginalTransactionId, refreshed.Error);
+-            return sub;
++            return;
+         }
+ 
+-        refreshed.Subscription.DeviceUuid = deviceUuid ?? refreshed.Subscription.DeviceUuid;
+         try
+         {
+-            var updated = await entitlements.UpsertAsync(refreshed.Subscription, ct, relinkDevice: false);
+-            return string.IsNullOrWhiteSpace(deviceUuid) ? updated : await entitlements.FindForDeviceAsync(deviceUuid, ct);
++            refreshed.Subscription.DeviceUuid = "";
++            await entitlements.UpsertAsync(refreshed.Subscription, ct, relinkDevice: false);
+         }
+-        catch (SubscriptionReconciliationRequiredException) { return sub; }
++        catch (SubscriptionReconciliationRequiredException) { }
+     }
+ 
+     private bool NeedsRefresh(SubscriptionEntity sub)
+@@ -146,7 +100,9 @@ public sealed class IapService(
+     private int SecondsUntil(DateTime utc)
+         => Math.Max(0, (int)(utc - timeProvider.GetUtcNow().UtcDateTime).TotalSeconds);
+ 
+-    private static EntitlementDto ToDto(EntitlementService.Entitlement e, string? accountId, SubscriptionEntity? purchase)
++    private static EntitlementDto ToDto(EntitlementService.Entitlement e, string? accountId,
++        SubscriptionEntity? purchase, string authority)
+         => new(e.Status, e.ProductId, e.ExpiresAt?.ToUniversalTime().ToString("O"), e.IsTrial, e.AutoRenew, e.WasEverPaid,
+-            accountId == null ? "device" : "account", purchase?.ClaimedAt != null);
++            authority == "account" ? "account" : authority == "mobile_restore" ? "mobile_restore" : "device",
++            purchase?.ClaimedAt != null);
+ }
+diff --git a/src/Mavrylo.Services/Services/MobilePurchaseAccessResolver.cs b/src/Mavrylo.Services/Services/MobilePurchaseAccessResolver.cs
+new file mode 100644
+index 0000000..88edd59
+--- /dev/null
++++ b/src/Mavrylo.Services/Services/MobilePurchaseAccessResolver.cs
+@@ -0,0 +1,72 @@
++using Mavrylo.Data;
++using Mavrylo.Models;
++using Microsoft.EntityFrameworkCore;
++
++namespace Mavrylo.Services;
++
++public sealed record MobilePurchaseAccess(
++    string DeviceId,
++    Guid? InstallationOwnerId,
++    Guid? PurchaseOwnerId,
++    SubscriptionEntity? Subscription,
++    string Authority,
++    DateTime? GrantValidUntil,
++    EntitlementService.Entitlement Entitlement);
++
++public sealed class MobilePurchaseAccessResolver(AppDbContext db, EntitlementService entitlements, TimeProvider? clock = null)
++{
++    private sealed record Candidate(SubscriptionEntity Purchase, Guid OwnerId, string Authority, DateTime? GrantUntil,
++        EntitlementService.Entitlement Entitlement);
++
++    public async Task<MobilePurchaseAccess?> ResolveAsync(string keyId, CancellationToken ct)
++    {
++        var device = await db.Devices.AsNoTracking().SingleOrDefaultAsync(x => x.KeyId == keyId, ct);
++        if (device == null) return null;
++        var candidates = new List<Candidate>();
++        if (device.AnonymousOwnerId is { } installationOwner)
++        {
++            var bindings = await db.ApplePurchaseBindings.AsNoTracking()
++                .Where(x => x.AnonymousOwnerId == installationOwner && x.BindingKind == "server_token")
++                .ToListAsync(ct);
++            foreach (var binding in bindings)
++                await AddAsync(binding, "owner", null);
++        }
++        var grants = await db.MobilePurchaseGrants.AsNoTracking().Where(x => x.DeviceId == device.Id).ToListAsync(ct);
++        foreach (var grant in grants)
++        {
++            var binding = await db.ApplePurchaseBindings.AsNoTracking().SingleOrDefaultAsync(x =>
++                x.Environment == grant.Environment && x.OriginalTransactionId == grant.OriginalTransactionId, ct);
++            if (binding != null) await AddAsync(binding, "mobile_restore", grant.ValidUntil);
++        }
++
++        var selected = candidates.OrderByDescending(x => EntitlementService.Rank(x.Entitlement.Status))
++            .ThenByDescending(x => x.Entitlement.ExpiresAt).FirstOrDefault();
++        var stickyPaid = candidates.Any(x => entitlements.IsApplicable(x.Purchase) && x.Purchase.WasEverPaid);
++        return selected == null
++            ? new MobilePurchaseAccess(device.Id, device.AnonymousOwnerId, null, null, "none", null,
++                EntitlementService.Entitlement.Free())
++            : new MobilePurchaseAccess(device.Id, device.AnonymousOwnerId, selected.OwnerId, selected.Purchase,
++                selected.Authority, selected.GrantUntil, selected.Entitlement with { WasEverPaid = stickyPaid });
++
++        async Task AddAsync(ApplePurchaseBindingEntity binding, string authority, DateTime? grantUntil)
++        {
++            var purchase = await db.Subscriptions.AsNoTracking().SingleOrDefaultAsync(x =>
++                x.OriginalTransactionId == binding.OriginalTransactionId && x.Environment == binding.Environment, ct);
++            if (purchase == null) return;
++            var entitlement = entitlements.ToEntitlement(purchase);
++            if (grantUntil is { } end)
++            {
++                var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
++                if (end <= now && AccountEntitlementService.IsActive(entitlement.Status))
++                    entitlement = entitlement with
++                    {
++                        Status = purchase.WasEverPaid ? EntitlementService.Status.ExpiredPaid : EntitlementService.Status.ExpiredTrial,
++                        ExpiresAt = end, AutoRenew = false
++                    };
++                else if (entitlement.ExpiresAt > end)
++                    entitlement = entitlement with { ExpiresAt = end };
++            }
++            candidates.Add(new Candidate(purchase, binding.AnonymousOwnerId, authority, grantUntil, entitlement));
++        }
++    }
++}
+diff --git a/tests/AccountClaimHttpValidationTests.cs b/tests/AccountClaimHttpValidationTests.cs
+new file mode 100644
+index 0000000..4dfbe11
+--- /dev/null
++++ b/tests/AccountClaimHttpValidationTests.cs
+@@ -0,0 +1,77 @@
++using System.Net;
++using System.Net.Http.Headers;
++using System.Net.Http.Json;
++using System.Text;
++using System.Text.Json;
++using Mavrylo.Data;
++using Mavrylo.Models;
++using Mavrylo.Services;
++using Mavrylo.Tests.TestSupport;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.Extensions.DependencyInjection;
++using Microsoft.Extensions.DependencyInjection.Extensions;
++using Xunit;
++
++namespace Mavrylo.Tests;
++
++public sealed class AccountClaimHttpValidationTests(PostgresContainerFixture postgres) : IClassFixture<PostgresContainerFixture>
++{
++    [Fact]
++    public async Task FirstOwnerClaimAcceptsValidBodyButRejectsUnknownAndDuplicateFields()
++    {
++        var id = Guid.NewGuid().ToString("N");
++        var key = "SIMULATOR-" + id;
++        var originalId = "claim-shape-" + id;
++        var purchase = new SubscriptionEntity { OriginalTransactionId = originalId, ProductId = "monthly",
++            Environment = "Production", ExpiresAt = DateTime.UtcNow.AddDays(7), WasEverPaid = true };
++        var apple = new FakeAppStoreServerClient
++        {
++            VerifyTransactionResult = new(true, purchase, true, null),
++            SubscriptionStatusesResult = new(true, purchase, null)
++        };
++        await using var factory = new ApiFactory(postgres.ConnectionString, services =>
++        {
++            services.RemoveAll<IAppStoreServerClient>();
++            services.AddSingleton<IAppStoreServerClient>(apple);
++            services.RemoveAll<IAppAttestVerifier>();
++            services.AddSingleton<IAppAttestVerifier>(new FakeAppAttestVerifier { IsDevelopmentBypassEnabled = true });
++        });
++        using var client = factory.CreateClient();
++        using var scope = factory.Services.CreateScope();
++        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
++        var session = await scope.ServiceProvider.GetRequiredService<AccountService>()
++            .SignInAsync(new("claim-shape-" + id, null, "Owner"), default, allowCreation: true);
++        var owner = new AnonymousPurchaseOwnerEntity { Id = Guid.NewGuid() };
++        db.AnonymousPurchaseOwners.Add(owner);
++        db.Devices.Add(new DeviceEntity { KeyId = key, DeviceUuid = id, AnonymousOwnerId = owner.Id });
++        db.Subscriptions.Add(new SubscriptionEntity { OriginalTransactionId = originalId, ProductId = "monthly",
++            Environment = "Production", ExpiresAt = DateTime.UtcNow.AddDays(7), WasEverPaid = true });
++        db.ApplePurchaseBindings.Add(new ApplePurchaseBindingEntity
++        {
++            Environment = "Production", OriginalTransactionId = originalId,
++            AnonymousOwnerId = owner.Id, BindingKind = "server_token"
++        });
++        await db.SaveChangesAsync();
++        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
++        client.DefaultRequestHeaders.Add("X-Device-Authorization", "Bearer " +
++            scope.ServiceProvider.GetRequiredService<JwtTokenService>().CreateDeviceToken(key, "free").Token);
++        var url = "/owlai/account/subscription/apple/claim";
++        var valid = $$"""{"account_id":"{{session.Profile.Id}}","jws_transaction":"signed"}""";
++
++        using var accepted = await client.PostAsync(url, new StringContent(valid, Encoding.UTF8, "application/json"));
++        Assert.Equal(HttpStatusCode.OK, accepted.StatusCode);
++        Assert.Equal(session.Profile.Id, (await db.Subscriptions.AsNoTracking().SingleAsync(x => x.OriginalTransactionId == originalId)).OwnerAccountId);
++
++        foreach (var invalid in new[]
++        {
++            valid[..^1] + ",\"anonymous_owner_id\":\"foreign\"}",
++            valid[..^1] + ",\"account_id\":\"" + session.Profile.Id + "\"}",
++            "{", "null", "{}", "{\"account_id\":42,\"jws_transaction\":\"signed\"}"
++        })
++        {
++            using var rejected = await client.PostAsync(url, new StringContent(invalid, Encoding.UTF8, "application/json"));
++            Assert.Equal(HttpStatusCode.BadRequest, rejected.StatusCode);
++            Assert.Equal("invalid_purchase_request", (await rejected.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("code").GetString());
++        }
++    }
++}
+diff --git a/tests/AiProtectionFilterTests.cs b/tests/AiProtectionFilterTests.cs
+index d9958f0..b2c6676 100644
+--- a/tests/AiProtectionFilterTests.cs
++++ b/tests/AiProtectionFilterTests.cs
+@@ -125,6 +125,7 @@ public class AiProtectionFilterTests
+             Environment = "Production"
+         });
+         await testDb.Db.SaveChangesAsync();
++        await OwnerPurchaseFixture.BindAsync(testDb.Db, "key-1", "otid-1");
+         var filter = CreateFilter(testDb.Db, new AiProtectionOptions { Enabled = protectionEnabled, RequireAssertion = false }, testMode: testMode);
+         var context = CreateContext(testDb.Db, """{"word":"hola"}""", DeviceToken("key-1", EntitlementService.Status.Premium));
+ 
+diff --git a/tests/AiSpendRouteTests.cs b/tests/AiSpendRouteTests.cs
+index 34f0b15..30ff951 100644
+--- a/tests/AiSpendRouteTests.cs
++++ b/tests/AiSpendRouteTests.cs
+@@ -111,6 +111,7 @@ public class AiSpendRouteTests(PostgresContainerFixture postgres) : IClassFixtur
+                 ClaimedAt = account == null ? null : DateTime.UtcNow, ProductId = "com.flashcardai.owlai.premium.monthly", Environment = "Production",
+                 ExpiresAt = DateTime.UtcNow.AddDays(3), WasEverPaid = true, Status = "premium" };
+             db.Subscriptions.Add(subscription); await db.SaveChangesAsync();
++            if (kind == "paid-device") await OwnerPurchaseFixture.BindAsync(db, key!, subscription.OriginalTransactionId);
+         }
+         var path = (kind == "account" ? "/owlai/account/ai/" : "/owlai/ai/") + "word-detail";
+         var before = await db.AiSpendReservations.CountAsync();
+diff --git a/tests/AnonymousPurchaseMigrationTests.cs b/tests/AnonymousPurchaseMigrationTests.cs
+index 50cb727..7aac5df 100644
+--- a/tests/AnonymousPurchaseMigrationTests.cs
++++ b/tests/AnonymousPurchaseMigrationTests.cs
+@@ -1,8 +1,10 @@
+ using Mavrylo.Data;
++using Mavrylo.Services;
+ using Mavrylo.Tests.TestSupport;
+ using Microsoft.EntityFrameworkCore;
+ using Microsoft.EntityFrameworkCore.Infrastructure;
+ using Microsoft.EntityFrameworkCore.Migrations;
++using Microsoft.Extensions.DependencyInjection;
+ using Xunit;
+ 
+ namespace Mavrylo.Tests;
+@@ -58,5 +60,13 @@ public sealed class AnonymousPurchaseMigrationTests(PostgresContainerFixture pos
+         Assert.Equal(4, await db.AnonymousPurchaseOwners.CountAsync());
+         Assert.Equal(2, await db.ApplePurchaseBindings.CountAsync());
+         Assert.Equal(0, await db.MobilePurchaseGrants.CountAsync());
++
++        await using var api = new ApiFactory(postgres.ConnectionString);
++        using var client = api.CreateClient();
++        using var scope = api.Services.CreateScope();
++        var iap = scope.ServiceProvider.GetRequiredService<IapService>();
++        Assert.Equal(200, (await iap.EntitlementAsync("first-key", default)).Status);
++        Assert.Equal(200, (await iap.PurchaseContextAsync("first-key", new("monthly"), default)).Status);
++        Assert.Equal(1, await db.AnonymousPurchaseTokens.CountAsync());
+     }
+ }
+diff --git a/tests/AnonymousPurchaseOwnershipTests.cs b/tests/AnonymousPurchaseOwnershipTests.cs
+new file mode 100644
+index 0000000..6fe4a76
+--- /dev/null
++++ b/tests/AnonymousPurchaseOwnershipTests.cs
+@@ -0,0 +1,107 @@
++using Mavrylo.Data;
++using Mavrylo.Dtos;
++using Mavrylo.Models;
++using Mavrylo.Services;
++using Mavrylo.Tests.TestSupport;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.Extensions.Logging.Abstractions;
++using Xunit;
++
++namespace Mavrylo.Tests;
++
++public sealed class AnonymousPurchaseOwnershipTests
++{
++    [Fact]
++    public async Task PurchaseContextTokenStaysWithOriginalInstallationAcrossRetries()
++    {
++        using var fixture = TestDb.Create();
++        var owner = Guid.NewGuid();
++        fixture.Db.AnonymousPurchaseOwners.Add(new() { Id = owner, Provenance = "installation" });
++        fixture.Db.Devices.Add(new() { KeyId = "key", DeviceUuid = "library", AnonymousOwnerId = owner });
++        await fixture.Db.SaveChangesAsync();
++        var service = IapTestFactory.Create(fixture.Db, new FakeAppStoreServerClient());
++
++        var first = await service.PurchaseContextAsync("key", new("monthly"), default);
++        var retry = await service.PurchaseContextAsync("key", new("monthly"), default);
++        Assert.Equal(200, first.Status);
++        Assert.Equal(((IapPurchaseContextResponse)first.Body!).AppAccountToken,
++            ((IapPurchaseContextResponse)retry.Body!).AppAccountToken);
++        Assert.Equal(owner, (await fixture.Db.AnonymousPurchaseTokens.SingleAsync()).AnonymousOwnerId);
++        Assert.Single(await fixture.Db.AnonymousPurchaseTokens.ToListAsync());
++    }
++
++    [Fact]
++    public async Task CanonicalStateRefreshDoesNotChangeLegacyDeviceNamespace()
++    {
++        using var fixture = TestDb.Create();
++        var entitlements = new EntitlementService(fixture.Db, TimeProvider.System, TestConfig.SubscriptionPolicy());
++        var original = Purchase(Guid.NewGuid());
++        original.DeviceUuid = "original-library";
++        await entitlements.UpsertAsync(original);
++        var refreshed = Purchase(Guid.NewGuid());
++        refreshed.DeviceUuid = "other-library";
++        refreshed.ExpiresAt = DateTime.UtcNow.AddDays(6);
++        await entitlements.UpsertAsync(refreshed);
++        Assert.Equal("original-library", (await fixture.Db.Subscriptions.AsNoTracking().SingleAsync()).DeviceUuid);
++    }
++
++    [Fact]
++    public async Task MappedSignedTokenBindsOriginalInstallationOnce()
++    {
++        using var fixture = TestDb.Create();
++        var owner = Guid.NewGuid();
++        var token = Guid.NewGuid();
++        fixture.Db.AnonymousPurchaseOwners.Add(new() { Id = owner, Provenance = "installation" });
++        fixture.Db.AnonymousPurchaseTokens.Add(new() { AnonymousOwnerId = owner, AppAccountToken = token });
++        fixture.Db.Devices.Add(new() { KeyId = "original-key", DeviceUuid = "library", AnonymousOwnerId = owner });
++        await fixture.Db.SaveChangesAsync();
++        var signed = Purchase(token);
++        var canonical = Purchase(token);
++        var iap = Service(fixture.Db, signed, canonical);
++
++        Assert.Equal(200, (await iap.VerifyAsync("original-key", new IapVerifyRequest("signed"), default)).Status);
++        Assert.Equal(200, (await iap.VerifyAsync("original-key", new IapVerifyRequest("signed"), default)).Status);
++
++        var binding = Assert.Single(await fixture.Db.ApplePurchaseBindings.AsNoTracking().ToListAsync());
++        Assert.Equal(owner, binding.AnonymousOwnerId);
++        Assert.Equal("server_token", binding.BindingKind);
++        Assert.Equal(token, binding.BoundAppAccountToken);
++        Assert.Equal("", (await fixture.Db.Subscriptions.AsNoTracking().SingleAsync()).DeviceUuid);
++    }
++
++    [Fact]
++    public async Task CanonicalTokenCannotReplaceDifferentSignedOwnerToken()
++    {
++        using var fixture = TestDb.Create();
++        var owner = Guid.NewGuid();
++        var token = Guid.NewGuid();
++        fixture.Db.AnonymousPurchaseOwners.Add(new() { Id = owner, Provenance = "installation" });
++        fixture.Db.AnonymousPurchaseTokens.Add(new() { AnonymousOwnerId = owner, AppAccountToken = token });
++        fixture.Db.Devices.Add(new() { KeyId = "key", DeviceUuid = "library", AnonymousOwnerId = owner });
++        await fixture.Db.SaveChangesAsync();
++        var iap = Service(fixture.Db, Purchase(Guid.NewGuid()), Purchase(token));
++
++        Assert.Equal(503, (await iap.VerifyAsync("key", new IapVerifyRequest("signed"), default)).Status);
++        Assert.Empty(await fixture.Db.Subscriptions.ToListAsync());
++        Assert.Empty(await fixture.Db.ApplePurchaseBindings.ToListAsync());
++    }
++
++    private static SubscriptionEntity Purchase(Guid token) => new()
++    {
++        OriginalTransactionId = "purchase", ProductId = "monthly", Environment = "Production",
++        ExpiresAt = DateTime.UtcNow.AddDays(5), WasEverPaid = true, AppAccountToken = token,
++        DeviceUuid = "historical-library"
++    };
++
++    private static IapService Service(AppDbContext db, SubscriptionEntity signed, SubscriptionEntity canonical)
++    {
++        var config = TestConfig.Create();
++        var apple = new FakeAppStoreServerClient
++        {
++            IsLocalVerifyEnabled = false,
++            VerifyTransactionResult = new(true, signed, true, null),
++            SubscriptionStatusesResult = new(true, canonical, null)
++        };
++        return IapTestFactory.Create(db, apple, config: config);
++    }
++}
+diff --git a/tests/AppleJwsTests.cs b/tests/AppleJwsTests.cs
+index 19fa1e7..14d8a40 100644
+--- a/tests/AppleJwsTests.cs
++++ b/tests/AppleJwsTests.cs
+@@ -3,6 +3,8 @@ using System.Security.Cryptography.X509Certificates;
+ using System.Text;
+ using System.Text.Json;
+ using Mavrylo.Services;
++using Mavrylo.Tests.TestSupport;
++using Microsoft.Extensions.Logging.Abstractions;
+ using Xunit;
+ 
+ namespace Mavrylo.Tests;
+@@ -70,6 +72,46 @@ public sealed class AppleJwsTests
+         var valid = AppleJws.DecodeCore(Signed(EffectiveDate), true, root);
+         Assert.True(valid.Ok, valid.Error);
+         Assert.False(AppleJws.DecodeCore(Signed(EffectiveDate.AddYears(2)), true, root).Ok);
++
++        string SignedApp(DateTime date, long appAppleId = 123456789, string bundle = "com.mavrylo.owlai",
++            string receiptType = "Production")
++        {
++            var header = Base64Url.Encode(JsonSerializer.SerializeToUtf8Bytes(new { alg = "ES256", x5c = new[]
++            {
++                Convert.ToBase64String(leaf.RawData), Convert.ToBase64String(intermediate.RawData), Convert.ToBase64String(root.RawData)
++            } }));
++            var payload = Base64Url.Encode(JsonSerializer.SerializeToUtf8Bytes(new
++            {
++                receiptType, receiptCreationDate = new DateTimeOffset(date).ToUnixTimeMilliseconds(),
++                bundleId = bundle, appAppleId
++            }));
++            var content = header + "." + payload;
++            return content + "." + Base64Url.Encode(leafKey.SignData(Encoding.ASCII.GetBytes(content), HashAlgorithmName.SHA256,
++                DSASignatureFormat.IeeeP1363FixedFieldConcatenation));
++        }
++        var appAtSigning = AppleJws.DecodeAppTransactionCore(SignedApp(EffectiveDate), root);
++        Assert.True(appAtSigning.Ok, appAtSigning.Error);
++        Assert.False(AppleJws.DecodeAppTransactionCore(SignedApp(EffectiveDate.AddYears(2)), root).Ok);
++        using var http = new HttpClient();
++        var config = TestConfig.Create(new Dictionary<string, string?>
++        {
++            ["Apple:AppStoreServer:BundleId"] = "com.mavrylo.owlai",
++            ["Apple:AppStoreServer:AppAppleId"] = "123456789"
++        });
++        var client = new AppStoreServerClient(http, config, new FakeEnvironment("Production"),
++            NullLogger<AppStoreServerClient>.Instance, TimeProvider.System);
++        Assert.True(client.ProjectAppTransaction(appAtSigning.Payload).Ok);
++        foreach (var invalid in new[]
++        {
++            SignedApp(EffectiveDate, appAppleId: 987654321),
++            SignedApp(EffectiveDate, bundle: "com.other.app"),
++            SignedApp(EffectiveDate, receiptType: "Sandbox")
++        })
++        {
++            var signedEvidence = AppleJws.DecodeAppTransactionCore(invalid, root);
++            Assert.True(signedEvidence.Ok, signedEvidence.Error);
++            Assert.False(client.ProjectAppTransaction(signedEvidence.Payload).Ok);
++        }
+     }
+ 
+     private static CertificateRequest Request(string name, ECDsa key, bool ca, string? purpose)
+diff --git a/tests/EntitlementServiceTests.cs b/tests/EntitlementServiceTests.cs
+index 5c537e7..f432a1c 100644
+--- a/tests/EntitlementServiceTests.cs
++++ b/tests/EntitlementServiceTests.cs
+@@ -34,7 +34,7 @@ public class EntitlementServiceTests
+     }
+ 
+     [Fact]
+-    public async Task Upsert_KeepsWasEverPaidSticky_AndRelinksDevice()
++    public async Task Upsert_KeepsWasEverPaidSticky_WithoutRelinkingLegacyDevice()
+     {
+         using var testDb = TestDb.Create();
+         var time = new ManualTimeProvider(new DateTimeOffset(Now));
+@@ -63,7 +63,7 @@ public class EntitlementServiceTests
+         var sub = await service.FindByOriginalTransactionAsync("otid");
+         Assert.NotNull(sub);
+         Assert.True(sub!.WasEverPaid);
+-        Assert.Equal("device-b", sub.DeviceUuid);
++        Assert.Equal("device-a", sub.DeviceUuid);
+         Assert.Equal(EntitlementService.Status.ExpiredPaid, service.ToEntitlement(sub).Status);
+     }
+ }
+diff --git a/tests/IapHttpValidationTests.cs b/tests/IapHttpValidationTests.cs
+new file mode 100644
+index 0000000..3643858
+--- /dev/null
++++ b/tests/IapHttpValidationTests.cs
+@@ -0,0 +1,261 @@
++using System.Net;
++using System.Net.Http.Headers;
++using System.Net.Http.Json;
++using System.Formats.Cbor;
++using System.Security.Cryptography;
++using System.Text;
++using System.Text.Json;
++using Mavrylo.Data;
++using Mavrylo.Models;
++using Mavrylo.Services;
++using Mavrylo.Tests.TestSupport;
++using Microsoft.Extensions.DependencyInjection;
++using Microsoft.Extensions.DependencyInjection.Extensions;
++using Microsoft.EntityFrameworkCore;
++using Xunit;
++
++namespace Mavrylo.Tests;
++
++public sealed class IapHttpValidationTests(PostgresContainerFixture postgres) : IClassFixture<PostgresContainerFixture>
++{
++    [Theory]
++    [InlineData("/owlai/iap/purchase-context", "{")]
++    [InlineData("/owlai/iap/purchase-context", "null")]
++    [InlineData("/owlai/iap/purchase-context", "{}")]
++    [InlineData("/owlai/iap/purchase-context", "{\"product_id\":42}")]
++    [InlineData("/owlai/iap/purchase-context/", "{\"product_id\":\"monthly\",\"anonymous_owner_id\":\"foreign\"}")]
++    [InlineData("/owlai/iap/verify", "null")]
++    [InlineData("/owlai/iap/restore", "{}")]
++    public async Task MalformedPurchaseBodiesReturnStableCodeBeforeApple(string path, string body)
++    {
++        await using var factory = new ApiFactory(postgres.ConnectionString, services =>
++        {
++            services.RemoveAll<IAppAttestVerifier>();
++            services.AddSingleton<IAppAttestVerifier>(new FakeAppAttestVerifier { IsDevelopmentBypassEnabled = true });
++        });
++        using var client = factory.CreateClient();
++        using var scope = factory.Services.CreateScope();
++        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
++        var owner = new AnonymousPurchaseOwnerEntity { Id = Guid.NewGuid() };
++        var key = "SIMULATOR-" + Guid.NewGuid().ToString("N");
++        db.AnonymousPurchaseOwners.Add(owner);
++        db.Devices.Add(new DeviceEntity { KeyId = key, DeviceUuid = Guid.NewGuid().ToString("D"), AnonymousOwnerId = owner.Id });
++        await db.SaveChangesAsync();
++        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",
++            scope.ServiceProvider.GetRequiredService<JwtTokenService>().CreateDeviceToken(key, "free").Token);
++
++        using var response = await client.PostAsync(path, new StringContent(body, Encoding.UTF8, "application/json"));
++        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
++        Assert.Equal("invalid_purchase_request", (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("code").GetString());
++        Assert.False(await db.AnonymousPurchaseTokens.AnyAsync(x => x.AnonymousOwnerId == owner.Id));
++    }
++
++    [Theory]
++    [InlineData("/owlai/iap/restore")]
++    [InlineData("/owlai/iap/purchase-context")]
++    [InlineData("/owlai/app-attest/resume")]
++    [InlineData("/owlai/app-attest/resume/")]
++    [InlineData("/owlai/account/subscription/apple/claim")]
++    [InlineData("/owlai/account/subscription/apple/claim/")]
++    public async Task EarlyPurchaseAndResumeRejectionsAreNotCacheable(string path)
++    {
++        await using var factory = new ApiFactory(postgres.ConnectionString);
++        using var client = factory.CreateClient();
++        using var response = await client.PostAsync(path, new StringContent("{}", Encoding.UTF8, "application/json"));
++        Assert.False(response.IsSuccessStatusCode);
++        Assert.Equal("no-store", response.Headers.CacheControl?.ToString());
++    }
++
++    [Fact]
++    public async Task RestoreRetryNeedsFreshAssertionButCanReuseVerifiedAppleEnvelope()
++    {
++        var transactionId = Guid.NewGuid().ToString("N");
++        var deviceId = Guid.NewGuid().ToString("D");
++        var nonce = Guid.NewGuid().ToString("D");
++        var digest = Convert.ToBase64String(SHA384.HashData(Encoding.ASCII.GetBytes(nonce + deviceId)));
++        var purchase = new SubscriptionEntity { OriginalTransactionId = transactionId, ProductId = "monthly",
++            Environment = "Production", ExpiresAt = DateTime.UtcNow.AddDays(3), WasEverPaid = true };
++        var apple = new FakeAppStoreServerClient
++        {
++            IsLocalVerifyEnabled = false,
++            VerifyTransactionResult = new(true, purchase, true, null, digest, nonce),
++            AppTransactionResult = new(true, "Production", null, digest, nonce, null),
++            SubscriptionStatusesResult = new(true, purchase, null)
++        };
++        await using var factory = new ApiFactory(postgres.ConnectionString, services =>
++        {
++            services.RemoveAll<IAppStoreServerClient>();
++            services.AddSingleton<IAppStoreServerClient>(apple);
++        }, new Dictionary<string, string?>
++        {
++            ["Apple:TeamId"] = "TEAMID1234",
++            ["Apple:ClientId"] = "com.mavrylo.owlai"
++        });
++        using var signing = ECDsa.Create(ECCurve.NamedCurves.nistP256);
++        using var client = factory.CreateClient();
++        using var scope = factory.Services.CreateScope();
++        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
++        var owner = new AnonymousPurchaseOwnerEntity { Id = Guid.NewGuid() };
++        var key = "attested-" + Guid.NewGuid().ToString("N");
++        var device = new DeviceEntity { KeyId = key, DeviceUuid = Guid.NewGuid().ToString("D"),
++            AnonymousOwnerId = owner.Id, PublicKey = signing.ExportSubjectPublicKeyInfo() };
++        db.AnonymousPurchaseOwners.Add(owner);
++        db.Devices.Add(device);
++        await db.SaveChangesAsync();
++        var bearer = scope.ServiceProvider.GetRequiredService<JwtTokenService>().CreateDeviceToken(key, "free").Token;
++        const string path = "/owlai/iap/restore";
++        var body = $$"""{"jws_transaction":"signed-tx","jws_app_transaction":"signed-app","device_verification_id":"{{deviceId}}"}""";
++        var challenges = scope.ServiceProvider.GetRequiredService<ChallengeService>();
++
++        HttpRequestMessage RequestWithAssertion(int counter, ChallengeService.IssuedChallenge challenge)
++        {
++            var hash = AppAttestClientData.ComputeAssertionHash(challenge.Nonce, Encoding.UTF8.GetBytes(body), path, challenge.ChallengeId);
++            var authData = new byte[37];
++            SHA256.HashData(Encoding.UTF8.GetBytes("TEAMID1234.com.mavrylo.owlai")).CopyTo(authData, 0);
++            authData[36] = (byte)counter;
++            var signature = signing.SignData(authData.Concat(hash).ToArray(), HashAlgorithmName.SHA256,
++                DSASignatureFormat.Rfc3279DerSequence);
++            var writer = new CborWriter();
++            writer.WriteStartMap(2);
++            writer.WriteTextString("signature"); writer.WriteByteString(signature);
++            writer.WriteTextString("authenticatorData"); writer.WriteByteString(authData);
++            writer.WriteEndMap();
++            var request = new HttpRequestMessage(HttpMethod.Post, path)
++            {
++                Content = new StringContent(body, Encoding.UTF8, "application/json")
++            };
++            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearer);
++            request.Headers.Add("X-App-Attest-Key-Id", key);
++            request.Headers.Add("X-App-Attest-Challenge-Id", challenge.ChallengeId);
++            request.Headers.Add("X-App-Attest-Assertion", Convert.ToBase64String(writer.Encode()));
++            return request;
++        }
++
++        var firstChallenge = await challenges.IssueAssertionAsync(key, path);
++        using (var first = await client.SendAsync(RequestWithAssertion(1, firstChallenge)))
++            Assert.True(first.StatusCode == HttpStatusCode.OK, await first.Content.ReadAsStringAsync());
++        using (var replay = await client.SendAsync(RequestWithAssertion(1, firstChallenge)))
++            Assert.Equal(HttpStatusCode.Forbidden, replay.StatusCode);
++        var freshChallenge = await challenges.IssueAssertionAsync(key, path);
++        using (var retry = await client.SendAsync(RequestWithAssertion(2, freshChallenge)))
++            Assert.Equal(HttpStatusCode.OK, retry.StatusCode);
++        Assert.Equal(1, await db.MobilePurchaseGrants.CountAsync(x => x.DeviceId == device.Id));
++        Assert.Equal(2, (await db.Devices.AsNoTracking().SingleAsync(x => x.KeyId == key)).SignCount);
++    }
++
++    [Fact]
++    public async Task RestoreHttpAcceptsPairedEvidenceWithoutOwlLoginAndRejectsExtraAuthorityFields()
++    {
++        var transactionId = Guid.NewGuid().ToString("N");
++        var deviceId = Guid.NewGuid().ToString("D");
++        var nonce = Guid.NewGuid().ToString("D");
++        var digest = Convert.ToBase64String(System.Security.Cryptography.SHA384.HashData(
++            Encoding.ASCII.GetBytes(nonce + deviceId)));
++        var purchase = new SubscriptionEntity { OriginalTransactionId = transactionId, ProductId = "monthly",
++            Environment = "Production", ExpiresAt = DateTime.UtcNow.AddDays(3), WasEverPaid = true };
++        var apple = new FakeAppStoreServerClient
++        {
++            IsLocalVerifyEnabled = false,
++            VerifyTransactionResult = new(true, purchase, true, null, digest, nonce),
++            AppTransactionResult = new(true, "Production", null, digest, nonce, null),
++            SubscriptionStatusesResult = new(true, purchase, null)
++        };
++        await using var factory = new ApiFactory(postgres.ConnectionString, services =>
++        {
++            services.RemoveAll<IAppStoreServerClient>();
++            services.AddSingleton<IAppStoreServerClient>(apple);
++            services.RemoveAll<IAppAttestVerifier>();
++            services.AddSingleton<IAppAttestVerifier>(new FakeAppAttestVerifier { IsDevelopmentBypassEnabled = true });
++        });
++        using var client = factory.CreateClient();
++        using var scope = factory.Services.CreateScope();
++        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
++        var owner = new AnonymousPurchaseOwnerEntity { Id = Guid.NewGuid() };
++        var key = "SIMULATOR-" + Guid.NewGuid().ToString("N");
++        var device = new DeviceEntity { KeyId = key, DeviceUuid = Guid.NewGuid().ToString("D"), AnonymousOwnerId = owner.Id };
++        db.AnonymousPurchaseOwners.Add(owner);
++        db.Devices.Add(device);
++        await db.SaveChangesAsync();
++        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",
++            scope.ServiceProvider.GetRequiredService<JwtTokenService>().CreateDeviceToken(key, "free").Token);
++        var body = $$"""{"jws_transaction":"signed-tx","jws_app_transaction":"signed-app","device_verification_id":"{{deviceId}}"}""";
++
++        using var accepted = await client.PostAsync("/owlai/iap/restore", new StringContent(body, Encoding.UTF8, "application/json"));
++        Assert.Equal(HttpStatusCode.OK, accepted.StatusCode);
++        var response = await accepted.Content.ReadFromJsonAsync<JsonElement>();
++        Assert.Equal("mobile_restore", response.GetProperty("purchase_authority").GetString());
++        Assert.Equal("premium", response.GetProperty("entitlement").GetProperty("status").GetString());
++        Assert.NotNull(response.GetProperty("mobile_grant_expires_at").GetString());
++        Assert.Equal("no-store", accepted.Headers.CacheControl?.ToString());
++        Assert.Single(await db.MobilePurchaseGrants.Where(x => x.DeviceId == device.Id).ToListAsync());
++        Assert.Equal(owner.Id, (await db.Devices.AsNoTracking().SingleAsync(x => x.KeyId == key)).AnonymousOwnerId);
++
++        foreach (var invalid in new[]
++        {
++            body[..^1] + ",\"anonymous_owner_id\":\"foreign\"}",
++            body[..^1] + ",\"device_verification_id\":\"" + deviceId + "\"}"
++        })
++        {
++            using var rejected = await client.PostAsync("/owlai/iap/restore", new StringContent(invalid, Encoding.UTF8, "application/json"));
++            Assert.Equal(HttpStatusCode.BadRequest, rejected.StatusCode);
++            Assert.Equal("invalid_purchase_request", (await rejected.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("code").GetString());
++        }
++    }
++
++    [Fact]
++    public async Task PurchaseContextAcceptsValidBodyAndReusesInstallationToken()
++    {
++        await using var factory = new ApiFactory(postgres.ConnectionString, services =>
++        {
++            services.RemoveAll<IAppAttestVerifier>();
++            services.AddSingleton<IAppAttestVerifier>(new FakeAppAttestVerifier { IsDevelopmentBypassEnabled = true });
++        });
++        using var client = factory.CreateClient();
++        using var scope = factory.Services.CreateScope();
++        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
++        var owner = new AnonymousPurchaseOwnerEntity { Id = Guid.NewGuid() };
++        var key = "SIMULATOR-" + Guid.NewGuid().ToString("N");
++        db.AnonymousPurchaseOwners.Add(owner);
++        db.Devices.Add(new DeviceEntity { KeyId = key, DeviceUuid = Guid.NewGuid().ToString("D"), AnonymousOwnerId = owner.Id });
++        await db.SaveChangesAsync();
++        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",
++            scope.ServiceProvider.GetRequiredService<JwtTokenService>().CreateDeviceToken(key, "free").Token);
++
++        var first = await client.PostAsJsonAsync("/owlai/iap/purchase-context", new { product_id = "monthly" });
++        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
++        var firstToken = (await first.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("app_account_token").GetGuid();
++        Assert.NotEqual(Guid.Empty, firstToken);
++        var second = await client.PostAsJsonAsync("/owlai/iap/purchase-context", new { product_id = "monthly" });
++        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
++        Assert.Equal(firstToken, (await second.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("app_account_token").GetGuid());
++        Assert.Equal(1, await db.AnonymousPurchaseTokens.CountAsync(x => x.AnonymousOwnerId == owner.Id));
++    }
++
++    [Theory]
++    [InlineData("{\"product_id\":\"monthly\",\"anonymous_owner_id\":\"foreign\"}")]
++    [InlineData("{\"product_id\":\"monthly\",\"product_id\":\"product\"}")]
++    public async Task PurchaseContextRejectsUnknownAndDuplicateAuthorityFieldsBeforeIssuingToken(string body)
++    {
++        await using var factory = new ApiFactory(postgres.ConnectionString, services =>
++        {
++            services.RemoveAll<IAppAttestVerifier>();
++            services.AddSingleton<IAppAttestVerifier>(new FakeAppAttestVerifier { IsDevelopmentBypassEnabled = true });
++        });
++        using var client = factory.CreateClient();
++        using var scope = factory.Services.CreateScope();
++        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
++        var owner = new AnonymousPurchaseOwnerEntity { Id = Guid.NewGuid() };
++        var key = "SIMULATOR-" + Guid.NewGuid().ToString("N");
++        db.AnonymousPurchaseOwners.Add(owner);
++        db.Devices.Add(new DeviceEntity { KeyId = key, DeviceUuid = Guid.NewGuid().ToString("D"), AnonymousOwnerId = owner.Id });
++        await db.SaveChangesAsync();
++        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",
++            scope.ServiceProvider.GetRequiredService<JwtTokenService>().CreateDeviceToken(key, "free").Token);
++
++        using var response = await client.PostAsync("/owlai/iap/purchase-context", new StringContent(body, Encoding.UTF8, "application/json"));
++        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
++        var error = await response.Content.ReadFromJsonAsync<JsonElement>();
++        Assert.Equal("invalid_purchase_request", error.GetProperty("code").GetString());
++        Assert.False(await db.AnonymousPurchaseTokens.AnyAsync(x => x.AnonymousOwnerId == owner.Id));
++    }
++}
+diff --git a/tests/MobilePurchaseRestoreTests.cs b/tests/MobilePurchaseRestoreTests.cs
+new file mode 100644
+index 0000000..cd952df
+--- /dev/null
++++ b/tests/MobilePurchaseRestoreTests.cs
+@@ -0,0 +1,318 @@
++using Mavrylo.Models;
++using Mavrylo.Dtos;
++using Mavrylo.Services;
++using Mavrylo.Tests.TestSupport;
++using Microsoft.EntityFrameworkCore;
++using Xunit;
++
++namespace Mavrylo.Tests;
++
++public sealed class MobilePurchaseRestoreTests
++{
++    [Theory]
++    [InlineData(false, false, false, true)]
++    [InlineData(true, false, false, false)]
++    [InlineData(false, true, false, false)]
++    [InlineData(false, false, true, false)]
++    public void PairedSignedDeviceEvidenceRequiresBothHashesAndMatchingOptionalAppId(
++        bool wrongTransactionDevice, bool missingAppDevice, bool mismatchedAppId, bool valid)
++    {
++        var deviceId = Guid.NewGuid().ToString("D");
++        var txNonce = Guid.NewGuid().ToString("D");
++        var appNonce = Guid.NewGuid().ToString("D");
++        static string Digest(string nonce, string device) => Convert.ToBase64String(
++            System.Security.Cryptography.SHA384.HashData(System.Text.Encoding.ASCII.GetBytes(nonce + device)));
++        var apple = new FakeAppStoreServerClient
++        {
++            IsLocalVerifyEnabled = false,
++            VerifyTransactionResult = new(true, Purchase(""), true, null,
++                Digest(txNonce, wrongTransactionDevice ? Guid.NewGuid().ToString("D") : deviceId), txNonce),
++            AppTransactionResult = new(true, "Production", mismatchedAppId ? "different" : "same",
++                missingAppDevice ? null : Digest(appNonce, deviceId), appNonce, null)
++        };
++        apple.VerifyTransactionResult.Subscription!.AppTransactionId = "same";
++        var result = new AppleMobileRestoreVerifier(apple).Verify(new IapRestoreRequest("transaction", "app", deviceId));
++        Assert.Equal(valid, result.Ok);
++        if (valid) Assert.Equal("paired_device", result.Evidence!.EvidenceKind);
++        else Assert.Equal("restore_evidence_mismatch", result.Code);
++    }
++
++    [Fact]
++    public void MissingOptionalAppIdsAndPurchaseTokenPermitPairedLegacyMobileEvidence()
++    {
++        var deviceId = Guid.NewGuid().ToString("D");
++        var nonce = Guid.NewGuid().ToString("D");
++        var digest = Convert.ToBase64String(System.Security.Cryptography.SHA384.HashData(
++            System.Text.Encoding.ASCII.GetBytes(nonce + deviceId)));
++        var purchase = Purchase("");
++        purchase.AppAccountToken = null;
++        var apple = new FakeAppStoreServerClient
++        {
++            IsLocalVerifyEnabled = false,
++            VerifyTransactionResult = new(true, purchase, true, null, digest, nonce),
++            AppTransactionResult = new(true, "Production", null, digest, nonce, null)
++        };
++        var result = new AppleMobileRestoreVerifier(apple).Verify(new IapRestoreRequest("transaction", "app", deviceId));
++        Assert.True(result.Ok, result.Code);
++        Assert.Equal("paired_device_legacy", result.Evidence!.EvidenceKind);
++    }
++
++    [Fact]
++    public async Task NewKeyRestoresMobileWithoutOwnerOrAccountAndOriginalKeyStaysActive()
++    {
++        using var fixture = TestDb.Create();
++        var originalOwner = Guid.NewGuid();
++        var restoredOwner = Guid.NewGuid();
++        var original = new DeviceEntity { KeyId = "original-key", DeviceUuid = "original-library", AnonymousOwnerId = originalOwner };
++        var restored = new DeviceEntity { KeyId = "restored-key", DeviceUuid = "restored-library", AnonymousOwnerId = restoredOwner };
++        fixture.Db.AnonymousPurchaseOwners.AddRange(new AnonymousPurchaseOwnerEntity { Id = originalOwner },
++            new AnonymousPurchaseOwnerEntity { Id = restoredOwner });
++        fixture.Db.Devices.AddRange(original, restored);
++        fixture.Db.Subscriptions.Add(Purchase(""));
++        fixture.Db.ApplePurchaseBindings.Add(new() { Environment = "Production", OriginalTransactionId = "purchase",
++            AnonymousOwnerId = originalOwner, BindingKind = "server_token" });
++        await fixture.Db.SaveChangesAsync();
++        var (apple, request) = AppleEvidence(Purchase(""));
++        var service = RestoreService(fixture, apple);
++
++        var result = await service.RestoreMobileAsync("restored-key", request, default);
++        Assert.Equal(200, result.Status);
++        Assert.Equal(originalOwner, (await fixture.Db.ApplePurchaseBindings.SingleAsync()).AnonymousOwnerId);
++        Assert.Equal(restoredOwner, (await fixture.Db.Devices.SingleAsync(x => x.KeyId == "restored-key")).AnonymousOwnerId);
++        Assert.Equal("premium", (await new DeviceContextService(fixture.Db, Entitlements(fixture)).ResolveAsync("original-key"))!.Entitlement.Status);
++        Assert.Equal("premium", (await new DeviceContextService(fixture.Db, Entitlements(fixture)).ResolveAsync("restored-key"))!.Entitlement.Status);
++        Assert.Single(await fixture.Db.MobilePurchaseGrants.ToListAsync());
++        var tokenResult = await IapTestFactory.Create(fixture.Db, apple).TokenAsync("restored-key", default);
++        var tokenBody = Assert.IsType<IapTokenResponse>(tokenResult.Body);
++        Assert.Equal("mobile_restore", tokenBody.PurchaseAuthority);
++        Assert.Equal("mobile_restore", tokenBody.Entitlement.ResolutionSource);
++        Assert.NotNull(tokenBody.MobileGrantExpiresAt);
++    }
++
++    [Fact]
++    public async Task AppleOutageCannotCreateGrantOrBinding()
++    {
++        using var fixture = TestDb.Create();
++        var owner = Guid.NewGuid();
++        fixture.Db.AnonymousPurchaseOwners.Add(new() { Id = owner });
++        fixture.Db.Devices.Add(new() { KeyId = "key", DeviceUuid = "library", AnonymousOwnerId = owner });
++        await fixture.Db.SaveChangesAsync();
++        var (apple, request) = AppleEvidence(Purchase(""));
++        apple.SubscriptionStatusesResult = AppStoreServerClient.SubscriptionStatusesResult.Fail("outage");
++
++        var result = await RestoreService(fixture, apple).RestoreMobileAsync("key", request, default);
++        Assert.Equal(503, result.Status);
++        Assert.Empty(await fixture.Db.MobilePurchaseGrants.ToListAsync());
++        Assert.Empty(await fixture.Db.ApplePurchaseBindings.ToListAsync());
++    }
++
++    [Fact]
++    public async Task CompleteCapturedEnvelopeCanAddOnlyBoundedMobileGrantsForNewKeys()
++    {
++        using var fixture = TestDb.Create();
++        var originalOwner = Guid.NewGuid();
++        var token = Guid.NewGuid();
++        fixture.Db.AnonymousPurchaseOwners.Add(new() { Id = originalOwner });
++        fixture.Db.AnonymousPurchaseTokens.Add(new() { AnonymousOwnerId = originalOwner, AppAccountToken = token });
++        var first = new DeviceEntity { KeyId = "restored-one", DeviceUuid = "private-one", AnonymousOwnerId = Guid.NewGuid() };
++        var second = new DeviceEntity { KeyId = "restored-two", DeviceUuid = "private-two", AnonymousOwnerId = Guid.NewGuid() };
++        fixture.Db.AnonymousPurchaseOwners.AddRange(new AnonymousPurchaseOwnerEntity { Id = first.AnonymousOwnerId!.Value },
++            new AnonymousPurchaseOwnerEntity { Id = second.AnonymousOwnerId!.Value });
++        fixture.Db.Devices.AddRange(first, second);
++        await fixture.Db.SaveChangesAsync();
++        var canonical = Purchase(""); canonical.AppAccountToken = token;
++        var (apple, request) = AppleEvidence(canonical);
++        apple.VerifyTransactionResult.Subscription!.AppAccountToken = token;
++        var service = RestoreService(fixture, apple);
++
++        Assert.Equal(200, (await service.RestoreMobileAsync("restored-one", request, default)).Status);
++        Assert.Equal(200, (await service.RestoreMobileAsync("restored-one", request, default)).Status);
++        Assert.Equal(200, (await service.RestoreMobileAsync("restored-two", request, default)).Status);
++
++        var binding = Assert.Single(await fixture.Db.ApplePurchaseBindings.ToListAsync());
++        Assert.Equal(originalOwner, binding.AnonymousOwnerId);
++        Assert.Equal("server_token", binding.BindingKind);
++        Assert.Equal(2, await fixture.Db.MobilePurchaseGrants.CountAsync());
++        Assert.Equal(first.AnonymousOwnerId, (await fixture.Db.Devices.SingleAsync(x => x.KeyId == "restored-one")).AnonymousOwnerId);
++        fixture.Db.Users.Add(new AppUser { Id = "foreign", Email = "foreign@test.test" });
++        await fixture.Db.SaveChangesAsync();
++        var account = new AccountEntitlementService(fixture.Db, Entitlements(fixture), apple,
++            new SubscriptionOwnershipService(fixture.Db, TimeProvider.System), TimeProvider.System);
++        var desktopClaim = await account.ClaimAsync("foreign", "restored-one", "signed-transaction", default);
++        Assert.Equal(403, desktopClaim.Status);
++        Assert.Equal("desktop_owner_proof_required", System.Text.Json.JsonSerializer.SerializeToElement(desktopClaim.Body)
++            .GetProperty("code").GetString());
++        Assert.Null((await new DeviceContextService(fixture.Db, Entitlements(fixture))
++            .ResolveAsync("restored-one"))!.AccountId);
++    }
++
++    [Fact]
++    public async Task StaleRestoreAfterNewerRevocationRetainsHistoricalGrantOnly()
++    {
++        using var fixture = TestDb.Create();
++        var owner = Guid.NewGuid();
++        fixture.Db.AnonymousPurchaseOwners.Add(new() { Id = owner });
++        fixture.Db.Devices.Add(new() { KeyId = "key", DeviceUuid = "library", AnonymousOwnerId = owner });
++        var newer = Purchase("");
++        newer.RevokedAt = DateTime.UtcNow;
++        newer.LastAppleEventAt = DateTime.UtcNow;
++        fixture.Db.Subscriptions.Add(newer);
++        await fixture.Db.SaveChangesAsync();
++        var older = Purchase(""); older.LastAppleEventAt = newer.LastAppleEventAt.Value.AddMinutes(-1);
++        var (apple, request) = AppleEvidence(older);
++
++        Assert.Equal(200, (await RestoreService(fixture, apple).RestoreMobileAsync("key", request, default)).Status);
++        var persisted = await fixture.Db.Subscriptions.AsNoTracking().SingleAsync();
++        Assert.NotNull(persisted.RevokedAt);
++        var grant = await fixture.Db.MobilePurchaseGrants.AsNoTracking().SingleAsync();
++        Assert.True(grant.ValidUntil <= DateTime.UtcNow);
++        Assert.Equal("revoked", (await new DeviceContextService(fixture.Db, Entitlements(fixture)).ResolveAsync("key"))!.Entitlement.Status);
++    }
++
++    [Fact]
++    public async Task FamilySharedReceiptWithoutTokenRestoresMobileButCannotBecomeOwnerProof()
++    {
++        using var fixture = TestDb.Create();
++        var owner = Guid.NewGuid();
++        fixture.Db.AnonymousPurchaseOwners.Add(new() { Id = owner });
++        fixture.Db.Devices.Add(new() { KeyId = "family-key", DeviceUuid = "family-library", AnonymousOwnerId = owner });
++        await fixture.Db.SaveChangesAsync();
++        var canonical = Purchase("");
++        canonical.AppAccountToken = null;
++        var (apple, request) = AppleEvidence(canonical);
++        apple.VerifyTransactionResult.Subscription!.InAppOwnershipType = "FAMILY_SHARED";
++        var iap = IapTestFactory.Create(fixture.Db, apple);
++
++        Assert.Equal(200, (await iap.RestoreAsync("family-key", request, default)).Status);
++        Assert.Equal("legacy_unproven", (await fixture.Db.ApplePurchaseBindings.SingleAsync()).BindingKind);
++        Assert.Equal("premium", (await new DeviceContextService(fixture.Db, Entitlements(fixture))
++            .ResolveAsync("family-key"))!.Entitlement.Status);
++        Assert.Equal(403, (await iap.VerifyAsync("family-key", new IapVerifyRequest("signed-transaction"), default)).Status);
++    }
++
++    [Fact]
++    public async Task ExpiredCanonicalHistoryCreatesOnlyExpiredGrantAndNeverExtendsPaidAccess()
++    {
++        using var fixture = TestDb.Create();
++        var owner = Guid.NewGuid();
++        fixture.Db.AnonymousPurchaseOwners.Add(new() { Id = owner });
++        fixture.Db.Devices.Add(new() { KeyId = "expired-key", DeviceUuid = "expired-library", AnonymousOwnerId = owner });
++        await fixture.Db.SaveChangesAsync();
++        var canonical = Purchase("");
++        canonical.ExpiresAt = DateTime.UtcNow.AddDays(-1);
++        var (apple, request) = AppleEvidence(canonical);
++        var iap = IapTestFactory.Create(fixture.Db, apple);
++
++        var result = await iap.RestoreAsync("expired-key", request, default);
++        Assert.Equal(200, result.Status);
++        var response = Assert.IsType<IapVerifyResponse>(result.Body);
++        Assert.Equal("expired_paid", response.Entitlement.Status);
++        Assert.True(response.Entitlement.WasEverPaid);
++        Assert.Equal("mobile_restore", response.PurchaseAuthority);
++        Assert.True((await fixture.Db.MobilePurchaseGrants.SingleAsync()).ValidUntil < DateTime.UtcNow);
++        var token = Assert.IsType<IapTokenResponse>((await iap.TokenAsync("expired-key", default)).Body);
++        Assert.Equal("expired_paid", token.Entitlement.Status);
++    }
++
++    private static AnonymousPurchaseService RestoreService(TestDb fixture, FakeAppStoreServerClient apple)
++    {
++        var entitlements = Entitlements(fixture);
++        return new(fixture.Db, apple, entitlements, TestConfig.SubscriptionPolicy(),
++            new AppleMobileRestoreVerifier(apple), new MobilePurchaseAccessResolver(fixture.Db, entitlements),
++            new DeviceContextService(fixture.Db, entitlements),
++            new JwtTokenService(TestConfig.Create(), TimeProvider.System), TimeProvider.System);
++    }
++
++    private static (FakeAppStoreServerClient Apple, IapRestoreRequest Request) AppleEvidence(SubscriptionEntity canonical)
++    {
++        var id = Guid.NewGuid().ToString("D");
++        var nonce = Guid.NewGuid().ToString("D");
++        var digest = Convert.ToBase64String(System.Security.Cryptography.SHA384.HashData(
++            System.Text.Encoding.ASCII.GetBytes(nonce + id)));
++        var apple = new FakeAppStoreServerClient
++        {
++            IsLocalVerifyEnabled = false,
++            VerifyTransactionResult = new(true, Purchase(""), true, null, digest, nonce),
++            AppTransactionResult = new(true, "Production", null, digest, nonce, null),
++            SubscriptionStatusesResult = new(true, canonical, null)
++        };
++        return (apple, new IapRestoreRequest("signed-transaction", "signed-app", id));
++    }
++    [Fact]
++    public async Task HistoricalUuidEqualityCannotSupplyMobileEntitlement()
++    {
++        using var fixture = TestDb.Create();
++        var owner = Guid.NewGuid();
++        fixture.Db.AnonymousPurchaseOwners.Add(new() { Id = owner, Provenance = "installation" });
++        fixture.Db.Devices.Add(new() { KeyId = "new-key", DeviceUuid = "shared-legacy-value", AnonymousOwnerId = owner });
++        fixture.Db.Subscriptions.Add(Purchase("shared-legacy-value"));
++        await fixture.Db.SaveChangesAsync();
++
++        var context = await new DeviceContextService(fixture.Db, Entitlements(fixture)).ResolveAsync("new-key");
++        Assert.Equal("free", context!.Entitlement.Status);
++        Assert.Null(context.Subscription);
++    }
++
++    [Fact]
++    public async Task OriginalOwnerUsesBindingAcrossUnrelatedLibraryNamespace()
++    {
++        using var fixture = TestDb.Create();
++        var owner = Guid.NewGuid();
++        fixture.Db.AnonymousPurchaseOwners.Add(new() { Id = owner, Provenance = "installation" });
++        fixture.Db.Devices.Add(new() { KeyId = "owner-key", DeviceUuid = "new-library", AnonymousOwnerId = owner });
++        fixture.Db.Subscriptions.Add(Purchase("old-library"));
++        fixture.Db.ApplePurchaseBindings.Add(new()
++        {
++            Environment = "Production", OriginalTransactionId = "purchase", AnonymousOwnerId = owner,
++            BindingKind = "server_token"
++        });
++        await fixture.Db.SaveChangesAsync();
++
++        var context = await new DeviceContextService(fixture.Db, Entitlements(fixture)).ResolveAsync("owner-key");
++        Assert.Equal("premium", context!.Entitlement.Status);
++        Assert.Equal("purchase", context.Subscription!.OriginalTransactionId);
++    }
++
++    [Fact]
++    public async Task OtherInstallationGetsOnlyFiniteMobileGrantAndRetainsPaidHistoryAfterExpiry()
++    {
++        using var fixture = TestDb.Create();
++        var owner = Guid.NewGuid();
++        var restoredOwner = Guid.NewGuid();
++        var device = new DeviceEntity { KeyId = "restored-key", DeviceUuid = "new-library", AnonymousOwnerId = restoredOwner };
++        fixture.Db.AnonymousPurchaseOwners.AddRange(
++            new AnonymousPurchaseOwnerEntity { Id = owner, Provenance = "installation" },
++            new AnonymousPurchaseOwnerEntity { Id = restoredOwner, Provenance = "installation" });
++        fixture.Db.Devices.Add(device);
++        fixture.Db.Subscriptions.Add(Purchase("old-library"));
++        fixture.Db.ApplePurchaseBindings.Add(new()
++        {
++            Environment = "Production", OriginalTransactionId = "purchase", AnonymousOwnerId = owner,
++            BindingKind = "server_token"
++        });
++        fixture.Db.MobilePurchaseGrants.Add(new()
++        {
++            DeviceId = device.Id, Environment = "Production", OriginalTransactionId = "purchase",
++            ValidUntil = DateTime.UtcNow.AddMinutes(10), VerifiedAt = DateTime.UtcNow,
++            EvidenceKind = "paired_device", LastEvidenceHash = "hash"
++        });
++        await fixture.Db.SaveChangesAsync();
++
++        var resolver = new DeviceContextService(fixture.Db, Entitlements(fixture));
++        var active = await resolver.ResolveAsync("restored-key", default);
++        Assert.Equal("premium", active!.Entitlement.Status);
++        var grant = await fixture.Db.MobilePurchaseGrants.FindAsync(device.Id, "Production", "purchase");
++        grant!.ValidUntil = DateTime.UtcNow.AddSeconds(-1);
++        await fixture.Db.SaveChangesAsync();
++        var historical = await resolver.ResolveAsync("restored-key", default);
++        Assert.Equal("expired_paid", historical!.Entitlement.Status);
++        Assert.True(historical.Entitlement.WasEverPaid);
++    }
++
++    private static EntitlementService Entitlements(TestDb fixture) => new(fixture.Db, TimeProvider.System, TestConfig.SubscriptionPolicy());
++    private static SubscriptionEntity Purchase(string library) => new()
++    {
++        OriginalTransactionId = "purchase", ProductId = "monthly", Environment = "Production", DeviceUuid = library,
++        ExpiresAt = DateTime.UtcNow.AddDays(3), WasEverPaid = true
++    };
++}
+diff --git a/tests/PaidAccessAuditRegressionTests.cs b/tests/PaidAccessAuditRegressionTests.cs
+index ea48d3c..23f5700 100644
+--- a/tests/PaidAccessAuditRegressionTests.cs
++++ b/tests/PaidAccessAuditRegressionTests.cs
+@@ -101,6 +101,10 @@ public sealed class PaidAccessAuditRegressionTests
+         await AddDevice(db, "key", "device");
+         var apple = Apple(Purchase("purchase", "device"), Purchase("purchase", "device"));
+         var iap = Iap(db, apple);
++        var context = await iap.PurchaseContextAsync("key", new("monthly"), default);
++        var issuedToken = Assert.IsType<IapPurchaseContextResponse>(context.Body).AppAccountToken;
++        apple.VerifyTransactionResult.Subscription!.AppAccountToken = issuedToken;
++        apple.SubscriptionStatusesResult.Subscription!.AppAccountToken = issuedToken;
+         Assert.Equal(200, (await iap.VerifyAsync("key", new("synthetic-signed-proof"), default)).Status);
+         Assert.Equal(200, (await iap.VerifyAsync("key", new("synthetic-signed-proof"), default)).Status);
+         Assert.Single(await db.Subscriptions.ToListAsync());
+@@ -151,6 +155,7 @@ public sealed class PaidAccessAuditRegressionTests
+         purchase.Environment = environment;
+         db.Subscriptions.Add(purchase);
+         await db.SaveChangesAsync();
++        await BindOriginalOwner(db, "key", purchase);
+         Assert.Equal((402, 0), await InvokeAi(db, "key", quota: 0));
+     }
+ 
+@@ -211,6 +216,7 @@ public sealed class PaidAccessAuditRegressionTests
+             else purchase.RevokedAt = DateTime.UtcNow;
+             fixture.Db.Subscriptions.Add(purchase);
+             await fixture.Db.SaveChangesAsync();
++            await BindOriginalOwner(fixture.Db, "key", purchase);
+         }
+         Assert.Equal((expectedStatus, 0), await InvokeAi(fixture.Db, "key", quota: 0));
+     }
+@@ -223,8 +229,7 @@ public sealed class PaidAccessAuditRegressionTests
+ 
+     private static IapService Iap(AppDbContext db, IAppStoreServerClient apple)
+     {
+-        var entitlements = new EntitlementService(db, Clock, TestConfig.SubscriptionPolicy());
+-        return new(apple, entitlements, new(db, entitlements), new(Config, Clock), Clock, NullLogger<IapService>.Instance);
++        return IapTestFactory.Create(db, apple, Clock, Config);
+     }
+ 
+     private static FakeAppAttestVerifier AcceptedAttestation() => new()
+@@ -232,7 +237,22 @@ public sealed class PaidAccessAuditRegressionTests
+ 
+     private static async Task AddDevice(AppDbContext db, string key, string device)
+     {
+-        db.Devices.Add(new DeviceEntity { KeyId = key, DeviceUuid = device, PublicKey = [1, 2, 3] });
++        var owner = new AnonymousPurchaseOwnerEntity { Id = Guid.NewGuid(), Provenance = "installation" };
++        db.AnonymousPurchaseOwners.Add(owner);
++        db.Devices.Add(new DeviceEntity { KeyId = key, DeviceUuid = device, PublicKey = [1, 2, 3], AnonymousOwnerId = owner.Id });
++        await db.SaveChangesAsync();
++    }
++
++    private static async Task BindOriginalOwner(AppDbContext db, string key, SubscriptionEntity purchase)
++    {
++        var owner = (await db.Devices.SingleAsync(x => x.KeyId == key)).AnonymousOwnerId!.Value;
++        var token = Guid.NewGuid();
++        db.AnonymousPurchaseTokens.Add(new AnonymousPurchaseTokenEntity { AnonymousOwnerId = owner, AppAccountToken = token });
++        db.ApplePurchaseBindings.Add(new ApplePurchaseBindingEntity
++        {
++            AnonymousOwnerId = owner, OriginalTransactionId = purchase.OriginalTransactionId,
++            Environment = purchase.Environment, BindingKind = "server_token", BoundAppAccountToken = token
++        });
+         await db.SaveChangesAsync();
+     }
+ 
+diff --git a/tests/PaidAccessBoundaryHttpTests.cs b/tests/PaidAccessBoundaryHttpTests.cs
+index 74ed90b..4b569ac 100644
+--- a/tests/PaidAccessBoundaryHttpTests.cs
++++ b/tests/PaidAccessBoundaryHttpTests.cs
+@@ -292,10 +292,12 @@ public sealed class PaidAccessBoundaryHttpTests(PostgresContainerFixture postgre
+         var row = new DeviceWordEntity { DeviceUuid = key, ClientWordId = "client-1", NormalizedWord = "hello", DisplayWord = "Hello",
+             NativeLanguage = "en", LearningLanguage = "es", Translation = "original", Pronunciation = "pron", PartOfSpeech = "noun", DetailJson = "{}" };
+         db.DeviceWords.Add(row);
+-        db.Subscriptions.Add(new SubscriptionEntity { OriginalTransactionId = Guid.NewGuid().ToString("N"), DeviceUuid = key,
++        var purchaseId = Guid.NewGuid().ToString("N");
++        db.Subscriptions.Add(new SubscriptionEntity { OriginalTransactionId = purchaseId, DeviceUuid = key,
+             ProductId = status == "invalid_subscription" ? "unknown.product" : "com.flashcardai.owlai.premium.monthly", Environment = "Production", ExpiresAt = DateTime.UtcNow.AddDays(-1),
+             WasEverPaid = status != "expired_trial", IsTrial = status == "expired_trial", RevokedAt = status == "revoked" ? DateTime.UtcNow : null });
+         await db.SaveChangesAsync();
++        await OwnerPurchaseFixture.BindAsync(db, key, purchaseId);
+         var request = new { client_word_id = "client-1", normalized_word = "hello", display_word = "Hello", native_language = "en",
+             learning_language = "es", translation = "changed", pronunciation = "pron", part_of_speech = "noun", detail_json = "{}" };
+         using var denied = await client.PostAsJsonAsync("/owlai/device-words/upsert", request);
+diff --git a/tests/RestorationPostgresTests.cs b/tests/RestorationPostgresTests.cs
+new file mode 100644
+index 0000000..25b0114
+--- /dev/null
++++ b/tests/RestorationPostgresTests.cs
+@@ -0,0 +1,142 @@
++using System.Text;
++using Mavrylo.Data;
++using Mavrylo.Dtos;
++using Mavrylo.Models;
++using Mavrylo.Services;
++using Mavrylo.Tests.TestSupport;
++using Microsoft.EntityFrameworkCore;
++using Xunit;
++
++namespace Mavrylo.Tests;
++
++public sealed class RestorationPostgresTests(PostgresContainerFixture postgres) : IClassFixture<PostgresContainerFixture>
++{
++    private AppDbContext Database() => new(new DbContextOptionsBuilder<AppDbContext>()
++        .UseNpgsql(postgres.ConnectionString).Options);
++
++    [Fact]
++    public async Task NotificationFirstStateDoesNotEnrollInstallationAndConcurrentVerifyRestoreBindOnce()
++    {
++        var originalId = Guid.NewGuid().ToString("N");
++        var owner = Guid.NewGuid();
++        var restoredOwner = Guid.NewGuid();
++        var token = Guid.NewGuid();
++        await using (var setup = Database())
++        {
++            await setup.Database.MigrateAsync();
++            setup.AnonymousPurchaseOwners.AddRange(new AnonymousPurchaseOwnerEntity { Id = owner },
++                new AnonymousPurchaseOwnerEntity { Id = restoredOwner });
++            setup.AnonymousPurchaseTokens.Add(new AnonymousPurchaseTokenEntity { AnonymousOwnerId = owner, AppAccountToken = token });
++            setup.Devices.AddRange(
++                new DeviceEntity { KeyId = "owner-" + originalId, DeviceUuid = "private-owner-" + originalId, AnonymousOwnerId = owner },
++                new DeviceEntity { KeyId = "restore-" + originalId, DeviceUuid = "private-restored-" + originalId, AnonymousOwnerId = restoredOwner });
++            await setup.SaveChangesAsync();
++            await new EntitlementService(setup, TimeProvider.System, TestConfig.SubscriptionPolicy())
++                .UpsertAsync(Purchase(originalId, token));
++            Assert.Empty(await setup.ApplePurchaseBindings.Where(x => x.OriginalTransactionId == originalId).ToListAsync());
++            Assert.Empty(await setup.MobilePurchaseGrants.Where(x => x.OriginalTransactionId == originalId).ToListAsync());
++            Assert.Equal("free", (await new DeviceContextService(setup,
++                new EntitlementService(setup, TimeProvider.System, TestConfig.SubscriptionPolicy()))
++                .ResolveAsync("restore-" + originalId))!.Entitlement.Status);
++        }
++
++        await using var verifyDb = Database();
++        await using var restoreDb = Database();
++        var (verifyApple, _) = Evidence(originalId, token);
++        var (restoreApple, restoreRequest) = Evidence(originalId, token);
++        var bothAtCanonicalFetch = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
++        var fetchCount = 0;
++        async Task BeforeRefreshAsync()
++        {
++            if (Interlocked.Increment(ref fetchCount) == 2) bothAtCanonicalFetch.TrySetResult();
++            await bothAtCanonicalFetch.Task.WaitAsync(TimeSpan.FromSeconds(10));
++        }
++        verifyApple.BeforeRefreshAsync = BeforeRefreshAsync;
++        restoreApple.BeforeRefreshAsync = BeforeRefreshAsync;
++        var verify = IapTestFactory.Create(verifyDb, verifyApple).VerifyAsync("owner-" + originalId,
++            new IapVerifyRequest("signed-transaction"), default);
++        var restore = IapTestFactory.Create(restoreDb, restoreApple).RestoreAsync("restore-" + originalId,
++            restoreRequest, default);
++        var results = await Task.WhenAll(verify, restore);
++        Assert.Equal(2, fetchCount);
++        Assert.All(results, x => Assert.Equal(200, x.Status));
++
++        await using var check = Database();
++        var binding = Assert.Single(await check.ApplePurchaseBindings.AsNoTracking()
++            .Where(x => x.OriginalTransactionId == originalId).ToListAsync());
++        Assert.Equal(owner, binding.AnonymousOwnerId);
++        Assert.Equal("server_token", binding.BindingKind);
++        Assert.Equal(token, binding.BoundAppAccountToken);
++        Assert.Single(await check.MobilePurchaseGrants.AsNoTracking()
++            .Where(x => x.OriginalTransactionId == originalId).ToListAsync());
++        Assert.Equal("premium", (await new DeviceContextService(check,
++            new EntitlementService(check, TimeProvider.System, TestConfig.SubscriptionPolicy()))
++            .ResolveAsync("owner-" + originalId))!.Entitlement.Status);
++    }
++
++    [Fact]
++    public async Task AccountDeletionKeepsMobileGrantAndTombstoneBlocksNewDesktopClaim()
++    {
++        var originalId = Guid.NewGuid().ToString("N");
++        var accountId = "deleted-" + originalId;
++        var foreignId = "foreign-" + originalId;
++        var owner = Guid.NewGuid();
++        var restoredOwner = Guid.NewGuid();
++        var key = "restore-" + originalId;
++        await using var db = Database();
++        await db.Database.MigrateAsync();
++        db.Users.AddRange(new AppUser { Id = accountId, Email = accountId + "@example.test", GoogleSub = accountId },
++            new AppUser { Id = foreignId, Email = foreignId + "@example.test", GoogleSub = foreignId });
++        db.AnonymousPurchaseOwners.AddRange(new AnonymousPurchaseOwnerEntity { Id = owner },
++            new AnonymousPurchaseOwnerEntity { Id = restoredOwner });
++        var device = new DeviceEntity { KeyId = key, DeviceUuid = "private-" + originalId, AnonymousOwnerId = restoredOwner };
++        db.Devices.Add(device);
++        var purchase = Purchase(originalId, Guid.NewGuid());
++        purchase.OwnerAccountId = accountId;
++        purchase.ClaimedAt = DateTime.UtcNow.AddDays(-1);
++        db.Subscriptions.Add(purchase);
++        db.ApplePurchaseBindings.Add(new ApplePurchaseBindingEntity { Environment = "Production",
++            OriginalTransactionId = originalId, AnonymousOwnerId = owner, BindingKind = "server_token" });
++        db.MobilePurchaseGrants.Add(new MobilePurchaseGrantEntity { DeviceId = device.Id,
++            Environment = "Production", OriginalTransactionId = originalId,
++            ValidUntil = DateTime.UtcNow.AddDays(2), VerifiedAt = DateTime.UtcNow,
++            EvidenceKind = "paired_device", LastEvidenceHash = "fixture" });
++        await db.SaveChangesAsync();
++
++        await new AccountService(db, TestConfig.Create(), TimeProvider.System).DeleteAsync(accountId, default);
++        db.ChangeTracker.Clear();
++        Assert.False(await db.Users.AnyAsync(x => x.Id == accountId));
++        var tombstone = await db.Subscriptions.AsNoTracking().SingleAsync(x => x.OriginalTransactionId == originalId);
++        Assert.NotNull(tombstone.ClaimedAt);
++        Assert.Null(tombstone.OwnerAccountId);
++        Assert.Single(await db.MobilePurchaseGrants.Where(x => x.OriginalTransactionId == originalId).ToListAsync());
++        Assert.Single(await db.ApplePurchaseBindings.Where(x => x.OriginalTransactionId == originalId).ToListAsync());
++        Assert.Equal("premium", (await new DeviceContextService(db,
++            new EntitlementService(db, TimeProvider.System, TestConfig.SubscriptionPolicy()))
++            .ResolveAsync(key))!.Entitlement.Status);
++        Assert.False(await new SubscriptionOwnershipService(db, TimeProvider.System)
++            .TryClaimAsync(originalId, foreignId));
++    }
++
++    private static (FakeAppStoreServerClient Apple, IapRestoreRequest Request) Evidence(string originalId, Guid token)
++    {
++        var deviceId = Guid.NewGuid().ToString("D");
++        var nonce = Guid.NewGuid().ToString("D");
++        var digest = Convert.ToBase64String(System.Security.Cryptography.SHA384.HashData(
++            Encoding.ASCII.GetBytes(nonce + deviceId)));
++        var apple = new FakeAppStoreServerClient
++        {
++            IsLocalVerifyEnabled = false,
++            VerifyTransactionResult = new(true, Purchase(originalId, token), true, null, digest, nonce),
++            AppTransactionResult = new(true, "Production", null, digest, nonce, null),
++            SubscriptionStatusesResult = new(true, Purchase(originalId, token), null)
++        };
++        return (apple, new IapRestoreRequest("signed-transaction", "signed-app", deviceId));
++    }
++
++    private static SubscriptionEntity Purchase(string originalId, Guid token) => new()
++    {
++        OriginalTransactionId = originalId, ProductId = "monthly", Environment = "Production",
++        ExpiresAt = DateTime.UtcNow.AddDays(5), WasEverPaid = true, AppAccountToken = token
++    };
++}
+diff --git a/tests/SharedSubscriptionPostgresTests.cs b/tests/SharedSubscriptionPostgresTests.cs
+index f73c0df..5c589d7 100644
+--- a/tests/SharedSubscriptionPostgresTests.cs
++++ b/tests/SharedSubscriptionPostgresTests.cs
+@@ -29,12 +29,15 @@ public class SharedSubscriptionPostgresTests(PostgresContainerFixture postgres)
+         var expiry = await ReadInfinity(db, positive);
+         Assert.Equal(positive ? DateTime.MaxValue : DateTime.MinValue, expiry);
+         db.Users.Add(new AppUser { Id = id, Email = id + "@example.test" });
+-        db.Devices.Add(new DeviceEntity { KeyId = id, DeviceUuid = id });
++        var installation = new DeviceEntity { KeyId = id, DeviceUuid = id };
++        db.Devices.Add(installation);
+         db.Subscriptions.AddRange(
+             new SubscriptionEntity { OriginalTransactionId = "guest-" + id, DeviceUuid = id, ProductId = "monthly", ExpiresAt = expiry, WasEverPaid = true },
+             new SubscriptionEntity { OriginalTransactionId = "account-" + id, DeviceUuid = "other-" + id, ProductId = "monthly", ExpiresAt = expiry,
+                 WasEverPaid = true, OwnerAccountId = id, ClaimedAt = DateTime.UtcNow });
+-        await db.SaveChangesAsync(); db.ChangeTracker.Clear();
++        await db.SaveChangesAsync();
++        await BindOriginalOwner(db, installation, "guest-" + id);
++        db.ChangeTracker.Clear();
+ 
+         var entitlements = new EntitlementService(db, TimeProvider.System, TestConfig.SubscriptionPolicy());
+         var device = await new DeviceContextService(db, entitlements).ResolveAsync(id);
+@@ -112,24 +115,29 @@ public class SharedSubscriptionPostgresTests(PostgresContainerFixture postgres)
+         var session = await scope.ServiceProvider.GetRequiredService<AccountService>().SignInAsync(new("provenance-"+id, null, "Owner"), default, allowCreation: true);
+         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+         var keyId = "SIMULATOR-"+id;
+-        db.Devices.Add(new DeviceEntity { KeyId = keyId, DeviceUuid = id });
++        var device = new DeviceEntity { KeyId = keyId, DeviceUuid = id };
++        db.Devices.Add(device);
+         db.Subscriptions.AddRange(
+             new SubscriptionEntity { ProductId = "monthly", OriginalTransactionId = "account-"+id, DeviceUuid = "other-"+id, OwnerAccountId = session.Profile.Id, ClaimedAt = DateTime.UtcNow, ExpiresAt = DateTime.UtcNow.AddDays(20), WasEverPaid = true },
+             new SubscriptionEntity { ProductId = "monthly", OriginalTransactionId = "guest-"+id, DeviceUuid = id, ExpiresAt = DateTime.UtcNow.AddDays(10), WasEverPaid = true });
+         await db.SaveChangesAsync();
+-        apple.VerifyTransactionResult = new(true, new SubscriptionEntity { ProductId = "monthly", OriginalTransactionId = "guest-"+id, DeviceUuid = id, ExpiresAt = DateTime.UtcNow.AddDays(10), WasEverPaid = true }, true, null);
++        var token = await BindOriginalOwner(db, device, "guest-" + id);
++        var guestPurchase = new SubscriptionEntity { ProductId = "monthly", OriginalTransactionId = "guest-"+id,
++            DeviceUuid = id, AppAccountToken = token, ExpiresAt = DateTime.UtcNow.AddDays(10), WasEverPaid = true };
++        apple.VerifyTransactionResult = new(true, guestPurchase, true, null);
++        apple.SubscriptionStatusesResult = new(true, guestPurchase, null);
+         var deviceToken = scope.ServiceProvider.GetRequiredService<JwtTokenService>().CreateDeviceToken(keyId, "premium").Token;
+         client.DefaultRequestHeaders.Authorization = new("Bearer", deviceToken);
+         client.DefaultRequestHeaders.Add("X-Account-Authorization", "Bearer "+session.AccessToken);
+         var shared = await client.GetFromJsonAsync<JsonElement>("/owlai/iap/entitlement");
+-        Assert.Equal("account", shared.GetProperty("entitlement").GetProperty("resolution_source").GetString());
++        Assert.Equal("device", shared.GetProperty("entitlement").GetProperty("resolution_source").GetString());
+         Assert.False(shared.GetProperty("entitlement").GetProperty("purchase_is_linked").GetBoolean());
+         foreach (var path in new[] { "/owlai/iap/token", "/owlai/iap/verify" })
+         {
+             var response = await client.PostAsJsonAsync(path, new { jws_transaction = "fixture" });
+             Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
+             var entitlement = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("entitlement");
+-            Assert.Equal("account", entitlement.GetProperty("resolution_source").GetString());
++            Assert.Equal("device", entitlement.GetProperty("resolution_source").GetString());
+             Assert.False(entitlement.GetProperty("purchase_is_linked").GetBoolean());
+         }
+         client.DefaultRequestHeaders.Remove("X-Account-Authorization");
+@@ -139,11 +147,11 @@ public class SharedSubscriptionPostgresTests(PostgresContainerFixture postgres)
+         Assert.False(guest.GetProperty("entitlement").GetProperty("purchase_is_linked").GetBoolean());
+         Assert.True(await new SubscriptionOwnershipService(db, TimeProvider.System).TryClaimAsync("guest-"+id, session.Profile.Id));
+         var linked = await client.GetFromJsonAsync<JsonElement>("/owlai/iap/entitlement");
+-        Assert.Equal("account_required", linked.GetProperty("entitlement").GetProperty("status").GetString());
++        Assert.Equal("premium", linked.GetProperty("entitlement").GetProperty("status").GetString());
+         Assert.True(linked.GetProperty("entitlement").GetProperty("purchase_is_linked").GetBoolean());
+         client.DefaultRequestHeaders.Add("X-Account-Authorization", "Bearer "+session.AccessToken);
+         var linkedAccount = await client.GetFromJsonAsync<JsonElement>("/owlai/iap/entitlement");
+-        Assert.Equal("account", linkedAccount.GetProperty("entitlement").GetProperty("resolution_source").GetString());
++        Assert.Equal("device", linkedAccount.GetProperty("entitlement").GetProperty("resolution_source").GetString());
+         Assert.True(linkedAccount.GetProperty("entitlement").GetProperty("purchase_is_linked").GetBoolean());
+     }
+ 
+@@ -156,12 +164,17 @@ public class SharedSubscriptionPostgresTests(PostgresContainerFixture postgres)
+         var a = new AppUser { Email = otid+"a@example.test" };
+         var b = new AppUser { Email = otid+"b@example.test" };
+         var device = new DeviceEntity { KeyId = otid, DeviceUuid = otid };
+-        setup.Users.AddRange(a, b); setup.Devices.Add(device); await setup.SaveChangesAsync();
++        setup.Users.AddRange(a, b); setup.Devices.Add(device);
++        setup.Subscriptions.Add(new SubscriptionEntity { OriginalTransactionId = otid, ProductId = "monthly",
++            ExpiresAt = DateTime.UtcNow.AddDays(7), WasEverPaid = true });
++        await setup.SaveChangesAsync();
++        var token = await BindOriginalOwner(setup, device, otid);
+         var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+         async Task<int> Claim(string owner)
+         {
+             await using var db = Database();
+-            var purchase = new SubscriptionEntity { OriginalTransactionId = otid, DeviceUuid = otid, ProductId = "monthly", ExpiresAt = DateTime.UtcNow.AddDays(7) };
++            var purchase = new SubscriptionEntity { OriginalTransactionId = otid, DeviceUuid = otid,
++                AppAccountToken = token, ProductId = "monthly", ExpiresAt = DateTime.UtcNow.AddDays(7), WasEverPaid = true };
+             var apple = new FakeAppStoreServerClient { VerifyTransactionResult = new(true, purchase, true, null), SubscriptionStatusesResult = new(true, purchase, null) };
+             var service = new AccountEntitlementService(db, new(db, TimeProvider.System, TestConfig.SubscriptionPolicy()), apple, new(db, TimeProvider.System), TimeProvider.System);
+             await gate.Task;
+@@ -241,6 +254,23 @@ public class SharedSubscriptionPostgresTests(PostgresContainerFixture postgres)
+         Assert.Empty(await service.ListAccountMineAsync(a.Id, default));
+     }
+ 
++    private static async Task<Guid> BindOriginalOwner(AppDbContext db, DeviceEntity device, string originalId)
++    {
++        var owner = new AnonymousPurchaseOwnerEntity { Id = Guid.NewGuid(), Provenance = "installation" };
++        var token = Guid.NewGuid();
++        db.AnonymousPurchaseOwners.Add(owner);
++        device.AnonymousOwnerId = owner.Id;
++        db.AnonymousPurchaseTokens.Add(new AnonymousPurchaseTokenEntity
++        { AnonymousOwnerId = owner.Id, AppAccountToken = token });
++        db.ApplePurchaseBindings.Add(new ApplePurchaseBindingEntity
++        {
++            Environment = "Production", OriginalTransactionId = originalId, AnonymousOwnerId = owner.Id,
++            BindingKind = "server_token", BoundAppAccountToken = token
++        });
++        await db.SaveChangesAsync();
++        return token;
++    }
++
+     [Fact]
+     public async Task ClaimApiRequiresBothIdentities_ThenLogoutAndDeletionCloseSharedAccess()
+     {
+@@ -260,7 +290,12 @@ public class SharedSubscriptionPostgresTests(PostgresContainerFixture postgres)
+         var second = await accounts.SignInAsync(new("apple-stranger-"+otid, null, "Other"), default, allowCreation: true);
+         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+         var keyId = "SIMULATOR-"+otid;
+-        db.Devices.Add(new DeviceEntity { KeyId = keyId, DeviceUuid = purchase.DeviceUuid });
++        var device = new DeviceEntity { KeyId = keyId, DeviceUuid = purchase.DeviceUuid };
++        db.Devices.Add(device);
++        db.Subscriptions.Add(purchase);
++        await db.SaveChangesAsync();
++        var token = await BindOriginalOwner(db, device, otid);
++        purchase.AppAccountToken = token;
+         await db.SaveChangesAsync();
+         var deviceJwt = scope.ServiceProvider.GetRequiredService<JwtTokenService>().CreateDeviceToken(keyId, "free").Token;
+ 
+@@ -286,7 +321,7 @@ public class SharedSubscriptionPostgresTests(PostgresContainerFixture postgres)
+         var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+         Assert.Equal(2, await db.AiUsage.AsNoTracking().Where(x => x.KeyId == "account:"+first.Profile.Id && x.Date == today).Select(x => x.Count).SingleAsync());
+         client.DefaultRequestHeaders.Remove("X-Account-Authorization");
+-        Assert.Equal(HttpStatusCode.PaymentRequired, (await client.PostAsJsonAsync("/owlai/ai/analyze-word", new { word = otid })).StatusCode);
++        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/owlai/ai/analyze-word", new { word = otid })).StatusCode);
+         client.DefaultRequestHeaders.Authorization = new("Bearer", second.AccessToken);
+         var conflict = await client.PostAsJsonAsync("/owlai/account/subscription/apple/claim", new { account_id = second.Profile.Id, jws_transaction = "proof" });
+         Assert.Equal(HttpStatusCode.Conflict, conflict.StatusCode);
+@@ -296,7 +331,7 @@ public class SharedSubscriptionPostgresTests(PostgresContainerFixture postgres)
+         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/owlai/account/entitlement")).StatusCode);
+         client.DefaultRequestHeaders.Authorization = new("Bearer", deviceJwt);
+         client.DefaultRequestHeaders.Add("X-Account-Authorization", "Bearer " + first.AccessToken);
+-        Assert.Equal(HttpStatusCode.PaymentRequired, (await client.PostAsJsonAsync("/owlai/ai/analyze-word", new { word = otid })).StatusCode);
++        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/owlai/ai/analyze-word", new { word = otid })).StatusCode);
+         client.DefaultRequestHeaders.Remove("X-Account-Authorization");
+         await accounts.DeleteAsync(first.Profile.Id, default);
+         client.DefaultRequestHeaders.Authorization = new("Bearer", second.AccessToken);
+diff --git a/tests/SubscriptionLifecycleTests.cs b/tests/SubscriptionLifecycleTests.cs
+index a6cbe87..8dcf3b1 100644
+--- a/tests/SubscriptionLifecycleTests.cs
++++ b/tests/SubscriptionLifecycleTests.cs
+@@ -19,7 +19,7 @@ public sealed class SubscriptionLifecycleTests
+     [InlineData(false, true)]
+     [InlineData(true, false)]
+     [InlineData(true, true)]
+-    public async Task DeviceResolverValidatesClaimedAndTombstonedPurchaseBeforeProjectingHistory(bool invalid, bool tombstone)
++    public async Task OwnerBindingValidatesClaimedAndTombstonedPurchaseBeforeProjectingHistory(bool invalid, bool tombstone)
+     {
+         using var fixture = TestDb.Create(); var service = Entitlements(fixture.Db);
+         var saved = Purchase("claimed"); saved.ClaimedAt = Now.AddDays(-3);
+@@ -31,14 +31,15 @@ public sealed class SubscriptionLifecycleTests
+         }
+         fixture.Db.Devices.Add(new DeviceEntity { KeyId = "key", DeviceUuid = "device" });
+         fixture.Db.Subscriptions.Add(saved); await fixture.Db.SaveChangesAsync();
++        await OwnerPurchaseFixture.BindAsync(fixture.Db, "key", "claimed");
+         var before = JsonSerializer.Serialize(await fixture.Db.Subscriptions.AsNoTracking().SingleAsync());
+ 
+         var resolved = await new DeviceContextService(fixture.Db, service).ResolveAsync("key");
+ 
+-        Assert.Equal(invalid ? "invalid_subscription" : "account_required", resolved!.Entitlement.Status);
++        Assert.Equal(invalid ? "invalid_subscription" : "premium", resolved!.Entitlement.Status);
+         Assert.Equal(!invalid, resolved.Entitlement.WasEverPaid);
+         Assert.Equal(!invalid, resolved.Entitlement.AutoRenew);
+-        Assert.True(resolved.Device.RequiresAccountSubscription);
++        Assert.False(resolved.Device.RequiresAccountSubscription);
+         Assert.Equal(before, JsonSerializer.Serialize(await fixture.Db.Subscriptions.AsNoTracking().SingleAsync()));
+     }
+ 
+@@ -77,9 +78,10 @@ public sealed class SubscriptionLifecycleTests
+         using var fixture = TestDb.Create(); var service = Entitlements(fixture.Db);
+         var invalid = Purchase("A"); invalid.ProductId = "legacy-unknown";
+         fixture.Db.Subscriptions.Add(invalid); fixture.Db.Devices.Add(new DeviceEntity { KeyId = "key", DeviceUuid = "device" }); await fixture.Db.SaveChangesAsync();
++        await OwnerPurchaseFixture.BindAsync(fixture.Db, "key", "A");
+         var apple = Notification(Purchase("A"), Purchase("A"));
+         Assert.Equal(503, await new AppStoreNotificationService(apple, service, Clock, NullLogger<AppStoreNotificationService>.Instance).HandleAsync(new("proof"), default));
+-        var iap = new IapService(apple, service, new(fixture.Db, service), new(TestConfig.Create(), Clock), Clock, NullLogger<IapService>.Instance);
++        var iap = IapTestFactory.Create(fixture.Db, apple, Clock, entitlements: service);
+         Assert.Equal(503, (await iap.VerifyAsync("key", new("proof"), default)).Status);
+         Assert.Equal(200, (await iap.TokenAsync("key", default)).Status);
+         Assert.Equal("legacy-unknown", (await fixture.Db.Subscriptions.SingleAsync()).ProductId);
+@@ -210,16 +212,16 @@ public sealed class SubscriptionLifecycleTests
+     }
+ 
+     [Fact]
+-    public async Task SameDatedCanonicalRestoreCanRelinkWithoutRewritingLifecycleOrClaim()
++    public async Task SameDatedCanonicalRestoreCannotRelinkOrRewriteLifecycleOrClaim()
+     {
+         using var fixture = TestDb.Create(); var service = Entitlements(fixture.Db);
+         var saved = Purchase("A"); saved.LastAppleEventAt = Now; saved.ClaimedAt = Now.AddDays(-2);
+         await service.UpsertAsync(saved);
+         var restored = Purchase("A"); restored.LastAppleEventAt = Now; restored.DeviceUuid = "restored"; restored.ExpiresAt = Now.AddDays(100);
+         var result = await service.UpsertAsync(restored);
+-        Assert.Equal("restored", result.DeviceUuid); Assert.Equal(Now.AddDays(5), result.ExpiresAt);
++        Assert.Equal("device", result.DeviceUuid); Assert.Equal(Now.AddDays(5), result.ExpiresAt);
+         Assert.Equal(Now.AddDays(-2), result.ClaimedAt); Assert.Null(result.OwnerAccountId);
+-        Assert.Equal("account_required", service.ToDeviceEntitlement(result).Status);
++        Assert.Equal("premium", service.ToEntitlement(result).Status);
+     }
+ 
+     [Fact]
+@@ -244,7 +246,7 @@ public sealed class SubscriptionLifecycleTests
+         fixture.Db.Devices.Add(new DeviceEntity { KeyId = "key", DeviceUuid = "device" });
+         var row = Purchase("A"); row.LastCheckedAt = Now.AddHours(-1); await service.UpsertAsync(row);
+         var apple = new FakeAppStoreServerClient { SubscriptionStatusesResult = new(true, Purchase("B"), null) };
+-        var iap = new IapService(apple, service, new(fixture.Db, service), new(TestConfig.Create(), Clock), Clock, NullLogger<IapService>.Instance);
++        var iap = IapTestFactory.Create(fixture.Db, apple, Clock, entitlements: service);
+         if (token) await iap.TokenAsync("key", default); else await iap.EntitlementAsync("key", default);
+         Assert.Null(await service.FindByOriginalTransactionAsync("B")); Assert.Single(await fixture.Db.Subscriptions.ToListAsync());
+     }
+@@ -258,9 +260,11 @@ public sealed class SubscriptionLifecycleTests
+         fixture.Db.Devices.Add(new DeviceEntity { KeyId = "key", DeviceUuid = "device" });
+         var a = Purchase("A"); a.ExpiresAt = Now.AddDays(20); a.LastCheckedAt = Now.AddHours(-1);
+         await service.UpsertAsync(a); await service.UpsertAsync(Purchase("B"));
++        await OwnerPurchaseFixture.BindAsync(fixture.Db, "key", "A");
++        await OwnerPurchaseFixture.BindAsync(fixture.Db, "key", "B");
+         var revoked = Purchase("A"); revoked.RevokedAt = Now;
+         var apple = new FakeAppStoreServerClient { SubscriptionStatusesResult = new(true, revoked, null) };
+-        var iap = new IapService(apple, service, new(fixture.Db, service), new(TestConfig.Create(), Clock), Clock, NullLogger<IapService>.Instance);
++        var iap = IapTestFactory.Create(fixture.Db, apple, Clock, entitlements: service);
+         var result = token ? await iap.TokenAsync("key", default) : await iap.EntitlementAsync("key", default);
+         var dto = JsonSerializer.SerializeToElement(result.Body);
+         Assert.Equal("premium", dto.GetProperty("Entitlement").GetProperty("Status").GetString());
+diff --git a/tests/TestModeRouteTests.cs b/tests/TestModeRouteTests.cs
+index f17f762..dbf5fac 100644
+--- a/tests/TestModeRouteTests.cs
++++ b/tests/TestModeRouteTests.cs
+@@ -151,6 +151,7 @@ public class TestModeRouteTests(PostgresContainerFixture postgres) : IClassFixtu
+                 DeviceUuid = id, NormalizedWord = "word-" + i, NativeLanguage = "en", LearningLanguage = "es", IsActive = true
+             });
+         await db.SaveChangesAsync();
++        if (expired) await OwnerPurchaseFixture.BindAsync(db, key, id);
+         client.DefaultRequestHeaders.Authorization = new("Bearer", scope.ServiceProvider.GetRequiredService<JwtTokenService>()
+             .CreateDeviceToken(key, "premium").Token);
+         client.DefaultRequestHeaders.Add("X-Test-Mode", "true");
+diff --git a/tests/TestSupport/FakeAppStoreServerClient.cs b/tests/TestSupport/FakeAppStoreServerClient.cs
+index 6cde25e..072f1d8 100644
+--- a/tests/TestSupport/FakeAppStoreServerClient.cs
++++ b/tests/TestSupport/FakeAppStoreServerClient.cs
+@@ -11,11 +11,15 @@ internal sealed class FakeAppStoreServerClient : IAppStoreServerClient
+         AppStoreServerClient.VerifiedTransaction.Fail("not configured");
+     public AppStoreServerClient.SubscriptionStatusesResult SubscriptionStatusesResult { get; set; } =
+         AppStoreServerClient.SubscriptionStatusesResult.Fail("not configured");
++    public AppStoreServerClient.VerifiedAppTransaction AppTransactionResult { get; set; } =
++        AppStoreServerClient.VerifiedAppTransaction.Fail("not configured");
+     public AppleJws.DecodeResult DecodeNotificationResult { get; set; } =
+         AppleJws.DecodeResult.Fail("not configured");
++    public Func<Task>? BeforeRefreshAsync { get; set; }
+ 
+     public AppStoreServerClient.VerifiedTransaction VerifyTransaction(string jwsTransaction, string? deviceUuid) =>
+         VerifyTransactionResult;
++    public AppStoreServerClient.VerifiedAppTransaction VerifyAppTransaction(string jwsAppTransaction) => AppTransactionResult;
+ 
+     public Task<AppStoreServerClient.VerifiedTransaction> GetTransactionInfoAsync(
+         string transactionId,
+@@ -29,11 +33,14 @@ internal sealed class FakeAppStoreServerClient : IAppStoreServerClient
+         CancellationToken ct = default) =>
+         Task.FromResult(SubscriptionStatusesResult);
+ 
+-    public Task<AppStoreServerClient.SubscriptionStatusesResult> RefreshSubscriptionAsync(
++    public async Task<AppStoreServerClient.SubscriptionStatusesResult> RefreshSubscriptionAsync(
+         string originalTransactionId,
+         string? deviceUuid = null,
+-        CancellationToken ct = default) =>
+-        Task.FromResult(SubscriptionStatusesResult);
++        CancellationToken ct = default)
++    {
++        if (BeforeRefreshAsync != null) await BeforeRefreshAsync();
++        return SubscriptionStatusesResult;
++    }
+ 
+     public AppleJws.DecodeResult DecodeNotification(string signedPayload) => DecodeNotificationResult;
+ 
+diff --git a/tests/TestSupport/IapTestFactory.cs b/tests/TestSupport/IapTestFactory.cs
+new file mode 100644
+index 0000000..bab44ef
+--- /dev/null
++++ b/tests/TestSupport/IapTestFactory.cs
+@@ -0,0 +1,25 @@
++using Mavrylo.Data;
++using Mavrylo.Services;
++using Microsoft.Extensions.Configuration;
++using Microsoft.Extensions.Logging.Abstractions;
++
++namespace Mavrylo.Tests.TestSupport;
++
++internal static class IapTestFactory
++{
++    public static IapService Create(AppDbContext db, IAppStoreServerClient apple,
++        TimeProvider? clock = null, IConfiguration? config = null, EntitlementService? entitlements = null)
++    {
++        var time = clock ?? TimeProvider.System;
++        var settings = config ?? TestConfig.Create();
++        var policy = TestConfig.SubscriptionPolicy();
++        var subscriptions = entitlements ?? new EntitlementService(db, time, policy);
++        var context = new DeviceContextService(db, subscriptions);
++        var resolver = new MobilePurchaseAccessResolver(db, subscriptions, time);
++        var tokens = new JwtTokenService(settings, time);
++        var purchases = new AnonymousPurchaseService(db, apple, subscriptions, policy,
++            new AppleMobileRestoreVerifier(apple), resolver, context, tokens, time);
++        return new IapService(apple, subscriptions, context, purchases, tokens, time,
++            NullLogger<IapService>.Instance);
++    }
++}
+diff --git a/tests/TestSupport/OwnerPurchaseFixture.cs b/tests/TestSupport/OwnerPurchaseFixture.cs
+new file mode 100644
+index 0000000..3dc0691
+--- /dev/null
++++ b/tests/TestSupport/OwnerPurchaseFixture.cs
+@@ -0,0 +1,37 @@
++using Mavrylo.Data;
++using Mavrylo.Models;
++using Microsoft.EntityFrameworkCore;
++
++namespace Mavrylo.Tests.TestSupport;
++
++internal static class OwnerPurchaseFixture
++{
++    public static async Task BindAsync(AppDbContext db, string keyId, string originalTransactionId)
++    {
++        var device = await db.Devices.SingleAsync(x => x.KeyId == keyId);
++        var purchase = await db.Subscriptions.SingleAsync(x => x.OriginalTransactionId == originalTransactionId);
++        var ownerId = device.AnonymousOwnerId ?? Guid.NewGuid();
++        if (device.AnonymousOwnerId == null)
++        {
++            db.AnonymousPurchaseOwners.Add(new AnonymousPurchaseOwnerEntity { Id = ownerId, Provenance = "installation" });
++            device.AnonymousOwnerId = ownerId;
++        }
++        var mapped = await db.AnonymousPurchaseTokens.SingleOrDefaultAsync(x => x.AnonymousOwnerId == ownerId);
++        var token = mapped?.AppAccountToken ?? Guid.NewGuid();
++        if (mapped == null)
++            db.AnonymousPurchaseTokens.Add(new AnonymousPurchaseTokenEntity
++            {
++                AppAccountToken = token, AnonymousOwnerId = ownerId
++            });
++        purchase.AppAccountToken = token;
++        db.ApplePurchaseBindings.Add(new ApplePurchaseBindingEntity
++        {
++            Environment = purchase.Environment,
++            OriginalTransactionId = originalTransactionId,
++            AnonymousOwnerId = ownerId,
++            BindingKind = "server_token",
++            BoundAppAccountToken = token
++        });
++        await db.SaveChangesAsync();
++    }
++}
