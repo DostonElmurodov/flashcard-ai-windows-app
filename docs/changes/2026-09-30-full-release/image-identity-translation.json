@@ -1,0 +1,9 @@
+{
+  "archive_sha256": "6b485dcddd94fbd3e61c7ccd54992557afcd53ec558556c22e873730f0b45054",
+  "exported_config_id": "sha256:2e8751992871e7a7dc583efff498bf1f16020acd4b2505c95c22cf6ec3f1bdd5",
+  "loaded_oci_manifest_id": "sha256:73f2d2c78aa26a9827179a8e3cde2d81d45e40fabf5762ce67a85d5fbc4b0124",
+  "source_revision": "aa5fda0bc9718e82540fd32f177a4e4eadbf035c",
+  "archive_manifest_config_hash_chain_verified": true,
+  "loaded_rootfs_matches_config": true,
+  "rootfs_layers": 8
+}
