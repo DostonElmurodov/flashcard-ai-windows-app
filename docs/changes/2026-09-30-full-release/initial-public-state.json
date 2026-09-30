@@ -1,0 +1,13 @@
+{
+  "observedUtc": "2026-09-30T16:02:55.4640036Z",
+  "publicOrigin": "https://api.mavrylo.com",
+  "health": {
+    "ok": true
+  },
+  "featureFlags": {
+    "test_mode": true
+  },
+  "lastSuccessfulDeploymentRun": 36259043891,
+  "lastDeploymentSource": "473a39bee299f3df4c7fdcf6f45502f880a9bd8b",
+  "note": "Public endpoints and GitHub deployment metadata read this session; exact running image and private settings not yet inspected."
+}

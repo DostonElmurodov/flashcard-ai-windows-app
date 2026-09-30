@@ -1,0 +1,11 @@
+# Read-only deployment preflight workflow
+
+Backend checkout: `D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend` at base `a6e2362c8e624338c564bfd88499cd1835c956c1`.
+
+The existing `.github/workflows/api-ci-cd.yml` now has a manual `mode` choice with `preflight` as its default. A preflight dispatch runs a separate production-environment SSH job. The build, image push, and deployment jobs are gated to pushes to `main` or explicit `mode=deploy` as appropriate. The preflight job passes a restricted absolute deployment path to `ops/linux/read-only-preflight.sh` over SSH stdin; it does not log in to GHCR, pull images, recreate containers, run migrations, call providers, or query the database.
+
+The script reports Compose service names, API container image reference and image ID, OCI revision label when present, startup state and container health metadata, exact allowlisted non-secret runtime environment values (including the four `AiOperationQuota` limits), presence booleans for selected secrets, mount source/destination paths, and host `pg_dump`, `psql`, and noninteractive `sudo -l` availability. It never prints raw `docker inspect`, Compose configuration, environment files, logs, or secret values. Missing runtime access, Compose configuration, or API containers causes a nonzero exit. A running container with no image revision label reports `unavailable`; that result does not establish deployed source identity.
+
+Security review found that newline-delimited Docker environment records could let a multiline secret impersonate an allowlisted setting. The script now uses NUL-delimited records and reads each complete record before checking its key. The focused `ops/linux/read-only-preflight-probe.sh` feeds the actual script a multiline synthetic API key, a legitimate model, and a multiline allowlisted value. It asserts that only the secret-presence flag, legitimate model, and omitted-value marker appear. Its Docker mock requires the exact NUL-delimited Go template, so a return to newline records fails the probe.
+
+Validation performed locally: Bash syntax checks passed for both scripts and all four workflow shell blocks; the focused redaction probe passed; `git diff --check` passed. The SSH job has not yet run, so there are no live server findings.
