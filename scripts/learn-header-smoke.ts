@@ -19,7 +19,7 @@ const server=createServer((request,response)=>{
 try{
  await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));const address=server.address();assert.ok(address&&typeof address!=='string');const origin=`http://127.0.0.1:${address.port}`;
  try{store=await Store.open(join(data,'owl.sqlite'));store.saveSettings({apiBase:origin,onboardingComplete:true,keepInTray:false,launchAtLogin:false,reminders:false,dailyGoal:200});}finally{store?.close();store=undefined;}
- app=await electron.launch({args:['.'],env:{...process.env,OWL_TEST_DATA_DIR:data},timeout:30000});
+ app=await electron.launch({executablePath:process.env.OWL_TEST_EXECUTABLE,args:process.env.OWL_TEST_EXECUTABLE?[]:['.'],env:{...process.env,OWL_TEST_DATA_DIR:data},timeout:30000});
  const page=await app.firstWindow();
  console.log('learn-header smoke: signed in');
  const learnNav=()=>page.locator('.sidebar nav').getByRole('button',{name:/^Learn/});
