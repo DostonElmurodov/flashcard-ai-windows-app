@@ -1,0 +1,552 @@
+{
+  "source": "35ac2216af2925fd3dfc0f8cbbabd7dad70626c6",
+  "base": "544c16e1173c3fe2b219be050bd6416d3e2b89b2",
+  "scope": "Scoped source review; exact candidate Mac execution blocked",
+  "files": [
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\anonymous-restore-approved-behavior.md",
+      "bytes": 6299,
+      "sha256": "3FA06D6FC00975DE9C0424C75A0FAA636ED97B7F82ACC6B5A773A26AD277CEDC"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\anonymous-restore-contract.md",
+      "bytes": 25852,
+      "sha256": "8701EDC0A31ED8BFF40F713C78A56C5124AA58B3FB74690D1130C45CD5BFF581"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\final-review-carryover.md",
+      "bytes": 7709,
+      "sha256": "0AC43A9C60C4047E442FF7EAB2F3AC2B1A1A823B9A58F4316472F7C365F5FF9E"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\legacy-migration-preflight.md",
+      "bytes": 4512,
+      "sha256": "14DC49CF5E456F4E7488174A4B7774FFC9E10F9593F9C6CD4B78D61D4D44D334"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-3B-brief.md",
+      "bytes": 12555,
+      "sha256": "C32B01203DF321958D853D58883C09514BA837358137F0359FDA71D01EED879D"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-3B-fix1-brief.md",
+      "bytes": 6226,
+      "sha256": "6B3C781FDA372A1743868FCE88B25A750B613BB7823B065DB45CC59D316AEE51"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-3B-fix1-report-snapshot-35ac221.md",
+      "bytes": 23061,
+      "sha256": "3D6263D183DC36E136EA792439EE3603BCED20A92BBC9798952C00AAEC7C790F"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-3B-fix1-review-handoff-35ac221.md",
+      "bytes": 5060,
+      "sha256": "5849C42D0EC27AC70DBF949D366AA501401187D464E14D0FACE08550577470E4"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-3B-fix1-review-package-544c16e-35ac221.txt",
+      "bytes": 135641,
+      "sha256": "01A36AA7EAD70BFD2DB608AC1C35115B4C98778E7083CB01CDEBF3707FA4FF7A"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-3B-mac-evidence-index-snapshot-35ac221.md",
+      "bytes": 16284,
+      "sha256": "C744345F38C7AA05A5B9BF4B866ED9A802C2FC75F2F8DEFBCEC49DE9F8DF63D9"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-3B-source-review-544c16e.md",
+      "bytes": 24086,
+      "sha256": "75A9B49E22DB4F4C967E0A4737615D043A8BE3FD3F788F688829004E502D4554"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\ios\\.github\\workflows\\ios-validation.yml",
+      "bytes": 9213,
+      "sha256": "CD1C3EE2472F8ED84F1B88EB32EAA31E4AFEF13622E404AF9F7AB31B64CC8CEE"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\ios\\App\\UIAutomationFixture.swift",
+      "bytes": 15033,
+      "sha256": "10BD4C5ED88BF197C1DE1A30672E3FF998DD4090997DD70AF9EB47175A9C637B"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\ios\\FlashCardAITests\\AnonymousPurchaseRestoreTests.swift",
+      "bytes": 57024,
+      "sha256": "29578AE339ADA265BC9F05CEA93778A379A6904A3FC8B0721817B67DDECE452A"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\ios\\FlashCardAITests\\AppAttestSessionResumeTests.swift",
+      "bytes": 24477,
+      "sha256": "FE8386B016F704AB6AD93B121DB7174B9D2CD64E0BA15BC4CAD1E586634ACFAA"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\ios\\FlashCardAITests\\ReviewCardRepositoryTests.swift",
+      "bytes": 303599,
+      "sha256": "134924B3E67E289892A5D84F476335CA6E363995347AFBD31769E53F0DF9C086"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\ios\\FlashCardAITests\\SharedAccountSyncTests.swift",
+      "bytes": 115368,
+      "sha256": "FB03A44C6DD669A63C87939953F7F496618D4DBC33E8099518C7CF076BE7081E"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\ios\\Infrastructure\\Networking\\APIClient.swift",
+      "bytes": 25932,
+      "sha256": "41FC5C0566C2CF49DFA9BF73BC322524277660C7857785B1004569966049242E"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\ios\\Infrastructure\\Purchases\\EntitlementStore.swift",
+      "bytes": 19285,
+      "sha256": "8AB0406C131967CDFC67BE311FB8CF38C98484726606034728976018B794A7F0"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\ios\\Infrastructure\\Purchases\\StoreKitPurchaseEvidenceSource.swift",
+      "bytes": 8830,
+      "sha256": "07AE8238136D1CBFC29C048CE6469575BC2BF5403595FD5589E7AC12117926C4"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\ios\\Infrastructure\\Purchases\\StoreKitService.swift",
+      "bytes": 28733,
+      "sha256": "B0B164F912100AFB124F1D54D8F6D4B571DFC26818495123851ED4E94992D716"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\ios\\Infrastructure\\Security\\AppAttest\\AIIntegrityCoordinator.swift",
+      "bytes": 20798,
+      "sha256": "EDC5BAD5C10A60CDF2E3CC7F3405BB50CCF367961C72DB351DC6FBA8C4D050DF"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36566485867-restore-proof-resumed-544c16e\\artifacts.json",
+      "bytes": 763,
+      "sha256": "FC17A8CE942DB2813C797C1E8889478D772692234005666BD15C76C2984ABC84"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36566485867-restore-proof-resumed-544c16e\\artifacts\\ios-validation\\source-head.txt",
+      "bytes": 41,
+      "sha256": "58E0CD12E37671F6A5F4A9477AD7825F7F8D157D1DB17A5B8A1AFB81286BE57F"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36566485867-restore-proof-resumed-544c16e\\artifacts\\ios-validation\\xcode-test.log",
+      "bytes": 1848322,
+      "sha256": "BFA52D1933951DAC6AE8D94A20D523D67DDF2A25A16EABAA0788E2417A6317F0"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36566485867-restore-proof-resumed-544c16e\\cases.json",
+      "bytes": 4,
+      "sha256": "A5338D955B09046EC0B16F3A9625B7955C763AAE07DC722E474E6078745F932F"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36566485867-restore-proof-resumed-544c16e\\evidence-hashes.json",
+      "bytes": 5977,
+      "sha256": "244465D6860D0E91015E32A79439E9149870E643EF720560B71D215A8932963E"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36566485867-restore-proof-resumed-544c16e\\full.log",
+      "bytes": 2218722,
+      "sha256": "3B48E8212E6359AD50D10B0D07538CAFA538AE303AEDB0C7C43F4A405CC7BAA9"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36566485867-restore-proof-resumed-544c16e\\initial-run.json",
+      "bytes": 1585,
+      "sha256": "9F6C5B1D7A147EEFCEFB635F7FEDEB5C943F933FFF082377048B56B8E126C314"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36566485867-restore-proof-resumed-544c16e\\run.json",
+      "bytes": 1865,
+      "sha256": "01244B98951F308ECACECBBD333732B7EA3E56098475262226CEB0BB31D1E7A8"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36566489115-paid-access-resumed-544c16e\\artifacts.json",
+      "bytes": 763,
+      "sha256": "56114C9AAED1B942FA83AFC6DBF03AC8A31EF01CD363AE0D6CB560651535522A"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36566489115-paid-access-resumed-544c16e\\artifacts\\ios-validation\\source-head.txt",
+      "bytes": 41,
+      "sha256": "58E0CD12E37671F6A5F4A9477AD7825F7F8D157D1DB17A5B8A1AFB81286BE57F"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36566489115-paid-access-resumed-544c16e\\artifacts\\ios-validation\\xcode-test.log",
+      "bytes": 1848381,
+      "sha256": "D6CE1F2F068A23EFE1E155CD1B5FFDB60DD3F3D543EAC123CDF0BAB112532F8C"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36566489115-paid-access-resumed-544c16e\\cases.json",
+      "bytes": 4,
+      "sha256": "A5338D955B09046EC0B16F3A9625B7955C763AAE07DC722E474E6078745F932F"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36566489115-paid-access-resumed-544c16e\\evidence-hashes.json",
+      "bytes": 5977,
+      "sha256": "0418F5E8A53A2D9D8D794F79621F96BB8CD8DA5B68BBFCB01F8AC28BDA58F5C8"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36566489115-paid-access-resumed-544c16e\\full.log",
+      "bytes": 2218844,
+      "sha256": "9298011F3F2C8C374B5CBF94637BA3C8BA2AD2CA7E24532151D76A9B78CAADBC"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36566489115-paid-access-resumed-544c16e\\initial-run.json",
+      "bytes": 1585,
+      "sha256": "C75346D60543647FA2A5BFBA6DD6B241D872CCA237F218B98CC7393E0544EDC2"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36566489115-paid-access-resumed-544c16e\\run.json",
+      "bytes": 1865,
+      "sha256": "601B24B1CB10BE5C872426E6A860CBE300E212C5FEF31B25A39854F959FE8E16"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36567888022-restore-proof-fix1-red-a3c5cf8\\artifacts\\ios-validation\\source-head.txt",
+      "bytes": 41,
+      "sha256": "B078BB0E718461C0A283364AE8A85937E73D63FCAE82AB26CFA39EE43761C0FD"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36567888022-restore-proof-fix1-red-a3c5cf8\\artifacts\\ios-validation\\xcode-test.log",
+      "bytes": 2010127,
+      "sha256": "3BD419A5205C74FC233906433879C6552DA9BF8FDCE4646874E4646E6E85D386"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36567888022-restore-proof-fix1-red-a3c5cf8\\cases.json",
+      "bytes": 9124,
+      "sha256": "DC4D91EF6F6099346AD488F3ED7B754FB405BEDB1FA4EC0F6A5AF06632FC9D9D"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36567888022-restore-proof-fix1-red-a3c5cf8\\evidence-hashes.json",
+      "bytes": 433927,
+      "sha256": "BD5B9978EE630A8C6FC3FE6AB825D505BF71B4DF4F8A40626A23E07B5005EB6D"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36567888022-restore-proof-fix1-red-a3c5cf8\\full.log",
+      "bytes": 2419984,
+      "sha256": "CF12454F53E5A1166FFA193B6A6BC6FF439D36DD447B4F46FDD76EED1E130CE5"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36567888022-restore-proof-fix1-red-a3c5cf8\\initial-run.json",
+      "bytes": 1585,
+      "sha256": "20128CF7E7D3EA11CFBAC12FED9C192BA44B86102EEBAEFC4B44F2174142FAE6"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36567888022-restore-proof-fix1-red-a3c5cf8\\run.json",
+      "bytes": 1865,
+      "sha256": "8EC51A79A5359B77317D59B8E90A4FF1518C9BAC31CC6C1C1C3D1BBD8173AEF6"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36568668151-restore-proof-fix1-red2-e97f13b\\artifacts\\ios-validation\\source-head.txt",
+      "bytes": 41,
+      "sha256": "5AFA5B33D5A15C5791A7C82FB0BB7E727B0382F719E8D6E19C349514118E290E"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36568668151-restore-proof-fix1-red2-e97f13b\\artifacts\\ios-validation\\xcode-test.log",
+      "bytes": 2012457,
+      "sha256": "963F095F34E571307AC4F0055EDB328A95D4E047F5638622B2D99E6FAE2B1D2F"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36568668151-restore-proof-fix1-red2-e97f13b\\cases.json",
+      "bytes": 9345,
+      "sha256": "F94DEF30CD6308C6A63686E0747B09A0EA4EA19B91D643EF077DDBDE425A557E"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36568668151-restore-proof-fix1-red2-e97f13b\\evidence-hashes.json",
+      "bytes": 446186,
+      "sha256": "21B1D20EC040FE61C7108E3596D9265A142BD99578A32369E2AD1A8CB1A469C4"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36568668151-restore-proof-fix1-red2-e97f13b\\full.log",
+      "bytes": 2423407,
+      "sha256": "71766EF1153B045A2585865C8798A921018DCDAFA31664C7A02F3085C1AFDA74"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36568668151-restore-proof-fix1-red2-e97f13b\\initial-run.json",
+      "bytes": 1585,
+      "sha256": "186C09311B7E0868B5581D98EB6F0B4A305971241C6FD8380390C8F3EBBAED85"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36568668151-restore-proof-fix1-red2-e97f13b\\run.json",
+      "bytes": 1865,
+      "sha256": "4E5D14204C29FEA481DD245E89618E63C1683421FA143FFBE806F1F665697D12"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36571110838-restore-proof-fix1-candidate-184284a\\artifacts\\ios-validation\\source-head.txt",
+      "bytes": 41,
+      "sha256": "C86ACF7008E4C8DE8B2AA49FA6A0139FA4A121AAF9C6304832D443731061A228"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36571110838-restore-proof-fix1-candidate-184284a\\artifacts\\ios-validation\\xcode-test.log",
+      "bytes": 2006089,
+      "sha256": "24178DC237F7EB050771CE035DD10AC723554B6F70BE2051B321A1F1E4A13991"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36571110838-restore-proof-fix1-candidate-184284a\\cases.json",
+      "bytes": 10827,
+      "sha256": "519A47AE802FACF759849E0E8D568CB45CB07BB7343CE6706B33397F04BC2DBD"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36571110838-restore-proof-fix1-candidate-184284a\\evidence-hashes.json",
+      "bytes": 443380,
+      "sha256": "A6E93971C22C03C5499C8ED53C221EA7B5FCED3E1022966E27C4BBF654573483"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36571110838-restore-proof-fix1-candidate-184284a\\full.log",
+      "bytes": 2416042,
+      "sha256": "251F854F533EAE4F6D03DDE57CBABE28C63DEBC4805BF800EFE78526C4276693"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36571110838-restore-proof-fix1-candidate-184284a\\initial-run.json",
+      "bytes": 1585,
+      "sha256": "274B51882C85EDD6F75E0D84F19910948774264B1E3C56ACC65F5171E4D962CB"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36571110838-restore-proof-fix1-candidate-184284a\\run.json",
+      "bytes": 1865,
+      "sha256": "63AAFCA7FD3C0F236AEBE90BB39D53AD3BD477494983B80658FBE2CDB01FCD0A"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36571114794-paid-access-fix1-candidate-184284a\\artifacts\\ios-validation\\source-head.txt",
+      "bytes": 41,
+      "sha256": "C86ACF7008E4C8DE8B2AA49FA6A0139FA4A121AAF9C6304832D443731061A228"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36571114794-paid-access-fix1-candidate-184284a\\artifacts\\ios-validation\\xcode-test.log",
+      "bytes": 2021875,
+      "sha256": "D8E6B3261C4DF44697A6692A6621B3E90FCBD2700C3513826DE602104F75390D"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36571114794-paid-access-fix1-candidate-184284a\\cases.json",
+      "bytes": 23977,
+      "sha256": "0EE0EBD9A816BCBCEBE94A2C5981B9CCD2EB635663C0F38D088EC5C2B3DFFD37"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36571114794-paid-access-fix1-candidate-184284a\\evidence-hashes.json",
+      "bytes": 478966,
+      "sha256": "14620F0CB2CE6F25C25C82E44B2B2AF87EDC7829010B78D38FE44F0A616FFEDC"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36571114794-paid-access-fix1-candidate-184284a\\full.log",
+      "bytes": 2440016,
+      "sha256": "38A194E1E46D441EFFC17E375E870424FEBE93B75D13C6F3FDC769AFE75060A1"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36571114794-paid-access-fix1-candidate-184284a\\initial-run.json",
+      "bytes": 1585,
+      "sha256": "A6F24903E9E2956749AF282AF5092A3F794F0D5C38021E9848C7C590826AFEF7"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36571114794-paid-access-fix1-candidate-184284a\\run.json",
+      "bytes": 1865,
+      "sha256": "2416CD6BB76F3257245F741696B967AF59E0F64B2E20A7D1F5EA434EE2751116"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36572777487-restore-proof-fix1-red3-b0c933d\\artifacts\\ios-validation\\source-head.txt",
+      "bytes": 41,
+      "sha256": "70B66D97668B5CCFB56C4D268D6CC7178F01FC228107775A773139DABE52302A"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36572777487-restore-proof-fix1-red3-b0c933d\\artifacts\\ios-validation\\xcode-test.log",
+      "bytes": 2006450,
+      "sha256": "2CD7889D2F29E7AA11D841AE3B98F2327A7191C6AF1C3EAF0D3D39428C4BFDE6"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36572777487-restore-proof-fix1-red3-b0c933d\\cases.json",
+      "bytes": 11256,
+      "sha256": "58B91D2014C75C5470844EC7A080F18485EF15724251CB0924193E7DB852F8E3"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36572777487-restore-proof-fix1-red3-b0c933d\\evidence-hashes.json",
+      "bytes": 439484,
+      "sha256": "0D9A4E4EACA0BD51D54CE013C4FFDF7D15B04ABB6373B805F79C59BBD08731EC"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36572777487-restore-proof-fix1-red3-b0c933d\\full.log",
+      "bytes": 2416479,
+      "sha256": "D07467B5508DA3010D1B8C0E265E2F1667DDFB0220061220FDCEE1DE8EBA4DC8"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36572777487-restore-proof-fix1-red3-b0c933d\\initial-run.json",
+      "bytes": 1585,
+      "sha256": "D0B1AC202703CFDB0881CC2792FF44F9E77EC45F24C17C354E8D4E280DD804B2"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36572777487-restore-proof-fix1-red3-b0c933d\\run.json",
+      "bytes": 1865,
+      "sha256": "6D25EE728A1C88B2A1319950C891E919FA838DC0D2617B9641CDF634BC7ED721"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36573833249-restore-proof-fix1-candidate-79d1a83\\artifacts\\ios-validation\\source-head.txt",
+      "bytes": 41,
+      "sha256": "DFBE7734435A7956DFBD88905C21452FABF88B1C2AFE792CA4A52D61EA6653DE"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36573833249-restore-proof-fix1-candidate-79d1a83\\artifacts\\ios-validation\\xcode-test.log",
+      "bytes": 2004643,
+      "sha256": "1C351646DF758778918084D007726D9A947FEAFDB4EE685DA75995307624CCBB"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36573833249-restore-proof-fix1-candidate-79d1a83\\cases.json",
+      "bytes": 11256,
+      "sha256": "4A50B3F1D3587EF4957C7405EC931FD03DB2ADFC3FC2CD74E3EA6F8FA9CC36A1"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36573833249-restore-proof-fix1-candidate-79d1a83\\evidence-hashes.json",
+      "bytes": 41857,
+      "sha256": "B92BEAADB1500A9103DE0AA406CBD8EAE54457BD65D824A545A5B0C7E66C154C"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36573833249-restore-proof-fix1-candidate-79d1a83\\full.log",
+      "bytes": 2413614,
+      "sha256": "3C07370AA45BCEC48BD831C8D36F267F26AFD7C4EE18F3181191DB0905B3BC85"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36573833249-restore-proof-fix1-candidate-79d1a83\\initial-run.json",
+      "bytes": 1585,
+      "sha256": "6C7DD86C668727B9C1C0D95D1E3F2DA61FCB3936B656B9DA901B54C275DD8BB4"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36573833249-restore-proof-fix1-candidate-79d1a83\\run.json",
+      "bytes": 1865,
+      "sha256": "477A3A31F6B3AC970F581C77B87D42EFE33B38850DEF843C4F7044C07699CDFA"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36573837540-paid-access-fix1-candidate-79d1a83\\artifacts\\ios-validation\\source-head.txt",
+      "bytes": 41,
+      "sha256": "DFBE7734435A7956DFBD88905C21452FABF88B1C2AFE792CA4A52D61EA6653DE"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36573837540-paid-access-fix1-candidate-79d1a83\\artifacts\\ios-validation\\xcode-test.log",
+      "bytes": 2021439,
+      "sha256": "9E40F5D7F85DA9CD3ACD644CB8D21E4308C719C88B65F8F8C948295EDE40FC8F"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36573837540-paid-access-fix1-candidate-79d1a83\\cases.json",
+      "bytes": 23977,
+      "sha256": "6433EC681E14D5CBDB20C266B786D8A9A40FE9F21C78EE48AD5602C7AC6E01F8"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36573837540-paid-access-fix1-candidate-79d1a83\\evidence-hashes.json",
+      "bytes": 77998,
+      "sha256": "50BBCF4E9E4F6311F5A53610C403B5C0A7EE0D53BE8D3B0DE4FFF083F93874E6"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36573837540-paid-access-fix1-candidate-79d1a83\\full.log",
+      "bytes": 2438858,
+      "sha256": "0DE5EDE3647B1493940B9170995E4FB4E593D236084232C4DF720A777F888975"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36573837540-paid-access-fix1-candidate-79d1a83\\initial-run.json",
+      "bytes": 1585,
+      "sha256": "BAAE3D27F03FD373D28889BEC3F6565B180E497CF5FA4FEA46078214DBEEB8B3"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36573837540-paid-access-fix1-candidate-79d1a83\\run.json",
+      "bytes": 1865,
+      "sha256": "AD32F6A44D6805D2DEDC16A84C0CF53DBBCA09F3295806466B48AA4C2C429062"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36574310609-full-fix1-candidate-79d1a83\\artifacts\\ios-validation\\source-head.txt",
+      "bytes": 41,
+      "sha256": "DFBE7734435A7956DFBD88905C21452FABF88B1C2AFE792CA4A52D61EA6653DE"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36574310609-full-fix1-candidate-79d1a83\\artifacts\\ios-validation\\xcode-build.log",
+      "bytes": 1728705,
+      "sha256": "D79F217CACADC6856EAC62180D8CCE3B249559BE6BA96B3FAE3BFE498137A083"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36574310609-full-fix1-candidate-79d1a83\\artifacts\\ios-validation\\xcode-test.log",
+      "bytes": 333871,
+      "sha256": "281B3BA1D7621E4560BAC5B5BCAAF2FE1E04302B06C6D784D89CCFB0C154D4F9"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36574310609-full-fix1-candidate-79d1a83\\cases.json",
+      "bytes": 131925,
+      "sha256": "F0977708D4A8A5448BCE37C6A8C4CAF493475E9F2735D8C77AF79CB707E4830A"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36574310609-full-fix1-candidate-79d1a83\\evidence-hashes.json",
+      "bytes": 850408,
+      "sha256": "C80BFDB0FDF78F73DC5058B73C9E035B93D0F54D77FCD4B02786C046448F7C6B"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36574310609-full-fix1-candidate-79d1a83\\full.log",
+      "bytes": 2676292,
+      "sha256": "B242D12A0F7691426C45DAC5FA0F15836292FC2200229CC42DB8E0504694B374"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36574310609-full-fix1-candidate-79d1a83\\initial-run.json",
+      "bytes": 1585,
+      "sha256": "6AA7E5F525185E56EC0D60FB82182ADF01237B657511CBCA01DBEC394652DC0C"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36574310609-full-fix1-candidate-79d1a83\\run.json",
+      "bytes": 1865,
+      "sha256": "6BBECEA48BF93CF988E66D62721FB6E7F8D1C364BA0555AD4C254EF14044EFF2"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36574315164-release-compile-fix1-candidate-79d1a83\\artifacts\\ios-validation\\source-head.txt",
+      "bytes": 41,
+      "sha256": "DFBE7734435A7956DFBD88905C21452FABF88B1C2AFE792CA4A52D61EA6653DE"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36574315164-release-compile-fix1-candidate-79d1a83\\artifacts\\ios-validation\\xcode-build.log",
+      "bytes": 1550212,
+      "sha256": "6B97AAE8274583477F4DA2C8671B120D85D8AD707A37902CEA77E70CC3794DE4"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36574315164-release-compile-fix1-candidate-79d1a83\\evidence-hashes.json",
+      "bytes": 914,
+      "sha256": "3EDE265A3458B13B66E1E53FC10E4AA5130CF5AB74F0A8C4C296FCA4F5444B03"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36574315164-release-compile-fix1-candidate-79d1a83\\full.log",
+      "bytes": 1876314,
+      "sha256": "36079052717C8FEA94A5A6F75D2486B0051718F84F041D0DBB8FEC9A132E3290"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36574315164-release-compile-fix1-candidate-79d1a83\\initial-run.json",
+      "bytes": 1585,
+      "sha256": "7212B00BD48FFCA6D1A7E1C43AF6AE6F7A096FF8C0B37C28B9AF9A2876D0FD5E"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36574315164-release-compile-fix1-candidate-79d1a83\\run.json",
+      "bytes": 1865,
+      "sha256": "2B548BE8CF68C3D8D23E57B45DAEBB1CAF5EB8618D2C3983C4EE3E7A455DD85E"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36576517762-full-fix1-candidate-35ac221\\annotations.json",
+      "bytes": 823,
+      "sha256": "AEBC592FE8705F23BAF72D0F294CCB22EACA5116B93BC039D37672F115B4D8AB"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36576517762-full-fix1-candidate-35ac221\\artifacts.json",
+      "bytes": 34,
+      "sha256": "E338FB10E6740E1E43CDBE137DA3A22EC09F95D8097C5F247E751DE5F81F87B4"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36576517762-full-fix1-candidate-35ac221\\initial-run.json",
+      "bytes": 465,
+      "sha256": "5257009FBBDD3B92287E118CA9476D2013FD89AED9A36342BCF81E18837294FC"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36576517762-full-fix1-candidate-35ac221\\job.json",
+      "bytes": 912,
+      "sha256": "0DB3827B2677876AE1EB23568A447D4DA56BD0AB5F456E32DCF9128CB9E94DF5"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36576522177-release-compile-fix1-candidate-35ac221\\annotations.json",
+      "bytes": 823,
+      "sha256": "AEBC592FE8705F23BAF72D0F294CCB22EACA5116B93BC039D37672F115B4D8AB"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36576522177-release-compile-fix1-candidate-35ac221\\artifacts.json",
+      "bytes": 34,
+      "sha256": "E338FB10E6740E1E43CDBE137DA3A22EC09F95D8097C5F247E751DE5F81F87B4"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36576522177-release-compile-fix1-candidate-35ac221\\initial-run.json",
+      "bytes": 465,
+      "sha256": "CD007E04D9CABA806A083BA8A504FD4469BCC4807E6B981B523F14690D302589"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-results\\36576522177-release-compile-fix1-candidate-35ac221\\job.json",
+      "bytes": 912,
+      "sha256": "55D86F39614E6FE1E0200C1DDFEC8261472159617583F4A717B71BA675DD08B0"
+    }
+  ]
+}

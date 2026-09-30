@@ -1,0 +1,16 @@
+{
+  "base": "35ac2216af2925fd3dfc0f8cbbabd7dad70626c6",
+  "candidate": "22c36f59159ec9a32b6c600af7ae6bc1d94c293d",
+  "files": [
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\ios\\FlashCardAITests\\AnonymousPurchaseRestoreTests.swift",
+      "bytes": 70292,
+      "sha256": "0FEAD144A6E136D56CEF542662E735A9C2E359C0748726F18621488E4A556EE3"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\ios\\Infrastructure\\Purchases\\StoreKitService.swift",
+      "bytes": 29638,
+      "sha256": "4F14023371ED63B11C898C1C1DB438EA7F9DE87D93D99464FBDF2EBF593DA621"
+    }
+  ]
+}

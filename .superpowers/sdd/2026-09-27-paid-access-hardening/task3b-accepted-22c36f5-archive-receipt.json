@@ -1,0 +1,189 @@
+{
+  "archive": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task3b-accepted-22c36f5.zip",
+  "bytes": 1047005,
+  "sha256": "FC7C11AFB64C5800E4DC631E184C254B7143A567CA76FA5AC377308A665EDA58",
+  "verifiedEntries": 36,
+  "scope": "Selected raw logs/source/hash manifests and reports; nested XCResult originals preserved separately",
+  "entries": [
+    {
+      "path": ".superpowers/sdd/2026-09-27-paid-access-hardening/task-3B-fix2-report.md",
+      "bytes": 8628,
+      "sha256": "3F45C2338CB600DA6A5260A80031EDE6AE39389348DCE0A906B694888AD17545"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-27-paid-access-hardening/task-3B-fix2-report-snapshot-22c36f5.md",
+      "bytes": 8628,
+      "sha256": "3F45C2338CB600DA6A5260A80031EDE6AE39389348DCE0A906B694888AD17545"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-27-paid-access-hardening/task-3B-fix2-source-35ac221-22c36f5.diff",
+      "bytes": 26409,
+      "sha256": "AC87F5148054525915DDF95B0639A631282CE02A3190CEC4AE513D6A5B851CEB"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-27-paid-access-hardening/task-3B-fix2-source-hashes-22c36f5.json",
+      "bytes": 660,
+      "sha256": "F18C54F879537E254F4A4EE726F5ECFF08B30814BB80AE980DB5FD3A5759D9C6"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-27-paid-access-hardening/task-3B-fix2-review-22c36f5.md",
+      "bytes": 7405,
+      "sha256": "48B115E69F5BAFB2E78CC007E4AAECFD7B23F983752DAB4958AE0CB0672C834A"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-27-paid-access-hardening/task-3B-fix2-review-handoff-22c36f5.md",
+      "bytes": 2786,
+      "sha256": "4307F3455FF2ECC9C5458AD129ED982B6F435267DE3B64D10D9BC31FD2150159"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-27-paid-access-hardening/task-3B-fix2-mac-evidence-22c36f5.md",
+      "bytes": 1474,
+      "sha256": "639ED29AD4C3B9C6B79037315A5ACF04039852DAE3C81A50F4D2D9AF5A7820E1"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-27-paid-access-hardening/task-3B-fix2-brief.md",
+      "bytes": 5145,
+      "sha256": "99AD38D817254AB93809B5F8E48FB7281DEE46AA6D82C07C5ED2923CD66C5FC0"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-27-paid-access-hardening/task-3B-fix1-review-35ac221.md",
+      "bytes": 27671,
+      "sha256": "1800AC574C7CB23FAD9DC04D37AC320C73D16C5FFB7DEC0B7E17AE9C1AACA7B0"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-27-paid-access-hardening/anonymous-restore-contract.md",
+      "bytes": 25852,
+      "sha256": "8701EDC0A31ED8BFF40F713C78A56C5124AA58B3FB74690D1130C45CD5BFF581"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-27-paid-access-hardening/anonymous-restore-approved-behavior.md",
+      "bytes": 6299,
+      "sha256": "3FA06D6FC00975DE9C0424C75A0FAA636ED97B7F82ACC6B5A773A26AD277CEDC"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-27-paid-access-hardening/additional-agent-authorization.md",
+      "bytes": 1392,
+      "sha256": "F0CB6166951927654550BC96558B81AEE9321B22977D8476C5BD50910F4F03CD"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36584051326-restore-proof-fix2-red-68b0ddc/cases.json",
+      "bytes": 12338,
+      "sha256": "64CC7D205E0BD3DC474987D9AEF18F424CE233C658F9C638A7235C98D59C62DD"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36584051326-restore-proof-fix2-red-68b0ddc/evidence-hashes.json",
+      "bytes": 444909,
+      "sha256": "B8341C28F00B0EFC00AE45A382AC94276E8CBCA32BD5A6215550AAA14069358B"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36584051326-restore-proof-fix2-red-68b0ddc/full.log",
+      "bytes": 2426531,
+      "sha256": "C789CCD270C4C528FA36E396AA21901EAAFBF8F7B9B4C028D365174C27944D47"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36584051326-restore-proof-fix2-red-68b0ddc/run.json",
+      "bytes": 1865,
+      "sha256": "8C88AA7FEBE8FDF8B26141E64C030BF0CBF733EBC7872419E68E4946D945EA36"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36584051326-restore-proof-fix2-red-68b0ddc/watch.log",
+      "bytes": 3592,
+      "sha256": "4F9BCAA6EA03FB1FFBA85F78BA5CCF9F736AE475599414545D156B6DF6BD93C7"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36584051326-restore-proof-fix2-red-68b0ddc/artifacts/ios-validation/source-head.txt",
+      "bytes": 41,
+      "sha256": "4345BF9ADDD74C962B016250FDA6700034FA506AC227D6367DFE902AEA7CD4DD"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36584051326-restore-proof-fix2-red-68b0ddc/artifacts/ios-validation/xcode-test.log",
+      "bytes": 2012662,
+      "sha256": "1BA0613139E9A2968CBB8164E1B85ACB12D8923C9C311AF284DE711FEE9055B3"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36585128732-full-fix2-22c36f5/cases.json",
+      "bytes": 133009,
+      "sha256": "BADDB72568881AC9007FC36F265F23435798F05552C3EBB9D70F1ADF2DDA640C"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36585128732-full-fix2-22c36f5/evidence-hashes.json",
+      "bytes": 395189,
+      "sha256": "030AAB9F7FE939B851903DCF1DC4BFF076B53C48BA61814E4FD2596EF2D75E84"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36585128732-full-fix2-22c36f5/full.log",
+      "bytes": 2671411,
+      "sha256": "8CFA85C6CAED454037BF77BA4E8398A41442C1F10F06E2F6314A5164999EE377"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36585128732-full-fix2-22c36f5/run.json",
+      "bytes": 1865,
+      "sha256": "7A5DC006267FE6ADD653A929936B81269C523FA38C1AE0931654D9791672B932"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36585128732-full-fix2-22c36f5/watch.log",
+      "bytes": 9275,
+      "sha256": "E87AC9BBC16293AFDECFFF3AA33D51915CC00CBE2F7D03852E6F2FA284F73ED8"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36585128732-full-fix2-22c36f5/artifacts/ios-validation/simulator-preflight.log",
+      "bytes": 8554,
+      "sha256": "2DDBD7011D6D26598E4C1893D7221D082A913158008786EFAE801D9CF44BBA74"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36585128732-full-fix2-22c36f5/artifacts/ios-validation/source-head.txt",
+      "bytes": 41,
+      "sha256": "13BEDE5E121975A6EE1A3984FD1917ED7E4D151699AA3F4154B3EBF05EE836BB"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36585128732-full-fix2-22c36f5/artifacts/ios-validation/xcode-build.log",
+      "bytes": 1732387,
+      "sha256": "B34CD8548F7FE1A0205C65FBAA0B4442E4FB84DB16294EC8BBC7C9D5231FB848"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36585128732-full-fix2-22c36f5/artifacts/ios-validation/xcode-test.log",
+      "bytes": 310652,
+      "sha256": "C155A4E1C5CEAB3044F417F78F4AED3895E6318755DA5A25E61A8B50E4237C49"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36585132762-release-compile-fix2-22c36f5/evidence-hashes.json",
+      "bytes": 768,
+      "sha256": "EB1EA1BBA7BB2C034146643DDA13CCFDD2F588BA260E3227E5F36EF3AC88761A"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36585132762-release-compile-fix2-22c36f5/full.log",
+      "bytes": 1876464,
+      "sha256": "72F0F56A6227E19A8D2FB0BE63F366EC59867B6982EDB849391DE72F6EF8ED90"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36585132762-release-compile-fix2-22c36f5/run.json",
+      "bytes": 1865,
+      "sha256": "08A9AD83CC17E82EAAB661B6C8CF85386D20583BA153E05A892E3D82251E558C"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36585132762-release-compile-fix2-22c36f5/watch.log",
+      "bytes": 2180,
+      "sha256": "126A43B4FB53C9C6E061E8ADA6B18C9AD49FA70BD4D9D6207BD008866D055DF2"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36585132762-release-compile-fix2-22c36f5/artifacts/ios-validation/source-head.txt",
+      "bytes": 41,
+      "sha256": "13BEDE5E121975A6EE1A3984FD1917ED7E4D151699AA3F4154B3EBF05EE836BB"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task3b-results/36585132762-release-compile-fix2-22c36f5/artifacts/ios-validation/xcode-build.log",
+      "bytes": 1550216,
+      "sha256": "30214CFFCDD7F8EF94980CDC2DB65B99E73ECC356EFA2D432A488F91DDF9D549"
+    },
+    {
+      "path": "test-results/paid-access-hardening/ios/FlashCardAITests/AnonymousPurchaseRestoreTests.swift",
+      "bytes": 70292,
+      "sha256": "0FEAD144A6E136D56CEF542662E735A9C2E359C0748726F18621488E4A556EE3"
+    },
+    {
+      "path": "test-results/paid-access-hardening/ios/Infrastructure/Purchases/StoreKitService.swift",
+      "bytes": 29638,
+      "sha256": "4F14023371ED63B11C898C1C1DB438EA7F9DE87D93D99464FBDF2EBF593DA621"
+    }
+  ]
+}

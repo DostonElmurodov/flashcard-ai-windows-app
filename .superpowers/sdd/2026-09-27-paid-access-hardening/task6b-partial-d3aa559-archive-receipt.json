@@ -1,0 +1,980 @@
+{
+  "status": "partial, not accepted or release-ready",
+  "archive": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task6b-partial-d3aa559-20260929.zip",
+  "bytes": 1971987,
+  "sha256": "F9C583F11C4ADD8C6E50175FBB362DF122E0D18DF29FB875825A6AE5139DCFC0",
+  "entries": 194,
+  "rawArtifacts": "Original Mac artifact and XCResult directories preserved separately; their existing manifests are included.",
+  "files": [
+    {
+      "path": "results/backend-ambiguous-delete-green.log",
+      "bytes": 2411,
+      "sha256": "41B94751DEFCDAB01D787A08BBE51F84F140A69909DFC9BC1CB8BF83E2D135B6"
+    },
+    {
+      "path": "results/backend-ambiguous-delete-red.log",
+      "bytes": 3498,
+      "sha256": "784546016E1056CF24AEF55D02431D28988EC6F09A39A01D1B788DD21D3A0AF5"
+    },
+    {
+      "path": "results/backend-collation-build.log",
+      "bytes": 1877,
+      "sha256": "7B17B135C84662FB5D84D34F8ADFFDE39992B7427511874F80D2C9D4578C703E"
+    },
+    {
+      "path": "results/backend-collation-build2.log",
+      "bytes": 1251,
+      "sha256": "F49EFE18FE6E0F6D333B2471E47856D8D216D907B842231D147C36E9D392FD16"
+    },
+    {
+      "path": "results/backend-collation-build3.log",
+      "bytes": 702,
+      "sha256": "2D2BF7316D5CB3F03D3A2D3A4C25AFCA91EFA578944FE0315B521C74CC71ABE7"
+    },
+    {
+      "path": "results/backend-exact-id-green.log",
+      "bytes": 2412,
+      "sha256": "97B52413F5C35FAAAA8021AF9BFF931A1FC17E2E863AB2C1BFA69939FE7DB2D9"
+    },
+    {
+      "path": "results/backend-exact-id-red.log",
+      "bytes": 3449,
+      "sha256": "2EF315B803E2837C76F4427861E739A120D82CDC3BC3E43E17BD73A379BCD665"
+    },
+    {
+      "path": "results/backend-focused-after-resurrection.log",
+      "bytes": 1345,
+      "sha256": "2564698D482EE885BBB96CE3A41F5504E64A7CC7CCEEDFD7FC87B1831482EB37"
+    },
+    {
+      "path": "results/backend-focused-mid.log",
+      "bytes": 1345,
+      "sha256": "DD880DB8637C7DD9AD4EBD723AA3E276DF086EDB7461FB872563196153E5F1FD"
+    },
+    {
+      "path": "results/backend-http-12-green.log",
+      "bytes": 2424,
+      "sha256": "D6B6B1D54DEC9E0036BC304579BCECBA60FF7A2CEDC24C6B2DF64813885E5D86"
+    },
+    {
+      "path": "results/backend-http-12-red.log",
+      "bytes": 4032,
+      "sha256": "2CD9CDE12BBFE432F04D9E7A41073E14761914783848D475A4E8A38371DE8A76"
+    },
+    {
+      "path": "results/backend-identity-edge-final.log",
+      "bytes": 1344,
+      "sha256": "D00F9CF53C47950088CCEE89F0B51BAA31CC54C6BA8957D5442C0D58D0CC8473"
+    },
+    {
+      "path": "results/backend-idless-ai-green.log",
+      "bytes": 1347,
+      "sha256": "F894D6DF70012A3242AD608AAE5B6469CD980BA0C00F5F0BFA1FD7BCD3CA9208"
+    },
+    {
+      "path": "results/backend-idless-ai-red.log",
+      "bytes": 1463,
+      "sha256": "F1400D0BC0204A69BDAE0FB1B4A1BFA62A914F3DC8A0AA23D6552C714B8D0523"
+    },
+    {
+      "path": "results/backend-inactive-fields.log",
+      "bytes": 2920,
+      "sha256": "CDDBD1CB0AC3BFA1463A655EFD6746B94A2379CC4AA6CFAC8C0E6F05B1C911FE"
+    },
+    {
+      "path": "results/backend-metadata-ai-green.log",
+      "bytes": 1344,
+      "sha256": "B57C545A6A975BA64AB4A2FDE9813C38EFDA3A52963FE1250E2C3AF376BFE9C3"
+    },
+    {
+      "path": "results/backend-metadata-ai-red.log",
+      "bytes": 1473,
+      "sha256": "99B71B4EBF8813211F72AE68A234043812DFDB966CC1F7CF83C4958D801904B6"
+    },
+    {
+      "path": "results/backend-migration-c-exact.log",
+      "bytes": 1344,
+      "sha256": "1A29988B0C5FF02A5EA3851B9F8503B059C5FC68917244FC0C1B0C420E48AA67"
+    },
+    {
+      "path": "results/backend-migration-collation.log",
+      "bytes": 1344,
+      "sha256": "AAF519A1EC785645229059F3EA2C42DE3BFD68991F0C99E937FA97F162C0C01E"
+    },
+    {
+      "path": "results/backend-order-edges-first.log",
+      "bytes": 2537,
+      "sha256": "6AC9B4AE72B9439C80D31897C867815B9C7081F1F920CA8A3F88911FCCFD4BE5"
+    },
+    {
+      "path": "results/backend-order-green.log",
+      "bytes": 2408,
+      "sha256": "4486999091E7F5E8B5FF5F2706052EA37B9C9FE3E24561070646451C1EDDD313"
+    },
+    {
+      "path": "results/backend-order-red.log",
+      "bytes": 2754,
+      "sha256": "CEDF083FFA126F630F11B76BF79EBF393CCC0B16718BB20F1ACDA11E0E8EF1B0"
+    },
+    {
+      "path": "results/backend-order-resurrection-green.log",
+      "bytes": 1347,
+      "sha256": "99B6DEC2BCD57A802BC7CDD0EFA53BC4A214C2167899ABB82C0CE9D277CD282C"
+    },
+    {
+      "path": "results/backend-order-resurrection-red.log",
+      "bytes": 1490,
+      "sha256": "94AF0974EA821A4EA66E5A9DB97A973704FE2213FE6D6128CF1EAB1E690292B9"
+    },
+    {
+      "path": "results/backend-order-safety-red.log",
+      "bytes": 2542,
+      "sha256": "214F086671C25C4213431538E83E2F60F730F44475A5574C20BB142C882F2CA9"
+    },
+    {
+      "path": "results/backend-placeholder-green.log",
+      "bytes": 2421,
+      "sha256": "526FBE1AF58FD7CD29036A1F603F6E50E662510C041FA6A728C0BDE59BC7B689"
+    },
+    {
+      "path": "results/backend-placeholder-red.log",
+      "bytes": 3467,
+      "sha256": "449C36563E19CC490BBDD96A2DAAEB63BF6B15E11B6DD431614142D55D0CE0E7"
+    },
+    {
+      "path": "results/backend-release-after-resurrection.log",
+      "bytes": 1347,
+      "sha256": "0F675956202B23B304B39CD3D8D8CEED606E00BFF7B90C057711406E3B4E85C9"
+    },
+    {
+      "path": "results/backend-release-build-after-resurrection.log",
+      "bytes": 702,
+      "sha256": "0109F3F85DC449B04D9456B3BE18EBB93830B53EC013E6F5F4A61210A6C87CF5"
+    },
+    {
+      "path": "results/backend-release-build.log",
+      "bytes": 702,
+      "sha256": "EA9F7AC427A260EB1A0213FD3DEEFA394C281DDC27B942257988C3A0F7674092"
+    },
+    {
+      "path": "results/backend-release-failures-detail.log",
+      "bytes": 41954,
+      "sha256": "7EBBBA287EB68D5965EB7B21BA2D154ADBCA909CCE3C13B6220C3053925D4183"
+    },
+    {
+      "path": "results/backend-release-failures-fixed.log",
+      "bytes": 2628,
+      "sha256": "3AEDEFCCB36004F89BC387E8A0F830AAD54C6FF3037B307CB25B79BA551688C3"
+    },
+    {
+      "path": "results/backend-release-green.log",
+      "bytes": 1347,
+      "sha256": "ECE37DE62F382A401084D817BE221F816C534712039717629648B7D9DF2243CD"
+    },
+    {
+      "path": "results/backend-release-mid.log",
+      "bytes": 2092,
+      "sha256": "28F3C46047537A557C26EC2292391EE1413AFD5DE291A21AA753262C5F206DA0"
+    },
+    {
+      "path": "results/backend-service-green1.log",
+      "bytes": 7474,
+      "sha256": "C2985404AD97E326CBA95F68BF9148A2FB6FF1AD49DF28022CEE968A80706E3F"
+    },
+    {
+      "path": "results/backend-spaced-id-green.log",
+      "bytes": 1344,
+      "sha256": "197CFF9939F35104BEA4B95212A2B839E8D94081A88152047A5B0695D03F48FD"
+    },
+    {
+      "path": "results/backend-spaced-id-red.log",
+      "bytes": 1470,
+      "sha256": "79C827512963056BFC21AF56A5D5B3719576CE2F951DF9E00083518D4C022214"
+    },
+    {
+      "path": "results/backend-unicode-identity.log",
+      "bytes": 2403,
+      "sha256": "C6A396C73B40F7FE1EF93EAF3543F188EDC703391C9717B4707BACFA5C049506"
+    },
+    {
+      "path": "results/ef-model-collation-pending.log",
+      "bytes": 84,
+      "sha256": "B6AC75E685674A5B3F1260114079E544E56FDE7F8B695D3A3C6C84244B96AA97"
+    },
+    {
+      "path": "results/ef-model-collation-verified.log",
+      "bytes": 66,
+      "sha256": "C924DA1693AD60EB6A78717DDD333946A8A61A056C2CE2868AE514384F01C866"
+    },
+    {
+      "path": "results/ef-model-final-partial.log",
+      "bytes": 66,
+      "sha256": "C924DA1693AD60EB6A78717DDD333946A8A61A056C2CE2868AE514384F01C866"
+    },
+    {
+      "path": "results/ef-model-first.log",
+      "bytes": 66,
+      "sha256": "C924DA1693AD60EB6A78717DDD333946A8A61A056C2CE2868AE514384F01C866"
+    },
+    {
+      "path": "results/mac-36596850548-watch.log",
+      "bytes": 3509,
+      "sha256": "3A60759C3975468BB771BAE811E1537FDF18C820F7B6CB9350E7D35496A24D57"
+    },
+    {
+      "path": "results/mac-36597861142-watch.log",
+      "bytes": 3122,
+      "sha256": "09115262E30D0C880F3F6878F7B83313096EE8F9FF2DE7B1CB87A09391BFA56C"
+    },
+    {
+      "path": "results/mac-36598610403-watch.log",
+      "bytes": 3126,
+      "sha256": "610AA6E419D8798E3155C03872894F9C508AB64C40863BBFD09F004E2232607E"
+    },
+    {
+      "path": "results/mac-36599359219-watch.log",
+      "bytes": 3565,
+      "sha256": "389FD717B5551C050947578CAE97881128E9EE55EDBFC3D5DE139B71D603CE79"
+    },
+    {
+      "path": "results/mac-36600634654-watch.log",
+      "bytes": 71,
+      "sha256": "BD55E0B1101A20F2C85A9876C3ED00BBF2E5AF1E028F17F878E642691DFE12ED"
+    },
+    {
+      "path": "results/migration-build-error.log",
+      "bytes": 1251,
+      "sha256": "A9B700D92F0CA91D090699D7BEA3E8B2D7C1323BF644BC96B43D10C86C81AB29"
+    },
+    {
+      "path": "results/migration-populated-first.log",
+      "bytes": 8878,
+      "sha256": "35AD3D4ABE149F2C7D58F98969F32CAB52656A7E88C4BDE494868D67F38115B9"
+    },
+    {
+      "path": "results/migration-populated-second.log",
+      "bytes": 5360,
+      "sha256": "A1CA1CEF8AD16270D9F8F7DC049EB07CB86E5801E0BE67EC00E40AF4AAAC99AF"
+    },
+    {
+      "path": "results/migration-populated-third.log",
+      "bytes": 2435,
+      "sha256": "8BDF14B46C3675CB795BF6DD52A528E8C97BE6D88D20CE1E478333DC8A0960C0"
+    },
+    {
+      "path": "results/migration-scaffold-no-build.log",
+      "bytes": 55,
+      "sha256": "3B37E330A054A7D31A4068F3D0D6964B1AD48330E40C1F21AEB243AC3F6BEC3B"
+    },
+    {
+      "path": "results/migration-scaffold-verbose.log",
+      "bytes": 6643,
+      "sha256": "ADCFA04210E9F582CC61D37810A5857B96B51DA7E77874522AD4134D4BFB1B84"
+    },
+    {
+      "path": "results/migration-scaffold.log",
+      "bytes": 69,
+      "sha256": "1CD745FF3B6E1C561DA63495C9ECEE557AA926FA29D71E1739920A01122F97D6"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/head.txt",
+      "bytes": 42,
+      "sha256": "E98F638F38974151A203D3CA4E80432C2C3465550DAC089A0A27516E9A16CF0E"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source-sha256.json",
+      "bytes": 6759,
+      "sha256": "E577EBF8DE79F902DFB98F54BBB2FDDF9287FE232C6E130FA2F50B3C95867FBB"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/status.txt",
+      "bytes": 2134,
+      "sha256": "72E0BBA447D2E439729C0775356E1AE06B87EA204D078AF1CFFD090062DB4034"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/tracked.diff",
+      "bytes": 148988,
+      "sha256": "A5F21DBBE469BEB2B83197F49795C0ECABA22194435DD5ED1F243AEA3B4EB9DD"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/Program.cs",
+      "bytes": 15429,
+      "sha256": "457F37AA0096DC64357298561B5C1B92B950CD6375D79C1E2FD312CDB5517C13"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/Areas/OwlAI/Controllers/DeviceController.cs",
+      "bytes": 5055,
+      "sha256": "B7D6F0A85FF714C7BDB35131357CCCE803AD7247909BE39B56AF049629A067CA"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/Areas/OwlAI/Controllers/DeviceWordsController.cs",
+      "bytes": 4182,
+      "sha256": "5B1F783C3C468DEAC418A207885DA5E7FB5568AA4FD7D468A79466D46FBB02BE"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/Filters/AccountAiProtectionFilter.cs",
+      "bytes": 3826,
+      "sha256": "9AFE2CBE7ECCF0AEBEEABF197A847F3A8FB1BAD5E49E1AFCA748EC112B611959"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/Filters/AiProtectionFilter.cs",
+      "bytes": 12672,
+      "sha256": "9E276809E045285C782E30B3289824DA041167BB9A3C528F249D56CF0F32ADD6"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Data/AppDbContext.cs",
+      "bytes": 13572,
+      "sha256": "6AC0CCB7043F4A4A85039BB36E4A209D370E514DD78F8FAFA029BBA8A8692646"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Data/Migrations/20260929150632_AddStableOperationUsage.cs",
+      "bytes": 18567,
+      "sha256": "4A0E85CE9B535F21D52F28926002D9A4368584D5FD411FB90F42DAC7F9FDBB4F"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Data/Migrations/20260929150632_AddStableOperationUsage.Designer.cs",
+      "bytes": 46123,
+      "sha256": "C252C36CD9C036C8CE6CC56AD7CE5C94EB264472B9A3DB352466B5D5B58B1049"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Data/Migrations/20260929161053_AddDeviceWordClientOrder.cs",
+      "bytes": 4478,
+      "sha256": "1F287BA4388F7D7A4427A4AF9ED2AB3300312D09F0A40BEB400EC8E56B52A28F"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Data/Migrations/20260929161053_AddDeviceWordClientOrder.Designer.cs",
+      "bytes": 46528,
+      "sha256": "234E9A5DED4EEEBBDEFB09DBA6D7E63A4809EACA6E318D9149892E0CFAEBB143"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Data/Migrations/AppDbContextModelSnapshot.cs",
+      "bytes": 46402,
+      "sha256": "55B6A08559AA61119F0FACE36F18288AC31CA5D49FC23C84BAB8CE4C7B4FF320"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Entities/Models/DeviceEntity.cs",
+      "bytes": 1455,
+      "sha256": "7D7A118062C256B90067580506CB2E23AA9D74FC601D47676E9C7A9DAF462FDF"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Entities/Models/DeviceWordEntity.cs",
+      "bytes": 1126,
+      "sha256": "ECDCE68FEAAEFD35938DD3BAE03C62FCDB515B358FE8D255264113F1B6E1937D"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Entities/Models/UsageAccountingEntities.cs",
+      "bytes": 1560,
+      "sha256": "2132E8450D0FEE822BB662A85D4A6DA37D6B55F4E35CAFCF8F9590FEF3DDC0EA"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Services/Dtos/DeviceWordDtos.cs",
+      "bytes": 1077,
+      "sha256": "0D0E8C76AC603FC7FDFFAD07C56D6E238EA1C5BECA3827151D719A20E4664E09"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Services/Dtos/Dtos.cs",
+      "bytes": 3269,
+      "sha256": "E0CC24E9D115B74730FDFDD582A7FBDAB14B83F429C1BB4A0E293B5C3A0970A7"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Services/Services/AccountAiUsageService.cs",
+      "bytes": 1892,
+      "sha256": "DCC0CC48EC5117BCA0BFCBF480092C89FB77F298C7E50231CA7C6A93CF3FEF91"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Services/Services/AccountEntitlementService.cs",
+      "bytes": 7203,
+      "sha256": "77C770E8F3D93917F033438F5D24F2D99634E60ABDD2031828D2C1934795D827"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Services/Services/AiRequestContextReader.cs",
+      "bytes": 6642,
+      "sha256": "BDCF7EB364AE6ED10EB6F89E00237CD1A09CC402570D8A28A7CD85DEF6422777"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Services/Services/AiUsageService.cs",
+      "bytes": 3955,
+      "sha256": "89601863B8202C8507F266D10B0B286E7A02973A053315A62CCDA4AE1951559E"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Services/Services/AnonymousPurchaseService.cs",
+      "bytes": 13335,
+      "sha256": "30271115E893D20EC222C20FEA8EE0AB16AA191D65149B624E767AF6ACB9B67A"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Services/Services/DeviceContextService.cs",
+      "bytes": 7306,
+      "sha256": "DE20B61E7026C6A57F70B37655D4681C04E6EB10BDC6EF32CB646731D78FFD53"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Services/Services/DeviceWordService.cs",
+      "bytes": 23823,
+      "sha256": "5989AA402B6B9584A2D2ED7D2EAD698D44A65BA3FFFAB9F859E7CA4FCD4D7E23"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Services/Services/OperationQuotaService.cs",
+      "bytes": 6001,
+      "sha256": "784C13622748D81E84FD72F868F11F1C6D9981F4338E18E6938D11960F098277"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/src/Mavrylo.Services/Services/UsageSubjectResolver.cs",
+      "bytes": 10237,
+      "sha256": "DF6D3A8F8D6E00BBC047A641158DC833D15D8FA4B11D0E488BD3A4FB7ABC6A1B"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/tests/AiProtectionFilterTests.cs",
+      "bytes": 21346,
+      "sha256": "68E40CFBCC966E1C6BDF601812FB7906EE7EA61ED909F69C29220D45948771F2"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/tests/AiRequestInterpretationTests.cs",
+      "bytes": 22170,
+      "sha256": "C8D9115D85AA4BE9BEAB30A2C4FB970DEE91676BEA99E3DEB030587EFD497807"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/tests/AiSpendRouteTests.cs",
+      "bytes": 20169,
+      "sha256": "7F2040ADA887B2851F724F57EA24EDABBFE1C2E962084BE769F7F074D0038573"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/tests/AnonymousInstallationTests.cs",
+      "bytes": 25670,
+      "sha256": "8AA9FE1CDF6099AD0B80744305F807BB4F14610E9323BD52DF789A715763AEC3"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/tests/AppAttestCounterConcurrencyTests.cs",
+      "bytes": 12210,
+      "sha256": "E2F21C7B54C97BBC84FE0F71F40AC02BD70C9F378331657E9E90387178AE9D55"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/tests/DeviceControllerBootstrapTests.cs",
+      "bytes": 17464,
+      "sha256": "D213A234910B08D0EFD3F71A749BEB8CA06CD317541FAD65A438DEEADD8D9D2A"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/tests/DeviceWordOrderMigrationTests.cs",
+      "bytes": 3765,
+      "sha256": "D3DD5AA601596160342884F7F38048BEA7B9AEBF08F7F63F55C550A7B80BE0D6"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/tests/DeviceWordServiceTests.cs",
+      "bytes": 20757,
+      "sha256": "26DF7D16695F11307D3D0F9143EB3544DE4B5A25B3C3200BF3087BEDFDC11555"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/tests/PaidAccessAuditRegressionTests.cs",
+      "bytes": 24225,
+      "sha256": "0247793FE337DD20D9499CD9508227587D268017991C2ADE32CCE341AA4BFF19"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/tests/PaidAccessBoundaryHttpTests.cs",
+      "bytes": 28123,
+      "sha256": "C185B650BDA3CDE1B5D8D34526310FCEAF2215B0A41584ADA0E4B267ED29E64F"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/tests/ReviewTranslationTests.cs",
+      "bytes": 17493,
+      "sha256": "CEBD080BE0F16EA3B4E2331D45A9492AB31A18C9487592922BD2E058596859E6"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/tests/SharedSubscriptionPostgresTests.cs",
+      "bytes": 34907,
+      "sha256": "B2363A8C7D2495EC11B673FFCEA7B501738F8E44781F3F0504B139C18CE41B72"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/tests/UsageMigrationPostgresTests.cs",
+      "bytes": 19376,
+      "sha256": "79621869975B436CE5A5A1D89F5DC73E01459914FCF682F3C4B17141A36D3F62"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/tests/UsageSubjectPostgresTests.cs",
+      "bytes": 25130,
+      "sha256": "16DE5A4B1DF87E1D0D46F77D3C7C80D90DDEA110580A13564CB6815D4C0EB98D"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/tests/TestSupport/ApiFactory.cs",
+      "bytes": 2163,
+      "sha256": "E77662272C1800534356BC6EDAE8D59487638A304747F88C25FFBE8B4368223B"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/tests/TestSupport/FakeAppAttestVerifier.cs",
+      "bytes": 1187,
+      "sha256": "BA7BC56BD72782D85392DF8CB6816A666214258AF1DF77D06E86CEC0AEA71222"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/tests/TestSupport/QuotaTestSupport.cs",
+      "bytes": 816,
+      "sha256": "B557E2A2798C26A42BB944BF7FC227B4C8456D8D01AC545A6D5404394E89C16F"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/tests/TestSupport/TestConfig.cs",
+      "bytes": 1868,
+      "sha256": "3A658AF51DCBEA68037D1D3CAACFBA2F57B8204E1716075B7DB78734605BADB1"
+    },
+    {
+      "path": "results/backend-partial-freeze-1/source/tests/TestSupport/TestDb.cs",
+      "bytes": 1063,
+      "sha256": "4E9C94713BBD1BBC9A9FF3FA61A394845054F54800903A4EF6C5EF30D026D31F"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/head.txt",
+      "bytes": 42,
+      "sha256": "E98F638F38974151A203D3CA4E80432C2C3465550DAC089A0A27516E9A16CF0E"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source-sha256.json",
+      "bytes": 6759,
+      "sha256": "5168BB6042F747DAB9CD55AD842E950A51A98C9CF7CE822F212A5B86B993F328"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/status.txt",
+      "bytes": 2134,
+      "sha256": "72E0BBA447D2E439729C0775356E1AE06B87EA204D078AF1CFFD090062DB4034"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/tracked.diff",
+      "bytes": 150284,
+      "sha256": "EB2F8BB5156DD4CF7CECF82771571410970DAC4F6DF04690D969186C3FC7A2E5"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/Program.cs",
+      "bytes": 15429,
+      "sha256": "457F37AA0096DC64357298561B5C1B92B950CD6375D79C1E2FD312CDB5517C13"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/Areas/OwlAI/Controllers/DeviceController.cs",
+      "bytes": 5055,
+      "sha256": "B7D6F0A85FF714C7BDB35131357CCCE803AD7247909BE39B56AF049629A067CA"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/Areas/OwlAI/Controllers/DeviceWordsController.cs",
+      "bytes": 4182,
+      "sha256": "5B1F783C3C468DEAC418A207885DA5E7FB5568AA4FD7D468A79466D46FBB02BE"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/Filters/AccountAiProtectionFilter.cs",
+      "bytes": 3826,
+      "sha256": "9AFE2CBE7ECCF0AEBEEABF197A847F3A8FB1BAD5E49E1AFCA748EC112B611959"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/Filters/AiProtectionFilter.cs",
+      "bytes": 12672,
+      "sha256": "9E276809E045285C782E30B3289824DA041167BB9A3C528F249D56CF0F32ADD6"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Data/AppDbContext.cs",
+      "bytes": 13572,
+      "sha256": "6AC0CCB7043F4A4A85039BB36E4A209D370E514DD78F8FAFA029BBA8A8692646"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Data/Migrations/20260929150632_AddStableOperationUsage.cs",
+      "bytes": 18567,
+      "sha256": "4A0E85CE9B535F21D52F28926002D9A4368584D5FD411FB90F42DAC7F9FDBB4F"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Data/Migrations/20260929150632_AddStableOperationUsage.Designer.cs",
+      "bytes": 46123,
+      "sha256": "C252C36CD9C036C8CE6CC56AD7CE5C94EB264472B9A3DB352466B5D5B58B1049"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Data/Migrations/20260929161053_AddDeviceWordClientOrder.cs",
+      "bytes": 4478,
+      "sha256": "1F287BA4388F7D7A4427A4AF9ED2AB3300312D09F0A40BEB400EC8E56B52A28F"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Data/Migrations/20260929161053_AddDeviceWordClientOrder.Designer.cs",
+      "bytes": 46528,
+      "sha256": "234E9A5DED4EEEBBDEFB09DBA6D7E63A4809EACA6E318D9149892E0CFAEBB143"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Data/Migrations/AppDbContextModelSnapshot.cs",
+      "bytes": 46402,
+      "sha256": "55B6A08559AA61119F0FACE36F18288AC31CA5D49FC23C84BAB8CE4C7B4FF320"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Entities/Models/DeviceEntity.cs",
+      "bytes": 1455,
+      "sha256": "7D7A118062C256B90067580506CB2E23AA9D74FC601D47676E9C7A9DAF462FDF"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Entities/Models/DeviceWordEntity.cs",
+      "bytes": 1126,
+      "sha256": "ECDCE68FEAAEFD35938DD3BAE03C62FCDB515B358FE8D255264113F1B6E1937D"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Entities/Models/UsageAccountingEntities.cs",
+      "bytes": 1560,
+      "sha256": "2132E8450D0FEE822BB662A85D4A6DA37D6B55F4E35CAFCF8F9590FEF3DDC0EA"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Services/Dtos/DeviceWordDtos.cs",
+      "bytes": 1077,
+      "sha256": "0D0E8C76AC603FC7FDFFAD07C56D6E238EA1C5BECA3827151D719A20E4664E09"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Services/Dtos/Dtos.cs",
+      "bytes": 3269,
+      "sha256": "E0CC24E9D115B74730FDFDD582A7FBDAB14B83F429C1BB4A0E293B5C3A0970A7"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Services/Services/AccountAiUsageService.cs",
+      "bytes": 1892,
+      "sha256": "DCC0CC48EC5117BCA0BFCBF480092C89FB77F298C7E50231CA7C6A93CF3FEF91"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Services/Services/AccountEntitlementService.cs",
+      "bytes": 7203,
+      "sha256": "77C770E8F3D93917F033438F5D24F2D99634E60ABDD2031828D2C1934795D827"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Services/Services/AiRequestContextReader.cs",
+      "bytes": 6642,
+      "sha256": "BDCF7EB364AE6ED10EB6F89E00237CD1A09CC402570D8A28A7CD85DEF6422777"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Services/Services/AiUsageService.cs",
+      "bytes": 3955,
+      "sha256": "89601863B8202C8507F266D10B0B286E7A02973A053315A62CCDA4AE1951559E"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Services/Services/AnonymousPurchaseService.cs",
+      "bytes": 13335,
+      "sha256": "30271115E893D20EC222C20FEA8EE0AB16AA191D65149B624E767AF6ACB9B67A"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Services/Services/DeviceContextService.cs",
+      "bytes": 7306,
+      "sha256": "DE20B61E7026C6A57F70B37655D4681C04E6EB10BDC6EF32CB646731D78FFD53"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Services/Services/DeviceWordService.cs",
+      "bytes": 23946,
+      "sha256": "FB6E300918D9A43525F43C1B9609FAF66A294BAD06F462D91E365364FAE3AE29"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Services/Services/OperationQuotaService.cs",
+      "bytes": 6001,
+      "sha256": "784C13622748D81E84FD72F868F11F1C6D9981F4338E18E6938D11960F098277"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/src/Mavrylo.Services/Services/UsageSubjectResolver.cs",
+      "bytes": 10237,
+      "sha256": "DF6D3A8F8D6E00BBC047A641158DC833D15D8FA4B11D0E488BD3A4FB7ABC6A1B"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/tests/AiProtectionFilterTests.cs",
+      "bytes": 21346,
+      "sha256": "68E40CFBCC966E1C6BDF601812FB7906EE7EA61ED909F69C29220D45948771F2"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/tests/AiRequestInterpretationTests.cs",
+      "bytes": 22170,
+      "sha256": "C8D9115D85AA4BE9BEAB30A2C4FB970DEE91676BEA99E3DEB030587EFD497807"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/tests/AiSpendRouteTests.cs",
+      "bytes": 20169,
+      "sha256": "7F2040ADA887B2851F724F57EA24EDABBFE1C2E962084BE769F7F074D0038573"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/tests/AnonymousInstallationTests.cs",
+      "bytes": 25670,
+      "sha256": "8AA9FE1CDF6099AD0B80744305F807BB4F14610E9323BD52DF789A715763AEC3"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/tests/AppAttestCounterConcurrencyTests.cs",
+      "bytes": 12210,
+      "sha256": "E2F21C7B54C97BBC84FE0F71F40AC02BD70C9F378331657E9E90387178AE9D55"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/tests/DeviceControllerBootstrapTests.cs",
+      "bytes": 17464,
+      "sha256": "D213A234910B08D0EFD3F71A749BEB8CA06CD317541FAD65A438DEEADD8D9D2A"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/tests/DeviceWordOrderMigrationTests.cs",
+      "bytes": 3765,
+      "sha256": "D3DD5AA601596160342884F7F38048BEA7B9AEBF08F7F63F55C550A7B80BE0D6"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/tests/DeviceWordServiceTests.cs",
+      "bytes": 21886,
+      "sha256": "D83A0C6E3DD926826763A62438483BE5E37FBBAA0F2243044C429BF9C06D0BFC"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/tests/PaidAccessAuditRegressionTests.cs",
+      "bytes": 24225,
+      "sha256": "0247793FE337DD20D9499CD9508227587D268017991C2ADE32CCE341AA4BFF19"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/tests/PaidAccessBoundaryHttpTests.cs",
+      "bytes": 28123,
+      "sha256": "C185B650BDA3CDE1B5D8D34526310FCEAF2215B0A41584ADA0E4B267ED29E64F"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/tests/ReviewTranslationTests.cs",
+      "bytes": 17493,
+      "sha256": "CEBD080BE0F16EA3B4E2331D45A9492AB31A18C9487592922BD2E058596859E6"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/tests/SharedSubscriptionPostgresTests.cs",
+      "bytes": 34907,
+      "sha256": "B2363A8C7D2495EC11B673FFCEA7B501738F8E44781F3F0504B139C18CE41B72"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/tests/UsageMigrationPostgresTests.cs",
+      "bytes": 19376,
+      "sha256": "79621869975B436CE5A5A1D89F5DC73E01459914FCF682F3C4B17141A36D3F62"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/tests/UsageSubjectPostgresTests.cs",
+      "bytes": 25130,
+      "sha256": "16DE5A4B1DF87E1D0D46F77D3C7C80D90DDEA110580A13564CB6815D4C0EB98D"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/tests/TestSupport/ApiFactory.cs",
+      "bytes": 2163,
+      "sha256": "E77662272C1800534356BC6EDAE8D59487638A304747F88C25FFBE8B4368223B"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/tests/TestSupport/FakeAppAttestVerifier.cs",
+      "bytes": 1187,
+      "sha256": "BA7BC56BD72782D85392DF8CB6816A666214258AF1DF77D06E86CEC0AEA71222"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/tests/TestSupport/QuotaTestSupport.cs",
+      "bytes": 816,
+      "sha256": "B557E2A2798C26A42BB944BF7FC227B4C8456D8D01AC545A6D5404394E89C16F"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/tests/TestSupport/TestConfig.cs",
+      "bytes": 1868,
+      "sha256": "3A658AF51DCBEA68037D1D3CAACFBA2F57B8204E1716075B7DB78734605BADB1"
+    },
+    {
+      "path": "results/backend-partial-freeze-2/source/tests/TestSupport/TestDb.cs",
+      "bytes": 1063,
+      "sha256": "4E9C94713BBD1BBC9A9FF3FA61A394845054F54800903A4EF6C5EF30D026D31F"
+    },
+    {
+      "path": "results/ios-partial-freeze-d3aa559/accepted-base-to-current.diff",
+      "bytes": 60397,
+      "sha256": "C204DDCFBA0AB09BB4954D1D9DE5D5167505136A1AFC59BA1EE54FD4283698F2"
+    },
+    {
+      "path": "results/ios-partial-freeze-d3aa559/head.txt",
+      "bytes": 42,
+      "sha256": "15233FC89D32AEB497A7551B343865DE2CF7934E266B46F45963C440F1441730"
+    },
+    {
+      "path": "results/ios-partial-freeze-d3aa559/source-sha256.json",
+      "bytes": 1108,
+      "sha256": "8641FA5D4DF5949722220302FF7829B75DA5E026682A9F512451EE1094D083EE"
+    },
+    {
+      "path": "results/ios-partial-freeze-d3aa559/status.txt",
+      "bytes": 7,
+      "sha256": "BF9B5D9576F23812D3A58C66A57A3FD7616CB25FD90538CBCA5BD8B761F6C5FB"
+    },
+    {
+      "path": "results/ios-partial-freeze-d3aa559/source/FlashCardAITests/EntitlementMutationBoundaryTests.swift",
+      "bytes": 58944,
+      "sha256": "7E266DE6E062696CCB88DBC922C1FA04DB6EC30D5935F790E87695E2F6431793"
+    },
+    {
+      "path": "results/ios-partial-freeze-d3aa559/source/FlashCardAITests/ReviewCardRepositoryTests.swift",
+      "bytes": 303158,
+      "sha256": "32022E13FA470FD28A2F2B0592E3B2716E82026045E87A94422AA9BBA87CC0DA"
+    },
+    {
+      "path": "results/ios-partial-freeze-d3aa559/source/Infrastructure/DTOs/AIResponses.swift",
+      "bytes": 1312,
+      "sha256": "53E38D2B7803B24ED00C0904ECAC6D6F7E0C7E83F8834F581264AA5012022FC0"
+    },
+    {
+      "path": "results/ios-partial-freeze-d3aa559/source/Infrastructure/DTOs/DeviceWordDTOs.swift",
+      "bytes": 1249,
+      "sha256": "B614FB2DABE4DF3699B220081C116AAF0DAE0F0293BF21FA867B267769B2AECE"
+    },
+    {
+      "path": "results/ios-partial-freeze-d3aa559/source/Infrastructure/Networking/APIClient.swift",
+      "bytes": 26396,
+      "sha256": "B1E0AC812A5DF59DCC43C5CA05B0450431375C248E1F1B7B1202483CFBD15C45"
+    },
+    {
+      "path": "results/ios-partial-freeze-d3aa559/source/Infrastructure/Repositories/WordRepository.swift",
+      "bytes": 180460,
+      "sha256": "02B7D862042DCDAA7048CB7EDE45E87A2CEB74021271E743A3CB65C78768CE34"
+    },
+    {
+      "path": "results/ios-partial-freeze-d3aa559/source/Presentation/Features/Home/ViewModels/SecondaryReviewModel.swift",
+      "bytes": 6329,
+      "sha256": "513F2E151716DDF44BD32170FC99BB47C2F7AC8631414E3E57D38566EE1F4269"
+    },
+    {
+      "path": "results/mac/36595118979-paid-access-red-23aea6a/cases.json",
+      "bytes": 24167,
+      "sha256": "D03C77B1307541E2E2948FE972E9292162CD2E4EEF95E2515B7D7DE41F54E11F"
+    },
+    {
+      "path": "results/mac/36595118979-paid-access-red-23aea6a/evidence-hashes.json",
+      "bytes": 479926,
+      "sha256": "7D5818957DC5CF1B9C3D3469DF398A58F6B4FCB5C4C3D5D9CDA3E6D424474BF1"
+    },
+    {
+      "path": "results/mac/36595118979-paid-access-red-23aea6a/full.log",
+      "bytes": 2446786,
+      "sha256": "564D8321A322AB0A4C7AC866211CCE77507F527E95101FD1394AA86EC1A53667"
+    },
+    {
+      "path": "results/mac/36595118979-paid-access-red-23aea6a/run.json",
+      "bytes": 1865,
+      "sha256": "C594114CBFAB117E40012DBB3696745B1284BC226CB5C3D2AA6D9D61867A66C8"
+    },
+    {
+      "path": "results/mac/36595118979-paid-access-red-23aea6a/watch.log",
+      "bytes": 3118,
+      "sha256": "DCC66B8D50A89CD64EB5BB1EBDC2BB7E0E61914CC9B38D7049EAA63E69F1C130"
+    },
+    {
+      "path": "results/mac/36596850548-paid-access-green-17bc982/cases.json",
+      "bytes": 24167,
+      "sha256": "77B9E42306B7340F22925132A1CBE7F495411F6C53201EC0172FD4FA4A082801"
+    },
+    {
+      "path": "results/mac/36596850548-paid-access-green-17bc982/evidence-hashes.json",
+      "bytes": 78269,
+      "sha256": "0A843AD7D670C243409AA0D8294508E8D49CB06C1A2FE60EF0D619F008E1AE3A"
+    },
+    {
+      "path": "results/mac/36596850548-paid-access-green-17bc982/full.log",
+      "bytes": 2445768,
+      "sha256": "93F488EAEDC51729B4FF2181969D61EA7B557E6B3C42DC17040E65082EFC7D8B"
+    },
+    {
+      "path": "results/mac/36596850548-paid-access-green-17bc982/run.json",
+      "bytes": 1865,
+      "sha256": "BF97E54C912D127B113F8433AC015ECCF45FCCDC50B3E95A40B2E4833BF6C467"
+    },
+    {
+      "path": "results/mac/36597861142-paid-access-order-red-3611ca7/cases.json",
+      "bytes": 24373,
+      "sha256": "DFDD5E407FE734717C8F86636E0CF3EB287327A1F43E77F132B55AD97AE4004D"
+    },
+    {
+      "path": "results/mac/36597861142-paid-access-order-red-3611ca7/evidence-hashes.json",
+      "bytes": 478674,
+      "sha256": "402539ED31D5575FD9E287589303343DE06481632537300AA76E666E7691A5FB"
+    },
+    {
+      "path": "results/mac/36597861142-paid-access-order-red-3611ca7/full.log",
+      "bytes": 2448787,
+      "sha256": "AD68A5741B00B4685695F1E84BD6559780A20081B5986D28584D70A7C08D0DA7"
+    },
+    {
+      "path": "results/mac/36597861142-paid-access-order-red-3611ca7/run.json",
+      "bytes": 1865,
+      "sha256": "CA8D720EC0DD60DBA1E5292F71108EFB6CAE328098C9A311C2401818BC1EF132"
+    },
+    {
+      "path": "results/mac/36598610403-paid-access-order-red-a88e517/cases.json",
+      "bytes": 24373,
+      "sha256": "A58400F5B5481A3F61ECBDF61D267CD50AE5BFDE11059904A02D8C1AE6B17E92"
+    },
+    {
+      "path": "results/mac/36598610403-paid-access-order-red-a88e517/evidence-hashes.json",
+      "bytes": 473652,
+      "sha256": "DB8F8DA103ED7816ED2A061FD1C27EF8449BEBF12B7B9AA5C5B3E8F71145F890"
+    },
+    {
+      "path": "results/mac/36598610403-paid-access-order-red-a88e517/full.log",
+      "bytes": 2448067,
+      "sha256": "48E7DD6BB8488C335907CE02EB83069162ADC560B9A0348BF974E74DF91DBC46"
+    },
+    {
+      "path": "results/mac/36598610403-paid-access-order-red-a88e517/run.json",
+      "bytes": 1865,
+      "sha256": "8DBB9D7D06FE2DD6BA4FF68B9283CF33D69DADE91B5ED941D30DF39A6196D8F7"
+    },
+    {
+      "path": "results/mac/36599359219-existing-delete-red-daf74a0/cases.json",
+      "bytes": 42469,
+      "sha256": "C9057135F0F17F0D74EE55A1450DF8DD7E075C22E6208D07939A677F9DA562AF"
+    },
+    {
+      "path": "results/mac/36599359219-existing-delete-red-daf74a0/evidence-hashes.json",
+      "bytes": 533178,
+      "sha256": "0057A604E647CA72380121C4774DEAAC7769C2E0CE4AA201D122BBCE359D9875"
+    },
+    {
+      "path": "results/mac/36599359219-existing-delete-red-daf74a0/full.log",
+      "bytes": 2492941,
+      "sha256": "3CCA3F0A7AC05D97E999E585E47484EEC924FAB3E2248A8EFD67CDB133A113FB"
+    },
+    {
+      "path": "results/mac/36599359219-existing-delete-red-daf74a0/run.json",
+      "bytes": 1865,
+      "sha256": "3D8E16A14C7BE424A1D5E7CB0E61DC4809DAB2BA9224553CB331871583BAAB73"
+    },
+    {
+      "path": "results/mac/36600634654-full-blocked-d3aa559/annotations.json",
+      "bytes": 823,
+      "sha256": "40EAA5D80F38B1CD5A179FF9A00CDBD52A9B20F2884C77560A187D12BA8B286F"
+    },
+    {
+      "path": "results/mac/36600634654-full-blocked-d3aa559/evidence-hashes.json",
+      "bytes": 424,
+      "sha256": "84A37EAD4B8A9702CFBA9C1679DFE8872AA072544B4277BA6BB71DBFAFD1A671"
+    },
+    {
+      "path": "results/mac/36600634654-full-blocked-d3aa559/job.json",
+      "bytes": 912,
+      "sha256": "11F9BE1ACD54E8C628003539010AF9EDB018D264E6C9F0F87B224F5681FF2495"
+    },
+    {
+      "path": "results/mac/36600634654-full-blocked-d3aa559/run.json",
+      "bytes": 465,
+      "sha256": "0A50D6082399936FACFA0D2EEEB6CDEC7C12539F9362405F120D63428DDE6EDD"
+    },
+    {
+      "path": "sdd/task-6B-report.md",
+      "bytes": 7749,
+      "sha256": "A111C47A6FE631934DC4D30ABF3D35331070D59FA47ABDD8FD32AC06EE1802C3"
+    },
+    {
+      "path": "sdd/task-6B-word-order-brief.md",
+      "bytes": 11158,
+      "sha256": "10B216B622113FF77F028989806BBC08DB8FD7570D9267C84584EA3AE2BA7AED"
+    },
+    {
+      "path": "sdd/progress.md",
+      "bytes": 187382,
+      "sha256": "C9A605F28282F5AB23ABAA52E7B56683949D47A2251D744712A6A2E07D8E9E05"
+    },
+    {
+      "path": "sdd/additional-agent-authorization.md",
+      "bytes": 2104,
+      "sha256": "15BCE78CF148AD5A4DC3DF878B72AC4CCA34A424377AF655D0B1EB75ED4A5D04"
+    },
+    {
+      "path": "sdd/final-review-carryover.md",
+      "bytes": 10320,
+      "sha256": "42D2DA711C4830030704255DA1B8D7BAF94AC3E82E7D8AF4A5ADDEA79509BAB3"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-09-28-paid-access-current-state.md",
+      "bytes": 23733,
+      "sha256": "F31E08197D479BF0443C468472516A721B65B0609FC03B73C2F58345C8417718"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-09-27-paid-access-hardening.md",
+      "bytes": 82804,
+      "sha256": "900264124D06AFD768A1ADE0D62E7724AA7971901D8E57D64A6B46FFFA8BF68F"
+    },
+    {
+      "path": "docs/paid-access-release-checklist.md",
+      "bytes": 17904,
+      "sha256": "537F0C2A03496269532BFAA9C185599C25FE395B5AA6EABC9FC04DE0F7003410"
+    }
+  ]
+}

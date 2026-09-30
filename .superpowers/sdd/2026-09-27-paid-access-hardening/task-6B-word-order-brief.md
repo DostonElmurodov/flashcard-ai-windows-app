@@ -52,3 +52,5 @@ Backend `DeviceWordEntity`, `DeviceEntity`, `AppDbContext`, additive `AddDeviceW
 - [ ] Simplify, fresh scoped review, fix/rerun and commit. State remaining ambiguous legacy mappings honestly. Broader AccountSync redesign, cross-device content dedup or changed ten-card product policy needs a separate task, not inferred here.
 
 Rough local effort6–10h including duplicate-ID migration and client ordering evidence; independently reviewable from6A. Real legacy-library inventory is an external cutover gate. Keep saved content intact if exact historical identity/order cannot be established.
+
+Approved policy amendment: see restored-card-policy-approved.md. Unknown metadata-only materialization consumes a new free server content slot; alleged old timestamp/first-ten eligibility cannot bypass the ten occupied non-metadata slots. Preserve local restored content. This supersedes earlier ambiguous first-ten-only materialization wording.

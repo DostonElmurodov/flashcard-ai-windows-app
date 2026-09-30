@@ -1,0 +1,21 @@
+**No actionable new findings in the supplied fix-round scope. All five previous findings are addressed at source level; iOS runtime closure remains open.** Review used only the supplied material, without tools or independent execution.
+
+| Previous finding | Closure assessment |
+|---|---|
+| Repeated explicit AI ID creates duplicate reservations | **Closed in source.** `src/Mavrylo.Services/Services/DeviceWordService.cs:259,274–280,300–313,325–328` validates explicit IDs, rejects reuse with different semantics, and stores the exact ID on the reservation. Repeated matching requests reuse that row; subsequent upsert resolves it directly. Added service tests cover repeat→save, word/language conflicts, and blank IDs; the HTTP conflict test asserts zero provider calls and quota rows. |
+| Incomplete ordering incorrectly returns 402 | **Closed in source.** `Filters/AiProtectionFilter.cs:161–180` maps reconciliation failures from both primary and review paths to **409 with `code: word_order_reconciliation_required`**, before operation quota at line 195 or provider execution. The added two-route HTTP regression checks status, code, retained rows, and zero quota/provider activity. |
+| Blank delete ID falls back to another saved identity | **Closed in source.** `DeviceWordService.cs:232,409–412` validates every non-null delete ID and restricts explicit lookup to that ID. Empty/whitespace tests verify preservation of the saved row. Null legacy lookup remains separate. |
+| Local first-ten exclusion persists a denial | **Closed in the reviewed branch.** `Infrastructure/Repositories/WordRepository.swift:3673–3687` rechecks snapshot and access after reconciliation and returns on temporary exclusion without writing `access_denial`. Lines 3710–3714 also guard Boolean-false denial handling against stale snapshots and inactive access. Source regressions cover eligibility recovery and expiry during reconciliation; they remain unexecuted. |
+| Canonically equivalent IDs share lock membership | **Closed for supplied lock computation and consumers.** `WordRepository.swift:4–18,3505–3559` uses UTF-8 `Data` membership. `ReviewCardRepository.swift:160,275,791,892,914` carries that type through review checks. The composed/decomposed tenth/eleventh regression verifies distinct membership and dashboard locks. |
+
+The approved materialization rule remains intact at `DeviceWordService.cs:176–179`: under the library transaction lock, active non-metadata rows—including reservations—consume capacity. Separate first-ten checks and inactive-content denial remain present. This delta does not change AccountSync, fabricate paid history, or delete retained local content. No regression in the supplied 10A/6A boundaries is demonstrated.
+
+The local-preflight fix is separate from transport handling: under the supplied HTTP contract, **402 throws before decoding `accepted:false`** and therefore does not enter the Boolean-false marker branch.
+
+The deadline adjustment at `tests/AiSpendRouteTests.cs:248–254` is a bounded fixture change. Ordinary fake-provider cases now receive 10 seconds; explicit 500 ms and 5-second timeout controls remain. Positive accounting, settlement, cache, and provider-count assertions are preserved. The supplied 24/24 and 807/807 results support this configuration, but **do not prove the earlier 503 was caused by deadline exhaustion**.
+
+**Backend disposition:** Accept this scoped fix round as a dependency for server-only Task10B, based on supplied source and reported **807/807, zero skips, Release zero errors, and pinned EF no drift**. This does not establish Task10B migration readiness or production readiness.
+
+**iOS disposition:** Source-only acceptance of these corrections; current-candidate Mac tests and Release compilation remain required. The shown Swift changes are structurally plausible, but the excerpts omit complete initializer call sites, test helpers, and transport implementation, so whole-target compilation and transport behavior cannot be independently certified here. The historical 685/686 run and subsequent zero-step billing-blocked attempt provide no runtime validation of this candidate.
+
+**Whole Task6B acceptance and release remain open.**

@@ -1,0 +1,435 @@
+diff --git a/FlashCardAITests/AnonymousPurchaseRestoreTests.swift b/FlashCardAITests/AnonymousPurchaseRestoreTests.swift
+index bf7cb54..04753c0 100644
+--- a/FlashCardAITests/AnonymousPurchaseRestoreTests.swift
++++ b/FlashCardAITests/AnonymousPurchaseRestoreTests.swift
+@@ -613,6 +613,62 @@ final class AnonymousPurchaseRestoreTests: XCTestCase {
+         XCTAssertTrue(source.finished.isEmpty)
+     }
+ 
++    @MainActor
++    func testRestoreKeepsEarlierReconciliationGuidanceAfterAnotherOriginalSucceeds() async {
++        let source = reconciliationChainSource()
++        let (service, store, cleanup) = service(source: source)
++        defer { cleanup() }
++        var submitted: [String] = []
++        RestoreProofURLProtocol.respond = { request in
++            XCTAssertEqual(request.url?.path, "/owlai/iap/restore")
++            let jws = try XCTUnwrap(Self.json(request)["jws_transaction"])
++            submitted.append(jws)
++            return Self.reconciliationChainReply(for: jws)
++        }
++
++        let restored = await service.restore()
++        XCTAssertFalse(restored, "An unresolved reconciliation cannot be reported as a clean Restore")
++        XCTAssertEqual(source.syncCount, 1)
++        XCTAssertEqual(submitted, ["current-C-jws", "unfinished-A-jws", "unfinished-B-jws"])
++        XCTAssertEqual(source.finished, ["current-C", "unfinished-B"])
++        XCTAssertEqual(store.entitlement.status, "premium")
++        XCTAssertEqual(store.entitlement.productId, StoreKitService.yearlyProductId)
++        XCTAssertTrue(store.canUseAI, "Independent valid B remains usable")
++        XCTAssertTrue(service.errorText?.localizedCaseInsensitiveContains("support") == true,
++            "B's success cannot erase A's unresolved reconciliation guidance")
++    }
++
++    @MainActor
++    func testForegroundRefreshKeepsEarlierReconciliationGuidanceAfterOtherSuccessAndToken() async {
++        let source = reconciliationChainSource()
++        let (service, store, cleanup) = service(source: source)
++        defer { cleanup() }
++        var submitted: [String] = []
++        var tokenRequests = 0
++        RestoreProofURLProtocol.respond = { request in
++            if request.url?.path == "/owlai/iap/token" {
++                tokenRequests += 1
++                return (200, Self.response(status: "premium", authority: "mobile_restore",
++                    productId: StoreKitService.yearlyProductId))
++            }
++            XCTAssertEqual(request.url?.path, "/owlai/iap/restore")
++            let jws = try XCTUnwrap(Self.json(request)["jws_transaction"])
++            submitted.append(jws)
++            return Self.reconciliationChainReply(for: jws)
++        }
++
++        await service.refreshTokenAndEntitlement()
++        XCTAssertEqual(source.syncCount, 0, "Automatic checks never invoke AppStore.sync")
++        XCTAssertEqual(submitted, ["current-C-jws", "unfinished-A-jws", "unfinished-B-jws"])
++        XCTAssertEqual(source.finished, ["current-C", "unfinished-B"])
++        XCTAssertEqual(tokenRequests, 1)
++        XCTAssertEqual(store.entitlement.status, "premium")
++        XCTAssertEqual(store.entitlement.productId, StoreKitService.yearlyProductId)
++        XCTAssertTrue(store.canUseAI, "Independent valid B remains usable")
++        XCTAssertTrue(service.errorText?.localizedCaseInsensitiveContains("support") == true,
++            "Token success cannot erase A's unresolved reconciliation guidance")
++    }
++
+     @MainActor
+     func testEmptySuccessfulAppleCheckAndTokenRefreshHaveNoError() async {
+         let source = FakeRestoreEvidenceSource()
+@@ -1034,18 +1090,205 @@ final class AnonymousPurchaseRestoreTests: XCTestCase {
+         XCTAssertNil(service.errorText)
+     }
+ 
++    @MainActor
++    func testNewerPendingProcessorStillAppliesAfterOlderDiscoveryEntersProcessorLate() async {
++        let source = FakeRestoreEvidenceSource()
++        let olderEnumerating = expectation(description: "Older Apple enumeration is held")
++        let newerAtBackend = expectation(description: "Newer processor has reached fake backend")
++        var releaseEnumeration: CheckedContinuation<[ApplePurchaseEvidence], Never>?
++        source.currentOperation = {
++            olderEnumerating.fulfill()
++            return await withCheckedContinuation { releaseEnumeration = $0 }
++        }
++        let (service, store, cleanup) = service(source: source)
++        defer { cleanup() }
++        let replies = DeferredRestoreHTTP()
++        RestoreProofURLProtocol.respondAsync = { request, reply in
++            XCTAssertEqual(request.url?.path, "/owlai/iap/restore")
++            replies.receive(reply, firstArrived: { newerAtBackend.fulfill() },
++                laterBody: Self.response(status: "expired_paid", authority: "mobile_restore"))
++        }
++        let olderEvidence = ApplePurchaseEvidence(transactionId: "older-A",
++            originalTransactionId: "original-A", productId: StoreKitService.monthlyProductId,
++            jwsTransaction: "older-jws", jwsAppTransaction: "signed-app-transaction",
++            deviceVerificationId: deviceId)
++        let newerEvidence = ApplePurchaseEvidence(transactionId: "newer-B",
++            originalTransactionId: "original-B", productId: StoreKitService.yearlyProductId,
++            jwsTransaction: "newer-jws", jwsAppTransaction: "signed-app-transaction",
++            deviceVerificationId: deviceId)
++        let older = Task { await service.discoverApplePurchases(explicitRestore: false) }
++        await fulfillment(of: [olderEnumerating], timeout: 2)
++        let newer = Task { try await service.processPurchaseEvidence(newerEvidence) }
++        await fulfillment(of: [newerAtBackend], timeout: 2)
++        guard let releaseEnumeration else {
++            XCTFail("Older enumeration did not install its fake release gate")
++            return
++        }
++        releaseEnumeration.resume(returning: [olderEvidence])
++        let olderAcknowledged = await older.value
++        XCTAssertTrue(olderAcknowledged)
++        XCTAssertEqual(store.entitlement.status, "expired_paid",
++            "The old history reply arrives before the newer premium reply")
++        guard replies.releaseFirst(status: 200,
++            body: Self.response(status: "premium", authority: "mobile_restore",
++                productId: StoreKitService.yearlyProductId)) else {
++            XCTFail("Newer processor did not install its fake backend reply gate")
++            return
++        }
++        do {
++            let outcome = try await newer.value
++            XCTAssertTrue(outcome.backendAcknowledged)
++            XCTAssertTrue(outcome.appliedToCurrentSession,
++                "Processor arrival order cannot discard newer captured authority")
++        } catch { XCTFail("Newer fake proof should be acknowledged: \(error)") }
++        XCTAssertEqual(Set(source.finished), Set(["older-A", "newer-B"]))
++        XCTAssertEqual(replies.requests, 2)
++        XCTAssertEqual(store.entitlement.status, "premium")
++        XCTAssertTrue(store.canUseAI)
++    }
++
++    @MainActor
++    func testLateEnumerationErrorCannotPassAnAuthorityCheckSuspendedOnAccountGeneration() async {
++        let source = FakeRestoreEvidenceSource()
++        source.currentError = ApplePurchaseEvidenceError.unverifiedAppTransaction
++        let generation = UUID()
++        let olderCheckingGeneration = expectation(description: "Old error passed early authority check")
++        var generationCalls = 0
++        var releaseGeneration: CheckedContinuation<UUID, Never>?
++        let (service, store, cleanup) = service(source: source, accountSessionGeneration: {
++            generationCalls += 1
++            if generationCalls == 2 {
++                olderCheckingGeneration.fulfill()
++                return await withCheckedContinuation { releaseGeneration = $0 }
++            }
++            return generation
++        })
++        defer { cleanup() }
++        RestoreProofURLProtocol.respond = { request in
++            XCTAssertEqual(request.url?.path, "/owlai/iap/restore")
++            return (200, Self.response(status: "premium", authority: "mobile_restore"))
++        }
++        let older = Task { await service.discoverApplePurchases(explicitRestore: false) }
++        await fulfillment(of: [olderCheckingGeneration], timeout: 2)
++        let newer = try? await service.processPurchaseEvidence(evidence())
++        XCTAssertEqual(newer?.appliedToCurrentSession, true)
++        XCTAssertNil(service.errorText)
++        guard let releaseGeneration else {
++            XCTFail("Older error did not suspend at its final generation lookup")
++            return
++        }
++        releaseGeneration.resume(returning: generation)
++        let olderAcknowledged = await older.value
++        XCTAssertFalse(olderAcknowledged)
++        XCTAssertEqual(store.entitlement.status, "premium")
++        XCTAssertNil(service.errorText,
++            "The old error must recheck authority after its final account-generation await")
++    }
++
++    @MainActor
++    func testOldProcessorCannotPersistTokenAfterFinalAuthorityCheckSuspends() async {
++        let source = FakeRestoreEvidenceSource()
++        let generation = UUID()
++        let olderCheckingGeneration = expectation(description: "Old success passed early authority check")
++        var generationCalls = 0
++        var releaseGeneration: CheckedContinuation<UUID, Never>?
++        var persistedTokens: [String] = []
++        let (service, store, cleanup) = service(source: source,
++            persistToken: { token, _ in persistedTokens.append(token) },
++            accountSessionGeneration: {
++                generationCalls += 1
++                if generationCalls == 2 {
++                    olderCheckingGeneration.fulfill()
++                    return await withCheckedContinuation { releaseGeneration = $0 }
++                }
++                return generation
++            })
++        defer { cleanup() }
++        RestoreProofURLProtocol.respond = { request in
++            XCTAssertEqual(request.url?.path, "/owlai/iap/restore")
++            let jws = try XCTUnwrap(Self.json(request)["jws_transaction"])
++            if jws == "older-jws" {
++                return (200, Self.response(status: "expired_paid", authority: "mobile_restore",
++                    accessToken: "old-token"))
++            }
++            XCTAssertEqual(jws, "newer-jws")
++            return (200, Self.response(status: "premium", authority: "mobile_restore",
++                accessToken: "new-token"))
++        }
++        let olderEvidence = ApplePurchaseEvidence(transactionId: "older-A",
++            originalTransactionId: "original-A", productId: StoreKitService.monthlyProductId,
++            jwsTransaction: "older-jws", jwsAppTransaction: "signed-app-transaction",
++            deviceVerificationId: deviceId)
++        let newerEvidence = ApplePurchaseEvidence(transactionId: "newer-B",
++            originalTransactionId: "original-B", productId: StoreKitService.monthlyProductId,
++            jwsTransaction: "newer-jws", jwsAppTransaction: "signed-app-transaction",
++            deviceVerificationId: deviceId)
++        let older = Task { try await service.processPurchaseEvidence(olderEvidence) }
++        await fulfillment(of: [olderCheckingGeneration], timeout: 2)
++        let newer = try? await service.processPurchaseEvidence(newerEvidence)
++        XCTAssertEqual(newer?.appliedToCurrentSession, true)
++        XCTAssertEqual(persistedTokens, ["new-token"])
++        guard let releaseGeneration else {
++            XCTFail("Older success did not suspend at its final generation lookup")
++            return
++        }
++        releaseGeneration.resume(returning: generation)
++        do {
++            let outcome = try await older.value
++            XCTAssertTrue(outcome.backendAcknowledged)
++            XCTAssertFalse(outcome.appliedToCurrentSession)
++        } catch { XCTFail("Old fake proof should remain durably acknowledged: \(error)") }
++        XCTAssertEqual(Set(source.finished), Set(["older-A", "newer-B"]))
++        XCTAssertEqual(persistedTokens, ["new-token"],
++            "A stale grant must not reach token storage before EntitlementStore rejects it")
++        XCTAssertEqual(store.entitlement.status, "premium")
++    }
++
+     private func evidence() -> ApplePurchaseEvidence {
+         ApplePurchaseEvidence(transactionId: "transaction-1", originalTransactionId: "original-1",
+             productId: StoreKitService.monthlyProductId, jwsTransaction: "signed-transaction",
+             jwsAppTransaction: "signed-app-transaction", deviceVerificationId: deviceId)
+     }
+ 
++    private func reconciliationChainSource() -> FakeRestoreEvidenceSource {
++        let source = FakeRestoreEvidenceSource()
++        source.current = [ApplePurchaseEvidence(transactionId: "current-C",
++            originalTransactionId: "original-C", productId: StoreKitService.monthlyProductId,
++            jwsTransaction: "current-C-jws", jwsAppTransaction: "signed-app-transaction",
++            deviceVerificationId: deviceId)]
++        source.unfinished = [
++            ApplePurchaseEvidence(transactionId: "unfinished-A", originalTransactionId: "original-A",
++                productId: StoreKitService.monthlyProductId, jwsTransaction: "unfinished-A-jws",
++                jwsAppTransaction: "signed-app-transaction", deviceVerificationId: deviceId),
++            ApplePurchaseEvidence(transactionId: "unfinished-B", originalTransactionId: "original-B",
++                productId: StoreKitService.yearlyProductId, jwsTransaction: "unfinished-B-jws",
++                jwsAppTransaction: "signed-app-transaction", deviceVerificationId: deviceId)
++        ]
++        return source
++    }
++
++    private static func reconciliationChainReply(for jws: String) -> (Int, Data) {
++        switch jws {
++        case "current-C-jws":
++            return (200, response(status: "premium", authority: "mobile_restore"))
++        case "unfinished-A-jws":
++            return (503, Data(#"{"code":"subscription_reconciliation_required"}"#.utf8))
++        case "unfinished-B-jws":
++            return (200, response(status: "premium", authority: "mobile_restore",
++                productId: StoreKitService.yearlyProductId))
++        default:
++            XCTFail("Unexpected fake StoreKit evidence: \(jws)")
++            return (500, Data())
++        }
++    }
++
+     @MainActor
+     private func service(source: FakeRestoreEvidenceSource,
+                           purchaseOperation: ((String, UUID) async throws -> PurchaseOperationResult)? = nil,
+                           initialPurchaseContext: UUID? = nil,
+                           accountProfile: @escaping () async -> AccountProfileDTO? = { nil },
+                           refreshAccount: @escaping () async -> Void = {},
++                          persistToken: @escaping (String, Int) throws -> Void = { _, _ in },
+                           installationKeyId: @escaping () -> String? = { "fake-key" },
+                          accountSessionGeneration: @escaping () async -> UUID = {
+                              UUID(uuidString: "99999999-9999-9999-9999-999999999999")!
+@@ -1057,7 +1300,7 @@ final class AnonymousPurchaseRestoreTests: XCTestCase {
+         var purchaseContext = initialPurchaseContext
+         let service = StoreKitService(api: api(), transactionUpdates: NoRestoreTransactionUpdates(),
+             entitlements: store, accountProfile: accountProfile, refreshAccount: refreshAccount,
+-            persistToken: { _, _ in },
++            persistToken: persistToken,
+             evidenceSource: source, purchaseOperation: purchaseOperation,
+             installationKeyId: installationKeyId,
+             accountSessionGeneration: accountSessionGeneration,
+@@ -1088,8 +1331,9 @@ final class AnonymousPurchaseRestoreTests: XCTestCase {
+     private static let freeTokenResponse = Data(#"{"access_token":"free-grant","expires_in":3600,"entitlement":{"status":"free","product_id":null,"expires_at":null,"is_trial":false,"auto_renew":false,"was_ever_paid":false,"resolution_source":"device","purchase_is_linked":false}}"#.utf8)
+ 
+     private static func response(status: String, authority: String,
+-                                 productId: String = StoreKitService.monthlyProductId) -> Data {
+-        Data("{\"access_token\":\"fake-grant\",\"expires_in\":3600,\"purchase_authority\":\"\(authority)\",\"mobile_grant_expires_at\":\"2099-01-01T00:00:00Z\",\"entitlement\":{\"status\":\"\(status)\",\"product_id\":\"\(productId)\",\"expires_at\":\"2099-01-01T00:00:00Z\",\"is_trial\":false,\"auto_renew\":true,\"was_ever_paid\":true,\"resolution_source\":\"\(authority == "mobile_restore" ? "mobile_restore" : "device")\",\"purchase_is_linked\":false}}".utf8)
++                                 productId: String = StoreKitService.monthlyProductId,
++                                 accessToken: String = "fake-grant") -> Data {
++        Data("{\"access_token\":\"\(accessToken)\",\"expires_in\":3600,\"purchase_authority\":\"\(authority)\",\"mobile_grant_expires_at\":\"2099-01-01T00:00:00Z\",\"entitlement\":{\"status\":\"\(status)\",\"product_id\":\"\(productId)\",\"expires_at\":\"2099-01-01T00:00:00Z\",\"is_trial\":false,\"auto_renew\":true,\"was_ever_paid\":true,\"resolution_source\":\"\(authority == "mobile_restore" ? "mobile_restore" : "device")\",\"purchase_is_linked\":false}}".utf8)
+     }
+ 
+     private static func json(_ request: URLRequest) throws -> [String: String] {
+diff --git a/Infrastructure/Purchases/StoreKitService.swift b/Infrastructure/Purchases/StoreKitService.swift
+index 72b6da3..d03adc6 100644
+--- a/Infrastructure/Purchases/StoreKitService.swift
++++ b/Infrastructure/Purchases/StoreKitService.swift
+@@ -128,6 +128,7 @@ final class StoreKitService: ObservableObject {
+               entitlements.isCurrentAuthorityRequest(operation.authority) else { return false }
+         return await accountSessionGeneration() == operation.accountGeneration
+             && installationKeyId() == operation.keyId
++            && entitlements.isCurrentAuthorityRequest(operation.authority)
+     }
+ 
+     private func continuingOperation(after operation: OperationSnapshot) async -> OperationSnapshot? {
+@@ -287,7 +288,8 @@ final class StoreKitService: ObservableObject {
+                     if !obsoleteMismatch {
+                         if firstFailure == nil { firstFailure = error }
+                         if obsoleteInRestoredChain, busyRevision == busyID,
+-                           let reporting = await continuingOperation(after: activeOperation) {
++                           let reporting = await continuingOperation(after: activeOperation),
++                           busyRevision == busyID {
+                             activeOperation = reporting
+                             if apiError?.isPaidAccessDenial == true {
+                                 entitlements.closePaidMutationConfirmation(request: reporting.authority)
+@@ -297,8 +299,15 @@ final class StoreKitService: ObservableObject {
+                     }
+                 }
+             }
++            if let firstFailure, busyRevision == busyID,
++               let reporting = await continuingOperation(after: activeOperation),
++               busyRevision == busyID {
++                // Another original's valid grant does not resolve this failed Apple proof.
++                activeOperation = reporting
++                errorText = firstFailure.localizedDescription
++            }
+             if explicitRestore && !acknowledged && firstFailure == nil && busyRevision == busyID,
+-               await stillCurrent(activeOperation) {
++               await stillCurrent(activeOperation), busyRevision == busyID {
+                 errorText = "No Apple purchase was found."
+             }
+             return AppleDiscoveryResult(backendAcknowledged: acknowledged,
+@@ -311,7 +320,7 @@ final class StoreKitService: ObservableObject {
+                                             appliedToCurrentSession: false, failure: nil,
+                                             operation: operation)
+             }
+-            if busyRevision == busyID, await stillCurrent(operation) {
++            if busyRevision == busyID, await stillCurrent(operation), busyRevision == busyID {
+                 errorText = error.localizedDescription
+             }
+             return AppleDiscoveryResult(backendAcknowledged: false,
+@@ -381,7 +390,9 @@ final class StoreKitService: ObservableObject {
+                case .userCancelled = storeKitError { return false }
+             if !processorStarted && busyRevision == busyID {
+                 if let operation {
+-                    if await stillCurrent(operation) { errorText = error.localizedDescription }
++                    if await stillCurrent(operation), busyRevision == busyID {
++                        errorText = error.localizedDescription
++                    }
+                 } else {
+                     errorText = error.localizedDescription
+                 }
+@@ -398,8 +409,6 @@ final class StoreKitService: ObservableObject {
+     private func processPurchaseEvidence(
+         _ evidence: ApplePurchaseEvidence, operation: OperationSnapshot
+     ) async throws -> PurchaseProcessingOutcome {
+-        let refreshID = UUID()
+-        refreshRevision = refreshID
+         guard let keyId = installationKeyId() else { throw APIError.noBearerToken }
+         let authorityRequest = operation.authority
+         do {
+@@ -424,8 +433,7 @@ final class StoreKitService: ObservableObject {
+             }
+             // The backend has durably resolved this transaction, even if this UI request is stale.
+             await evidenceSource?.finish(transactionId: evidence.transactionId)
+-            guard refreshRevision == refreshID,
+-                   installationKeyId() == keyId,
++            guard installationKeyId() == keyId,
+                    await stillCurrent(operation) else {
+                 return PurchaseProcessingOutcome(backendAcknowledged: true, appliedToCurrentSession: false)
+             }
+@@ -441,7 +449,7 @@ final class StoreKitService: ObservableObject {
+             if applied { errorText = nil }
+             return PurchaseProcessingOutcome(backendAcknowledged: true, appliedToCurrentSession: applied)
+         } catch {
+-            if refreshRevision == refreshID, installationKeyId() == keyId,
++            if installationKeyId() == keyId,
+                await stillCurrent(operation) {
+                 if let apiError = error as? APIError, apiError.isPaidAccessDenial {
+                     entitlements.closePaidMutationConfirmation(request: authorityRequest)
+@@ -492,7 +500,9 @@ final class StoreKitService: ObservableObject {
+         guard discovery.failure == nil, discovery.appliedToCurrentSession,
+               installationKeyId() == operation.keyId,
+               entitlements.isLastAcceptedAuthorityRequest(operation.authority),
+-              await accountSessionGeneration() == operation.accountGeneration else { return false }
++              await accountSessionGeneration() == operation.accountGeneration,
++              installationKeyId() == operation.keyId,
++              entitlements.isLastAcceptedAuthorityRequest(operation.authority) else { return false }
+         return ["premium", "trial", "grace"].contains(entitlements.entitlement.status)
+     }
+ 
+@@ -512,17 +522,20 @@ final class StoreKitService: ObservableObject {
+         let refreshID = UUID()
+         refreshRevision = refreshID
+         let profile = await accountProfile()
+-        guard refreshRevision == refreshID, await stillCurrent(operation) else { return }
++        guard refreshRevision == refreshID, await stillCurrent(operation),
++              refreshRevision == refreshID else { return }
+         do {
+             let response = try await apiClient.iapToken()
+-            guard refreshRevision == refreshID, await stillCurrent(operation) else { return }
++            guard refreshRevision == refreshID, await stillCurrent(operation),
++                  refreshRevision == refreshID else { return }
+             try persistToken(response.accessToken, response.expiresIn)
+             entitlements.update(response.entitlement, accountAuthorized: profile != nil,
+                                 purchaseAuthority: response.purchaseAuthority,
+                                 request: operation.authority)
+             if discovery?.failure == nil { errorText = nil }
+         } catch {
+-            guard refreshRevision == refreshID, await stillCurrent(operation) else { return }
++            guard refreshRevision == refreshID, await stillCurrent(operation),
++                  refreshRevision == refreshID else { return }
+             if let apiError = error as? APIError, apiError.isPaidAccessDenial {
+                 entitlements.closePaidMutationConfirmation(request: operation.authority)
+             } else if case APIError.httpStatus(let code, _) = error, code == 403 {
+@@ -581,14 +594,17 @@ final class StoreKitService: ObservableObject {
+     ) async {
+         let operation = await snapshot()
+         let precedingRefresh = refreshRevision
++        var processorStarted = false
+         do {
+             guard let source = evidenceSource as? LiveStoreKitPurchaseEvidenceSource else { return }
+             let evidence = try await source.evidence(for: result)
++            processorStarted = true
+             _ = try await processPurchaseEvidence(evidence, operation: operation)
+         } catch {
+             // The shared processor handles its own failure. Only evidence construction failed
+             // before it started may set an error here.
+-            if refreshRevision == precedingRefresh, await stillCurrent(operation) {
++            if !processorStarted, refreshRevision == precedingRefresh,
++               await stillCurrent(operation), refreshRevision == precedingRefresh {
+                 errorText = error.localizedDescription
+             }
+         }

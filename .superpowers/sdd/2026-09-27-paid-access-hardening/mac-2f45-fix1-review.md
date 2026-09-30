@@ -1,0 +1,21 @@
+# Mac 2f45 fix 1 — independent source review
+
+Reviewed 2026-09-30. Scope: only the uncommitted increment in `FlashCardAITests/EntitlementMutationBoundaryTests.swift` over iOS HEAD `2f45a6c4725f67030f5d816bb47736e711e345a2`, checked against live repository behavior. No source edit, commit, push, CI dispatch, Swift compilation, or runtime execution performed. No applicable AGENTS.md was found in the workspace/checkout ancestor paths or checkout tree.
+
+## Finding
+
+**[P2] Register the second-GET release before the timeout can return** — `FlashCardAITests/EntitlementMutationBoundaryTests.swift:322-326`.
+
+The deferred release is registered only after `hasSecondGet()` succeeds. If the second queued operation reaches its GET just after the five-second polling window and the final false result, the guard returns without ever arranging release. `MutationOrderRetryGate.get()` then suspends on its checked continuation indefinitely. The task strongly retains the repository (WordRepository.swift:3920-3936), so fixture cleanup cannot release the database; cleanup eventually fails its own bounded wait and restores shared entitlement state with the old task still outstanding. Throwing from the earlier polling sleep has the same missing-release problem. This undermines the claimed bounded gate cleanup precisely on slow/error paths. Minimal fix: move the existing defer to immediately after gate creation, before any retry scheduling or suspension. The gate's sticky `secondGetReleased` flag already supports release-before-arrival and idempotent release. No product change is needed.
+
+## Checks and conclusions
+
+- Live HEAD and sole dirty path match the handoff. The live file and frozen `EntitlementMutationBoundaryTests.after.swift` independently hash to `9db8ec02ea453349b1311ac5413e407c26a7d53973e9d78266c73f9cd6c3b556`, matching the manifest. `git diff --check` reports no whitespace errors (only Git's line-ending warning).
+- Public retry requires synchronous edit permission before scheduling (WordRepository.swift:2879-2886, 3487-3502). All fixture timestamps are identical and IDs sort deterministically. `word-10` has index 9 and is editable; `word-11` has index 10 and is denied. The new synchronous-402 control preserves this boundary and retained text.
+- The exclusion case starts at 12 local rows, then deletes `word-01` to retain 11. Both counts exceed the actual `needsFreeRetainedOrder` threshold of 10 (WordRepository.swift:3725-3731), so the later save cannot bypass authoritative reconciliation simply because the library shrank to the free limit.
+- Both fake authoritative POST responses retain `remote-older-01`; the first includes word-01 through word-09, and the second word-02 through word-10. The asserted POST contents verify local deletion reaches the rebuilt order. This is a client test with authoritative responses supplied by the fixture; it does not verify backend ordering or deletion processing.
+- Retries of the same word share mutation keys and await the predecessor task (WordRepository.swift:3905-3925). Arrival at the second GET therefore proves the first operation has completed, making the first zero-upsert and nil-denial assertions meaningful. Holding the second GET lets deletion happen before its current-order snapshot is read (WordRepository.swift:3820-3821).
+- The expiry fixture now enters reconciliation through word-10, and awaited POST installs expired_paid before returning. The product rechecks save access after reconciliation (WordRepository.swift:3676-3678). Dropping the fixture's repository reference and waiting for its weak reference to clear meaningfully drains the repository-owned mutation, since both the scheduled task and operation capture self. The database remains owned by the fixture for the subsequent SQL assertion. Timeout is an explicit XCTest failure, not a silent success.
+- Static inspection found no additional obvious Swift syntax/type issue in the added actor, continuation, async defer task, or weak repository helper. Compilation and passing behavior remain unverified until a real Mac run. The earlier 691/693 result is historical evidence for the old fixtures only.
+
+Recommendation: fix the early-exit gate-release finding, refresh the freeze/hash, then run the intended Mac verification. No broader product change is indicated by this review.

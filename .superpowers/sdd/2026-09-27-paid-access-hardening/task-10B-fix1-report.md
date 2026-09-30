@@ -1,0 +1,17 @@
+# Task 10B fix1 — inapplicable-proof coverage
+
+Date: 2026-09-29. This is a test-only response to the P2 finding in `task-10B-independent-review.md`. Working checkout remains `D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\backend` at HEAD `3957f3e08c6317ff1495939e5c0cfbe7fea4f110` plus the accepted uncommitted work. The baseline for this fix is the original Task10B 49-path archive at `test-results/paid-access-hardening/task10b-results/backend-freeze`, not HEAD alone. Its 49 hashes were checked before editing: 48 remained identical, with only `tests/LegacyMarkerRecoveryTests.cs` intentionally changed.
+
+The new migrated PostgreSQL HTTP theory seeds an old-schema exact marked key, then lets an actual host apply the final migrations. It adds either a `server_token` owner binding or an exact-device mobile grant to a Sandbox purchase. The resolver demonstrably returns a non-null candidate with the expected authority label, while `IsApplicable` is false. With a device JWT and a fresh fixture assertion, token, entitlement and AI each return `503 subscription_reconciliation_required`. The denied AI path records zero fake-provider calls, zero operation buckets and zero spend reservations. The fixture's usage accounting state is Ready=true, so an unrelated readiness gate cannot mask the predicate.
+
+In the same database, an applicable Production purchase with a revocation timestamp is bound through that authority kind. The resolver selects it and clears only the effective unresolved state; the stored marker is not rewritten. Token and entitlement return HTTP 200 with `revoked`, while AI returns 402 with zero provider calls and no operation reservation. The original unmarked free positive control still reaches its counting fake provider in the neighboring test. This directly distinguishes an applicable inactive proof from an inapplicable candidate for both authority paths.
+
+This is coverage of the existing product predicate, not a demonstrated product-code defect or a new behavioral RED. No temporary mutation build was run; the optional mutation probe was omitted to keep the fix bounded. Simplify review kept the two authority fixtures explicit for the distinct owner-token and exact-grant relationships; no production branch, migration, setting, or helper refactor was added.
+
+Raw verification under `test-results/paid-access-hardening`:
+
+- `task10b-fix1-focused.log`: four Task10B tests passed, zero failed.
+- `task10b-fix1-full-release.log`: full Release 811/811 passed, zero skipped, 48 seconds. The focused run compiled the new test; the full run used that same Release build.
+- Existing backend Release build and pinned EF model check remain `task10b-release-build.log` (zero errors) and `task10b-ef-model.log` (no pending model changes). They were not rerun because no product/model file changed. Existing test-build NU1903 advisories for SQLitePCLRaw and SSH.NET and NU1510 for System.Formats.Cbor remain in the focused log.
+
+The new fix1 archive at `test-results/paid-access-hardening/task10b-fix1-results/backend-freeze` contains a complete current 49-path source snapshot, a one-path incremental diff against the original Task10B freeze, SHA-256 manifests, this report and the two new raw logs. No commit, push, Mac/device run, network provider call, production database access or deployment occurred. External gates in the original Task10B report remain open.

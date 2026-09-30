@@ -1,5 +1,7 @@
 # Защита оплаты и расходов Owl AI — Implementation Plan
 
+> **Статус исполнения на 30 сентября 2026:** локальная реализация варианта B, независимое итоговое ревью и автоматические проверки завершены. iPhone-покупка не требует Owl-аккаунта. Backend `a6e2362`:811/811; Windows `ac37325`:112/112, сборка и Electron smoke; iOS `5d2d5be`:694/694 и unsigned Release в запуске `36730138820`. Актуальные результаты и границы приёмки: [протокол проверки](../../paid-access-verification.md). Ниже сохранён исходный план и история изменений; старые пункты варианта A не являются текущим требованием входа перед покупкой. Реальные устройства, рабочая конфигурация и выпуск остаются отдельными этапами.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. This document is a plan, not authorization to implement or deploy. Respect the product decisions below before dependent tasks.
 
 **Goal:** При `test_mode=false` выдавать платные права только проверенному владельцу действительной подписки, соблюдать бесплатные ограничения и ограничивать расходы на каждый фактический вызов AI.

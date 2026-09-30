@@ -1,0 +1,126 @@
+{
+  "base": "3957f3e08c6317ff1495939e5c0cfbe7fea4f110",
+  "source": "Uncommitted five-file Task10A snapshot",
+  "files": [
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-10A-foundation-report.md",
+      "bytes": 7162,
+      "sha256": "52AF38A21CB6FD4B7F66E94D67D459199CEAEFC93F01EBEF6BCE07FD7EE3DB23"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-10A-foundation-brief.md",
+      "bytes": 4490,
+      "sha256": "0F143E00CCF75D0C6361F2FA575D3A441F5944D23DE7061E3AC2511A7C6D065E"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\task-10-local-closure-preparation.md",
+      "bytes": 12320,
+      "sha256": "0C66B854DD11EEFD65BBBC4981C8208AA598D7FC8A59902AE0575AB2848B8185"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\.superpowers\\sdd\\2026-09-27-paid-access-hardening\\remaining-task-execution-constraints.md",
+      "bytes": 3039,
+      "sha256": "2C6153E39212E24A17D67C1E95D37378C6E50A992A51BD95C974DA84B0085374"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\backend-release-build.log",
+      "bytes": 702,
+      "sha256": "3A728EDE81BBA801B99C64DD62597185BDE9140B7C6230360BA0850FED87445F"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\backend-release-final-after-review.log",
+      "bytes": 1347,
+      "sha256": "43EFB735C5EB2D75F573CAC7A81E415939BBE7BFFDD0FD22037D931A9E6765C6"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\backend-release-final.log",
+      "bytes": 1347,
+      "sha256": "0DDFCC81364239A7192BE93C019DF28E212F7292632003C58D962AAE34FB6EA0"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\backend-release-suite.log",
+      "bytes": 1347,
+      "sha256": "1480A065AB882AF4EF3DCAB0FF8D4645447568F7864E48847DE413964D3A9B6D"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\backend-release-verified.log",
+      "bytes": 1347,
+      "sha256": "37821EC51B2E238BC9175D281A4F837CE0C1E7EAA5574BDD47D212C1CF03DAB1"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\collision-first.log",
+      "bytes": 3433,
+      "sha256": "33AF4C4C4BCBDE585742659373145C66A353D4E1F39F22C5B1C2E917777BAC40"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\collision-green.log",
+      "bytes": 2415,
+      "sha256": "92FE664FC2F5015B1AA0C5524AB2498A5F68B1C871FD2ED88F1776B08CE5ACF3"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\focused-final.log",
+      "bytes": 1346,
+      "sha256": "371CBDF63EC5CB941709B9499958F539CC39448C3C84292B807FEE694BA68A64"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\resume-first.log",
+      "bytes": 5745,
+      "sha256": "AD4DA89C88AC488959B5C74F1651493971856F9F9BCF0C0BD9973C3628FED006"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\resume-green.log",
+      "bytes": 1346,
+      "sha256": "202AFA7E5450014BF5CA95F39787407DBD41B71F323DD5DE93EE64D36C775025"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\rollback-first.log",
+      "bytes": 2440,
+      "sha256": "501C17FA07DA50E514974385B5FFA4B83EC399C9E5EBBF132AA7029FDA58D06C"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\task10a-git-status.txt",
+      "bytes": 282,
+      "sha256": "F9C2EAAA9931911D8EF60FA123BEF98E06B0DAF1F37F19DFAF489D8DC79CE22C"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\task10a-report-sha256.txt",
+      "bytes": 66,
+      "sha256": "10EF7A2ADAF23C19A288AFBED0165361C955860C0937C04753BE1606D4F82C78"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\task10a-source-sha256.txt",
+      "bytes": 540,
+      "sha256": "DC207313DB4493254D8EEE73EA95856C6382C342325DF03B1A5A04257A3F0A9E"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\task10a-source.diff",
+      "bytes": 32871,
+      "sha256": "DF0F6A3553B14FFA6324CB5A262B76280232B26A093DD0F8564EA155CBCD2C67"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\task10a-untracked-backend.txt",
+      "bytes": 8,
+      "sha256": "A9A11813438BA2FC0C6EFD97F13B88BF41AF82044D04182D865BDD38EAA32423"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\validation-final.log",
+      "bytes": 4806,
+      "sha256": "B67AE7091BFCF4BB1E627F6387113A199701E03B57B484C2A21DA3F24A861B20"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\validation-green.log",
+      "bytes": 1346,
+      "sha256": "29D77F204BB5938264618F3EFFF475213486513347DC9017213DB8CC7921C059"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\validation-red-detail.log",
+      "bytes": 11373,
+      "sha256": "6669B92C4EAAC52DE4887BA62CDFCEBA4905AA1FB4CF47A9F4ADC541FFB81DFF"
+    },
+    {
+      "path": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task10a-foundation-results\\validation-red.log",
+      "bytes": 3048,
+      "sha256": "478CD5EB6EA856160A11945EB8C65E0A308A7E031C614714D8FD59801CB94618"
+    }
+  ]
+}

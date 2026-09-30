@@ -1,0 +1,568 @@
+{
+  "archive": "D:\\07 Hobby\\FlashcardAI\\test-results\\paid-access-hardening\\task6a-accepted-fix1.zip",
+  "bytes": 245306,
+  "sha256": "E18E942ABBFF6DD886970A13694C5E1AE6BAF003507F1EE836DC431004564B59",
+  "verifiedEntries": 112,
+  "entries": [
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/b4-key-rotation.log",
+      "bytes": 2037,
+      "sha256": "7B3F2D78FFA1037F4B409129DF71BDFD0D2436FA40F41478E95D557391198DE5"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/baseline-accepted-10a.diff",
+      "bytes": 33444,
+      "sha256": "9F59DE2ABCF334D525F5B0F9A3EFF9AE7D5B4436B824F8A6E52A0540DEC5442B"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/baseline-git-status.txt",
+      "bytes": 225,
+      "sha256": "6B2BF67EFA304FEB289F9B65F2C18B74536F09748F5BA629A9A0C049C524B42D"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/baseline-head.txt",
+      "bytes": 42,
+      "sha256": "E98F638F38974151A203D3CA4E80432C2C3465550DAC089A0A27516E9A16CF0E"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/claim-race-rollover-first.log",
+      "bytes": 2034,
+      "sha256": "60E736EE2BE0EB4C5C07A4827F4D5C8A97E292176BF6732827A6138CBDB8C0DA"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/corrupt-parent-red.log",
+      "bytes": 2851,
+      "sha256": "DC4DF40ADD7B49046C054C84D463CF75A8A09DCBB55D9335FF7B993A361AAA7D"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/early-build-2.log",
+      "bytes": 1251,
+      "sha256": "3F1BDBA22282D268839AB32F13624896DFDAE536C0E45A6372FB3A18B943570E"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/early-build.log",
+      "bytes": 1651,
+      "sha256": "4189ED5E12853B6DBF9AA7EED96A95E3B83AF3FF6AE75DF606C533FE9C0AEA7D"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-focused-corrected.log",
+      "bytes": 2034,
+      "sha256": "063D8EB813767F703C16D7CE261C8A9410C2A64704103D645217B1FA54B69F9B"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-focused.log",
+      "bytes": 2911,
+      "sha256": "AB75BF4A06506A46BF57D817904668608B82BDEDAF5B98D363170639D7659784"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-full-release-tests.log",
+      "bytes": 2035,
+      "sha256": "47FA5DC55BAA40B3A4FAD8EA3853F26360125474A779C06BBE44AF0A38302CD9"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-head.txt",
+      "bytes": 42,
+      "sha256": "E98F638F38974151A203D3CA4E80432C2C3465550DAC089A0A27516E9A16CF0E"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-migration-model-check-pinned.log",
+      "bytes": 66,
+      "sha256": "C924DA1693AD60EB6A78717DDD333946A8A61A056C2CE2868AE514384F01C866"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-migration-model-check.log",
+      "bytes": 260,
+      "sha256": "9D14EE8DC7BF015404786DCB84EE52D281F36FD2E7FAC33E7435DD5876FB19A3"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-release-build.log",
+      "bytes": 1259,
+      "sha256": "16659DA9B229F00E27372D6A6528738DE4F8B44743E6E162E3F5F7CB303D79B5"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-source-sha256.txt",
+      "bytes": 3935,
+      "sha256": "8C464502CB9B5D85783839ED463062A673C7295962328ABC94886E641A6A0CB2"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-status.txt",
+      "bytes": 1542,
+      "sha256": "0CF0CBDBA4FA8C5FF9F1FF2BD113C9DDBA5BA1579B7C8EAC03CFF5F6D4062F49"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-task10a-hash-verification.txt",
+      "bytes": 570,
+      "sha256": "14BD8D20150B111BE60AB0CCDFF84BF09AC92B99617BF40A8D8CDF898A043A6A"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-task6a-incremental-tracked.diff",
+      "bytes": 60134,
+      "sha256": "4FACFB4866BA1EFE1276AA0E0346AFF6BD68C35557DFE9F42E3A8AFA5DA34B9D"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-working-tree.diff",
+      "bytes": 93578,
+      "sha256": "5F7EDBAE44621AB54ADD3E2AC71BD1805D5A995E3AC936030EAABAB272C24DB7"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/focused-integration-first.log",
+      "bytes": 18878,
+      "sha256": "278C295C27D0249FD52D58354003CF62AB5BF5100908870EA1D14E3654E0A38A"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/focused-integration-second.log",
+      "bytes": 2304,
+      "sha256": "014CB1C1258D05180ACF85E2F153CEE2D6FC4D1A73BA0B47CC602F8C24CA055C"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/focused-legacy-boundary-first.log",
+      "bytes": 16960,
+      "sha256": "AA7A5B07CB1FFE7BCD102E5DC8C3FBF78FB66920935619399D94FF6A61261013"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/focused-legacy-boundary-green.log",
+      "bytes": 2035,
+      "sha256": "1ED9C6E753025ABBC89BC425D21C349513A6F2CA9AFCA24CBA806E1DDB9BE0EB"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/late-origin-green.log",
+      "bytes": 2034,
+      "sha256": "3E1A7DFB4FD694C16F0BD0A17BE213B9EC594DAD09208F7B612DE1472C91D2AB"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/late-origin-red.log",
+      "bytes": 2855,
+      "sha256": "EA163916C84C3CFE57A61D62F4A2D3014A978F88680AB971F4942D1D3C5651CA"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/migration-populated-first.log",
+      "bytes": 2034,
+      "sha256": "C3CCE7B165D378DAC0D305B6CCBA3B641D30436CBE9B4AF2EBCA7A0CC43C6D2D"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/migration-scaffold-no-build.log",
+      "bytes": 249,
+      "sha256": "AE0C92E1416BB4263AA7C4B60DF0FE96E7AEF59535E1D6D25D348F49F583BCCB"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/migration-scaffold-verbose.log",
+      "bytes": 6643,
+      "sha256": "5E603D7C1F214D9F2D275E0B5FF09B5AA0CA9E4491CB499C9310C35FC6F71730"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/migration-scaffold.log",
+      "bytes": 69,
+      "sha256": "1CD745FF3B6E1C561DA63495C9ECEE557AA926FA29D71E1739920A01122F97D6"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/normal-money-quota-route.log",
+      "bytes": 2034,
+      "sha256": "3FE24E2D36DDEB96893A96BC83AD90F54780B398ED16D5A601EE44908292EAA9"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/origin-claim-first.log",
+      "bytes": 2034,
+      "sha256": "BF76663934F7EFCEC0479D7FE117D716A29538484A6543F8236BDDBBCF402C05"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/paid-missing-config-green.log",
+      "bytes": 2034,
+      "sha256": "3E1A7DFB4FD694C16F0BD0A17BE213B9EC594DAD09208F7B612DE1472C91D2AB"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/paid-missing-config-red.log",
+      "bytes": 2683,
+      "sha256": "96DFD7D3DAC3B9D0014AD4CA9CFF57B2FD8BEEDD11A5372B9321F00BC37298D9"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/paid-quota-red.log",
+      "bytes": 2689,
+      "sha256": "954FFA3E619D91270EB14AD564F617B44D7F601D0D91C5BD317CC4B650BC9921"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/quota-postgres-first-green-attempt.log",
+      "bytes": 4549,
+      "sha256": "18669EC48BD9C9C829160E8C352C2C5274B8EE8F3FA2A86839BF1B9BF92EC38D"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/quota-postgres-green.log",
+      "bytes": 2034,
+      "sha256": "C013028C01E16C871FF135E16A716CB27EBC6ECD1E856CBE0450445295BE886C"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/quota-postgres-lineage-green.log",
+      "bytes": 2034,
+      "sha256": "D3F03D8F23D091CCBDED384148B03884B033209615126B68307F111342804EEA"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/quota-postgres-red.log",
+      "bytes": 4140,
+      "sha256": "EDF6BB582FF08BFCA3D012A55E5D31EFF660E1976E9DD18B39DA25211F632B24"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/restored-linked-first.log",
+      "bytes": 2034,
+      "sha256": "32A6F579B06E255AF9292CD929E110676F43A9442D8AB23874E1D3A901290E58"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/same-owner-independent-first.log",
+      "bytes": 2034,
+      "sha256": "3E1A7DFB4FD694C16F0BD0A17BE213B9EC594DAD09208F7B612DE1472C91D2AB"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/schema-service-build.log",
+      "bytes": 1259,
+      "sha256": "64B963211600F59E2CDF201B2466D48DEB4BB77A59AEF92B76557757201A3E2F"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-untracked-source/src/Mavrylo.Data/Migrations/20260929150632_AddStableOperationUsage.cs",
+      "bytes": 17571,
+      "sha256": "C2DCE97BDAE8DC63648EA704FB609FF568E6069678923C91C4F73044D059B32E"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-untracked-source/src/Mavrylo.Data/Migrations/20260929150632_AddStableOperationUsage.Designer.cs",
+      "bytes": 46123,
+      "sha256": "C252C36CD9C036C8CE6CC56AD7CE5C94EB264472B9A3DB352466B5D5B58B1049"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-untracked-source/src/Mavrylo.Entities/Models/UsageAccountingEntities.cs",
+      "bytes": 1560,
+      "sha256": "2132E8450D0FEE822BB662A85D4A6DA37D6B55F4E35CAFCF8F9590FEF3DDC0EA"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-untracked-source/src/Mavrylo.Services/Services/OperationQuotaService.cs",
+      "bytes": 6001,
+      "sha256": "784C13622748D81E84FD72F868F11F1C6D9981F4338E18E6938D11960F098277"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-untracked-source/src/Mavrylo.Services/Services/UsageSubjectResolver.cs",
+      "bytes": 10237,
+      "sha256": "DF6D3A8F8D6E00BBC047A641158DC833D15D8FA4B11D0E488BD3A4FB7ABC6A1B"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-untracked-source/tests/UsageMigrationPostgresTests.cs",
+      "bytes": 6338,
+      "sha256": "220F8674795FED63AE77443D0B948EDA31961431009A8F5E1E21BCB08AA83D5F"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-untracked-source/tests/UsageSubjectPostgresTests.cs",
+      "bytes": 25130,
+      "sha256": "16DE5A4B1DF87E1D0D46F77D3C7C80D90DDEA110580A13564CB6815D4C0EB98D"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-results/final-untracked-source/tests/TestSupport/QuotaTestSupport.cs",
+      "bytes": 816,
+      "sha256": "B557E2A2798C26A42BB944BF7FC227B4C8456D8D01AC545A6D5404394E89C16F"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/final-full-release-tests.log",
+      "bytes": 2035,
+      "sha256": "4A545475E8A9618E3458959D0A25208FF9694E35DD2DED305BB8AE50945794DA"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/final-head.txt",
+      "bytes": 42,
+      "sha256": "E98F638F38974151A203D3CA4E80432C2C3465550DAC089A0A27516E9A16CF0E"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/final-migration-model-check-pinned.log",
+      "bytes": 66,
+      "sha256": "C924DA1693AD60EB6A78717DDD333946A8A61A056C2CE2868AE514384F01C866"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/final-release-build.log",
+      "bytes": 1259,
+      "sha256": "37F46FB83D334CED389388BE29571F1A46F4E8307C74E4C54654E36C7932AA2A"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/final-source-sha256.txt",
+      "bytes": 4215,
+      "sha256": "A830E011BFAEDAC4143101AFE23C19F1F416910D5F6E57A65E0BB6523AADA0F1"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/final-status.txt",
+      "bytes": 1542,
+      "sha256": "0CF0CBDBA4FA8C5FF9F1FF2BD113C9DDBA5BA1579B7C8EAC03CFF5F6D4062F49"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/final-task10a-hash-verification.txt",
+      "bytes": 570,
+      "sha256": "14BD8D20150B111BE60AB0CCDFF84BF09AC92B99617BF40A8D8CDF898A043A6A"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/fix1-incremental.diff",
+      "bytes": 17397,
+      "sha256": "23BF17B637786F1E366058EECC29C6D59C65C0B14278A517A0025B637AC9D657"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/migration-findings-green-first.log",
+      "bytes": 2034,
+      "sha256": "947825AD23A4EFBD84B65312D7700E8F6BB39E4422746A67070D7B5C97275876"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/migration-findings-red.log",
+      "bytes": 4247,
+      "sha256": "AE6A879A6D103B174C4ED5B723238EDE295FF173E8C048F59695A923B6D6D252"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/migration-focused-final.log",
+      "bytes": 2035,
+      "sha256": "94A8BAA40A00FC1BB4C3C4DA24B1786B2111362468A6C6EFD181D557A3C23B59"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/migration-focused-second.log",
+      "bytes": 2560,
+      "sha256": "EE21438CA32E779E0C9FD2FD38674D4A048F05F37B555F1F1AC2474360E4C233"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/migration-focused-third.log",
+      "bytes": 4148,
+      "sha256": "4FEF264BD9BA7B55F7C19932032A2C1F7ACCFC872DF34DAD98A0C8C39B752119"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/original-task6a-source-comparison.txt",
+      "bytes": 3821,
+      "sha256": "6676AB37C9A85071D72BA78E2EDEFB489A33D457B7F3BD5BA44558D1038F059E"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/final-untracked-source/src/Mavrylo.Data/Migrations/20260929150632_AddStableOperationUsage.cs",
+      "bytes": 18567,
+      "sha256": "4A0E85CE9B535F21D52F28926002D9A4368584D5FD411FB90F42DAC7F9FDBB4F"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/final-untracked-source/src/Mavrylo.Data/Migrations/20260929150632_AddStableOperationUsage.Designer.cs",
+      "bytes": 46123,
+      "sha256": "C252C36CD9C036C8CE6CC56AD7CE5C94EB264472B9A3DB352466B5D5B58B1049"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/final-untracked-source/src/Mavrylo.Entities/Models/UsageAccountingEntities.cs",
+      "bytes": 1560,
+      "sha256": "2132E8450D0FEE822BB662A85D4A6DA37D6B55F4E35CAFCF8F9590FEF3DDC0EA"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/final-untracked-source/src/Mavrylo.Services/Services/OperationQuotaService.cs",
+      "bytes": 6001,
+      "sha256": "784C13622748D81E84FD72F868F11F1C6D9981F4338E18E6938D11960F098277"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/final-untracked-source/src/Mavrylo.Services/Services/UsageSubjectResolver.cs",
+      "bytes": 10237,
+      "sha256": "DF6D3A8F8D6E00BBC047A641158DC833D15D8FA4B11D0E488BD3A4FB7ABC6A1B"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/final-untracked-source/tests/UsageMigrationPostgresTests.cs",
+      "bytes": 18530,
+      "sha256": "B2493496EDB0824F08CDEFE67A9F7518F5E085429CBC237B4834296AB56902C0"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/final-untracked-source/tests/UsageSubjectPostgresTests.cs",
+      "bytes": 25130,
+      "sha256": "16DE5A4B1DF87E1D0D46F77D3C7C80D90DDEA110580A13564CB6815D4C0EB98D"
+    },
+    {
+      "path": "test-results/paid-access-hardening/task6a-fix1-results/final-untracked-source/tests/TestSupport/QuotaTestSupport.cs",
+      "bytes": 816,
+      "sha256": "B557E2A2798C26A42BB944BF7FC227B4C8456D8D01AC545A6D5404394E89C16F"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-27-paid-access-hardening/task-6A-report.md",
+      "bytes": 5058,
+      "sha256": "3CD2DCAB4F16EE6A17063A34FA7B9B560D7EDBF634D6281535F4C91922BC4711"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-27-paid-access-hardening/task-6A-review.md",
+      "bytes": 5253,
+      "sha256": "5E8FA712E82D351CF45E8EF77CFE3B247A5BB96C83408808ADA653F1CB27B2FF"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-27-paid-access-hardening/task-6A-fix1-report.md",
+      "bytes": 4294,
+      "sha256": "7D96B3FB9DA8337DA0A18910AAF41559E6F1F035738B0FC31CDD5D5135E577B0"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-27-paid-access-hardening/task-6A-fix1-review.md",
+      "bytes": 4639,
+      "sha256": "B0A27E06C99BD01317D6E4B639DC679729312AFFEA9E119BF236D4FCAF27745D"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-27-paid-access-hardening/task-6-owner-quota-brief.md",
+      "bytes": 12652,
+      "sha256": "E3D178D911A3FC82118BDD835A7C0E50257A3DF7DEC68D4B1F40AE94024D1699"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-27-paid-access-hardening/remaining-task-execution-constraints.md",
+      "bytes": 3039,
+      "sha256": "2C6153E39212E24A17D67C1E95D37378C6E50A992A51BD95C974DA84B0085374"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-27-paid-access-hardening/additional-agent-authorization.md",
+      "bytes": 1783,
+      "sha256": "12CD63FCF6300BA4ADE4580F017ADBFF69BC8EA1AE6AF41E55CCC1A6B5DC0A22"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/Areas/OwlAI/Controllers/DeviceController.cs",
+      "bytes": 5055,
+      "sha256": "B7D6F0A85FF714C7BDB35131357CCCE803AD7247909BE39B56AF049629A067CA"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/Filters/AccountAiProtectionFilter.cs",
+      "bytes": 3826,
+      "sha256": "9AFE2CBE7ECCF0AEBEEABF197A847F3A8FB1BAD5E49E1AFCA748EC112B611959"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/Filters/AiProtectionFilter.cs",
+      "bytes": 12572,
+      "sha256": "6330B974452470325216659072F0882DA434C5C9E0AF481F124DE14B4BE2BFD4"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/Program.cs",
+      "bytes": 15429,
+      "sha256": "457F37AA0096DC64357298561B5C1B92B950CD6375D79C1E2FD312CDB5517C13"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/src/Mavrylo.Data/AppDbContext.cs",
+      "bytes": 13486,
+      "sha256": "D2B849811A371CE377475D1759C06EFEA338ECB5A33444AABFF42508BA5BE6F9"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/src/Mavrylo.Data/Migrations/20260929150632_AddStableOperationUsage.cs",
+      "bytes": 18567,
+      "sha256": "4A0E85CE9B535F21D52F28926002D9A4368584D5FD411FB90F42DAC7F9FDBB4F"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/src/Mavrylo.Data/Migrations/20260929150632_AddStableOperationUsage.Designer.cs",
+      "bytes": 46123,
+      "sha256": "C252C36CD9C036C8CE6CC56AD7CE5C94EB264472B9A3DB352466B5D5B58B1049"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/src/Mavrylo.Data/Migrations/AppDbContextModelSnapshot.cs",
+      "bytes": 45999,
+      "sha256": "F4CD3DE6D46481F25164CF3017833F4673A77E78FF3B6B7A6F14EF5CA3CE7581"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/src/Mavrylo.Entities/Models/UsageAccountingEntities.cs",
+      "bytes": 1560,
+      "sha256": "2132E8450D0FEE822BB662A85D4A6DA37D6B55F4E35CAFCF8F9590FEF3DDC0EA"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/src/Mavrylo.Services/Services/AccountAiUsageService.cs",
+      "bytes": 1892,
+      "sha256": "DCC0CC48EC5117BCA0BFCBF480092C89FB77F298C7E50231CA7C6A93CF3FEF91"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/src/Mavrylo.Services/Services/AccountEntitlementService.cs",
+      "bytes": 7203,
+      "sha256": "77C770E8F3D93917F033438F5D24F2D99634E60ABDD2031828D2C1934795D827"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/src/Mavrylo.Services/Services/AiUsageService.cs",
+      "bytes": 3955,
+      "sha256": "89601863B8202C8507F266D10B0B286E7A02973A053315A62CCDA4AE1951559E"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/src/Mavrylo.Services/Services/AnonymousPurchaseService.cs",
+      "bytes": 13335,
+      "sha256": "30271115E893D20EC222C20FEA8EE0AB16AA191D65149B624E767AF6ACB9B67A"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/src/Mavrylo.Services/Services/DeviceContextService.cs",
+      "bytes": 7306,
+      "sha256": "DE20B61E7026C6A57F70B37655D4681C04E6EB10BDC6EF32CB646731D78FFD53"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/src/Mavrylo.Services/Services/OperationQuotaService.cs",
+      "bytes": 6001,
+      "sha256": "784C13622748D81E84FD72F868F11F1C6D9981F4338E18E6938D11960F098277"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/src/Mavrylo.Services/Services/UsageSubjectResolver.cs",
+      "bytes": 10237,
+      "sha256": "DF6D3A8F8D6E00BBC047A641158DC833D15D8FA4B11D0E488BD3A4FB7ABC6A1B"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/tests/AiProtectionFilterTests.cs",
+      "bytes": 21346,
+      "sha256": "68E40CFBCC966E1C6BDF601812FB7906EE7EA61ED909F69C29220D45948771F2"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/tests/AiRequestInterpretationTests.cs",
+      "bytes": 22170,
+      "sha256": "C8D9115D85AA4BE9BEAB30A2C4FB970DEE91676BEA99E3DEB030587EFD497807"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/tests/AiSpendRouteTests.cs",
+      "bytes": 20169,
+      "sha256": "7F2040ADA887B2851F724F57EA24EDABBFE1C2E962084BE769F7F074D0038573"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/tests/AnonymousInstallationTests.cs",
+      "bytes": 25670,
+      "sha256": "8AA9FE1CDF6099AD0B80744305F807BB4F14610E9323BD52DF789A715763AEC3"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/tests/AppAttestCounterConcurrencyTests.cs",
+      "bytes": 12210,
+      "sha256": "E2F21C7B54C97BBC84FE0F71F40AC02BD70C9F378331657E9E90387178AE9D55"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/tests/DeviceControllerBootstrapTests.cs",
+      "bytes": 17464,
+      "sha256": "D213A234910B08D0EFD3F71A749BEB8CA06CD317541FAD65A438DEEADD8D9D2A"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/tests/PaidAccessAuditRegressionTests.cs",
+      "bytes": 24225,
+      "sha256": "0247793FE337DD20D9499CD9508227587D268017991C2ADE32CCE341AA4BFF19"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/tests/PaidAccessBoundaryHttpTests.cs",
+      "bytes": 24382,
+      "sha256": "441B8DCFA870A2DA7BBC3227C1D3534AAB6E4944EB589CE19540969E54EB5263"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/tests/ReviewTranslationTests.cs",
+      "bytes": 17493,
+      "sha256": "CEBD080BE0F16EA3B4E2331D45A9492AB31A18C9487592922BD2E058596859E6"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/tests/SharedSubscriptionPostgresTests.cs",
+      "bytes": 34907,
+      "sha256": "B2363A8C7D2495EC11B673FFCEA7B501738F8E44781F3F0504B139C18CE41B72"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/tests/TestSupport/ApiFactory.cs",
+      "bytes": 2163,
+      "sha256": "E77662272C1800534356BC6EDAE8D59487638A304747F88C25FFBE8B4368223B"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/tests/TestSupport/FakeAppAttestVerifier.cs",
+      "bytes": 1187,
+      "sha256": "BA7BC56BD72782D85392DF8CB6816A666214258AF1DF77D06E86CEC0AEA71222"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/tests/TestSupport/QuotaTestSupport.cs",
+      "bytes": 816,
+      "sha256": "B557E2A2798C26A42BB944BF7FC227B4C8456D8D01AC545A6D5404394E89C16F"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/tests/TestSupport/TestConfig.cs",
+      "bytes": 1868,
+      "sha256": "3A658AF51DCBEA68037D1D3CAACFBA2F57B8204E1716075B7DB78734605BADB1"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/tests/TestSupport/TestDb.cs",
+      "bytes": 1063,
+      "sha256": "4E9C94713BBD1BBC9A9FF3FA61A394845054F54800903A4EF6C5EF30D026D31F"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/tests/UsageMigrationPostgresTests.cs",
+      "bytes": 18530,
+      "sha256": "B2493496EDB0824F08CDEFE67A9F7518F5E085429CBC237B4834296AB56902C0"
+    },
+    {
+      "path": "test-results/paid-access-hardening/backend/tests/UsageSubjectPostgresTests.cs",
+      "bytes": 25130,
+      "sha256": "16DE5A4B1DF87E1D0D46F77D3C7C80D90DDEA110580A13564CB6815D4C0EB98D"
+    }
+  ]
+}

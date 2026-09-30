@@ -1,0 +1,2484 @@
+Task 3B scoped fix round 1 SOURCE review package
+Base: 544c16e1173c3fe2b219be050bd6416d3e2b89b2
+Head: 35ac2216af2925fd3dfc0f8cbbabd7dad70626c6
+Repository: D:\07 Hobby\FlashcardAI\test-results\paid-access-hardening\ios
+
+Commits:
+35ac2216af2925fd3dfc0f8cbbabd7dad70626c6 test(ios): isolate shared entitlement in offline fixtures
+79d1a83d4868719db969dc4739183398cff5681b fix(ios): preserve owned restore order and surface reconciliation
+b0c933d6dc5115124a9102755afb99282d73f4b0 test(ios): prove same-call reconciliation while repairing discovery order
+184284a5c8aac3dfecef46976e8751bc223b82b2 test(ios): checkpoint restore repair with ordering regressions
+e97f13b49cf754ae036c6680649e01c811fa997f test(ios): cover restore after App Attest key replacement
+a3c5cf81c8b9c9855ec4d2d1c459ce90ea9b6e83 test(ios): isolate App Attest fakes and reproduce restore review gaps
+
+Stat:
+ .github/workflows/ios-validation.yml               |   7 +-
+ App/UIAutomationFixture.swift                      |   4 +-
+ .../AnonymousPurchaseRestoreTests.swift            | 526 ++++++++++++++++++++-
+ FlashCardAITests/AppAttestSessionResumeTests.swift | 242 +++++++++-
+ FlashCardAITests/ReviewCardRepositoryTests.swift   |  25 +
+ FlashCardAITests/SharedAccountSyncTests.swift      |   6 +-
+ Infrastructure/Networking/APIClient.swift          |  28 +-
+ Infrastructure/Purchases/EntitlementStore.swift    |  28 +-
+ .../Purchases/StoreKitPurchaseEvidenceSource.swift |  29 +-
+ Infrastructure/Purchases/StoreKitService.swift     | 212 +++++++--
+ .../AppAttest/AIIntegrityCoordinator.swift         |  93 +++-
+ 11 files changed, 1089 insertions(+), 111 deletions(-)
+
+Diff:
+diff --git a/.github/workflows/ios-validation.yml b/.github/workflows/ios-validation.yml
+index 910db95..f40d27e 100644
+--- a/.github/workflows/ios-validation.yml
++++ b/.github/workflows/ios-validation.yml
+@@ -126,22 +126,25 @@ jobs:
+           require('DEBUG' not in settings.get('SWIFT_ACTIVE_COMPILATION_CONDITIONS', '').split(), 'DEBUG enabled in Release')
+           entitlement_source = plistlib.loads(Path(settings['CODE_SIGN_ENTITLEMENTS']).read_bytes())
+           require(entitlement_source['com.apple.developer.devicecheck.appattest-environment'] == '$(APP_ATTEST_ENVIRONMENT)',
+                   'Unexpected App Attest entitlement source')
+           app = derived / 'Build/Products/Release-iphoneos/FlashCardAI.app'
+           info = plistlib.loads((app / 'Info.plist').read_bytes())
+           require(info['CFBundleIdentifier'] == 'com.mavrylo.owlai', 'Unexpected built Release bundle ID')
+           require(info['APIBaseURL'] == 'https://api.mavrylo.com', 'Unexpected built Release API URL')
+           executable = (app / info['CFBundleExecutable']).read_bytes()
+           for marker in (b'-owl-ui-fixture', b'ui-fixture.invalid', b'ui-fixture-account',
+-                         b'learner@example.test', b'correct horse'):
+-              require(marker not in executable, 'Debug UI fixture marker found in Release executable')
++                         b'learner@example.test', b'correct horse',
++                         b'OfflineFixtureState', b'beginHostedOfflineFixture',
++                         b'beginDedicatedUIFixture', b'resetForOfflineFixture',
++                         b'endHostedOfflineFixture', b'captureForHostedTest'):
++              require(marker not in executable, f'Debug fixture marker {marker!r} found in Release executable')
+           print('Unsigned iOS device Release compile and bounded configuration checks passed')
+           PY
+           elif [[ "$OWL_TEST_SCOPE" == ui-proof || "$OWL_TEST_SCOPE" == ui-root || "$OWL_TEST_SCOPE" == ui-review || "$OWL_TEST_SCOPE" == full ]]; then
+             derived_data="$RUNNER_TEMP/owl-ui-derived-data"
+             xcodebuild build-for-testing "${common[@]}" -derivedDataPath "$derived_data" 2>&1 | tee xcode-build.log
+             echo "Simulator boot preflight: $(date -u +%Y-%m-%dT%H:%M:%SZ)" | tee simulator-preflight.log
+             xcrun simctl bootstatus "$OWL_SIMULATOR" -b 2>&1 | tee -a simulator-preflight.log
+             app_path="$derived_data/Build/Products/Debug-iphonesimulator/FlashCardAI.app"
+             bundle_id=$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app_path/Info.plist")
+             [[ "$bundle_id" == com.mavrylo.owlai.uitest ]] || { echo "Unexpected UI fixture bundle: $bundle_id" >&2; exit 1; }
+diff --git a/App/UIAutomationFixture.swift b/App/UIAutomationFixture.swift
+index bd083c4..7c4da43 100644
+--- a/App/UIAutomationFixture.swift
++++ b/App/UIAutomationFixture.swift
+@@ -93,21 +93,23 @@ enum UIAutomationFixture {
+             if isProIncomplete && !shouldSeed {
+                 precondition(
+                     !AppLaunchState.hasCompletedProductOnboarding
+                         && !AppLaunchState.hasCompletedSettingsOnboarding,
+                     "Pro UI action completed onboarding unexpectedly"
+                 )
+             } else {
+                 AppLaunchState.hasCompletedProductOnboarding = !isOnboarding && !isProIncomplete
+                 AppLaunchState.hasCompletedSettingsOnboarding = !isOnboarding && !isProIncomplete
+             }
+-            EntitlementStore.shared.update(.free)
++            // WordRepository's synchronous gates read the shared snapshot. Start this
++            // dedicated Debug fixture as a genuinely free identity, including paid history.
++            EntitlementStore.shared.beginDedicatedUIFixture()
+ 
+             let configuration = URLSessionConfiguration.ephemeral
+             configuration.protocolClasses = [OfflineURLProtocol.self]
+             let offlineSession = URLSession(configuration: configuration)
+             let offlineURL = URL(string: "https://ui-fixture.invalid")!
+             let entitlements = EntitlementStore(defaults: defaults)
+             let accountClient = AccountSessionClient(
+                 session: offlineSession,
+                 baseURL: offlineURL,
+                 storage: EmptyAccountStorage(),
+diff --git a/FlashCardAITests/AnonymousPurchaseRestoreTests.swift b/FlashCardAITests/AnonymousPurchaseRestoreTests.swift
+index a755598..bf7cb54 100644
+--- a/FlashCardAITests/AnonymousPurchaseRestoreTests.swift
++++ b/FlashCardAITests/AnonymousPurchaseRestoreTests.swift
+@@ -1,70 +1,120 @@
+ import Foundation
+ import StoreKit
+ import XCTest
+ @testable import FlashCardAI
+ 
+ private final class RestoreProofURLProtocol: URLProtocol {
+     static var respond: ((URLRequest) throws -> (Int, Data))?
++    static var respondAsync: ((URLRequest, @escaping (Result<(Int, Data), Error>) -> Void) -> Void)?
+ 
+     override class func canInit(with request: URLRequest) -> Bool { true }
+     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+     override func startLoading() {
++        if let respondAsync = Self.respondAsync {
++            respondAsync(request) { [self] result in
++                deliver(result)
++            }
++            return
++        }
+         do {
+             guard let respond = Self.respond else { throw URLError(.badServerResponse) }
+-            let (status, body) = try respond(request)
++            deliver(.success(try respond(request)))
++        } catch { deliver(.failure(error)) }
++    }
++    override func stopLoading() {}
++
++    private func deliver(_ result: Result<(Int, Data), Error>) {
++        switch result {
++        case .success(let (status, body)):
+             let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
+             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+             client?.urlProtocol(self, didLoad: body)
+             client?.urlProtocolDidFinishLoading(self)
+-        } catch { client?.urlProtocol(self, didFailWithError: error) }
++        case .failure(let error): client?.urlProtocol(self, didFailWithError: error)
++        }
+     }
+-    override func stopLoading() {}
+ }
+ 
+ private final class FakeRestoreEvidenceSource: StoreKitPurchaseEvidenceSource {
+     var current: [ApplePurchaseEvidence] = []
+     var historical: [ApplePurchaseEvidence] = []
++    var unfinished: [ApplePurchaseEvidence] = []
+     var currentError: Error?
+     var historyError: Error?
++    var syncError: Error?
+     var syncCount = 0
+     var historicalProductIds: [String] = []
+     var finished: [String] = []
+     var currentOperation: (() async throws -> [ApplePurchaseEvidence])?
+ 
+     func currentEvidence() async throws -> [ApplePurchaseEvidence] {
+         if let currentOperation { return try await currentOperation() }
+         if let currentError { throw currentError }
+         return current
+     }
+     func latestHistoricalEvidence(productIds: [String]) async throws -> [ApplePurchaseEvidence] {
+         historicalProductIds = productIds
+         if let historyError { throw historyError }
+         return historical
+     }
+-    func synchronize() async throws { syncCount += 1 }
++    func synchronize() async throws {
++        syncCount += 1
++        if let syncError { throw syncError }
++    }
++    func unfinishedEvidence() async throws -> [ApplePurchaseEvidence] { unfinished }
+     func finish(transactionId: String) async { finished.append(transactionId) }
+ }
+ 
++private final class DeferredRestoreHTTP {
++    private let lock = NSLock()
++    private var firstReply: ((Result<(Int, Data), Error>) -> Void)?
++    private var count = 0
++
++    func receive(_ reply: @escaping (Result<(Int, Data), Error>) -> Void,
++                 firstArrived: () -> Void, laterBody: Data) {
++        lock.lock()
++        count += 1
++        let isFirst = count == 1
++        if isFirst { firstReply = reply }
++        lock.unlock()
++        if isFirst { firstArrived() }
++        else { reply(.success((200, laterBody))) }
++    }
++
++    func releaseFirst(status: Int, body: Data) -> Bool {
++        lock.lock()
++        let reply = firstReply
++        firstReply = nil
++        lock.unlock()
++        guard let reply else { return false }
++        reply(.success((status, body)))
++        return true
++    }
++
++    var requests: Int { lock.lock(); defer { lock.unlock() }; return count }
++}
++
+ private struct NoRestoreTransactionUpdates: StoreKitTransactionUpdates {
+     @MainActor
+     func observe(_ handle: @escaping @MainActor (VerificationResult<StoreKit.Transaction>) async -> Void) -> StoreKitTransactionObservation {
+         StoreKitTransactionObservation(task: Task {})
+     }
+ }
+ 
+ final class AnonymousPurchaseRestoreTests: XCTestCase {
+     private let appToken = UUID(uuidString: "11111111-2222-3333-4444-555555555555")!
+     private let deviceId = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+ 
+     override func tearDown() {
+         RestoreProofURLProtocol.respond = nil
++        RestoreProofURLProtocol.respondAsync = nil
+         super.tearDown()
+     }
+ 
+     func testGuestPurchaseContextUsesDeviceProofAndServerTokenWithoutOwlAccount() async throws {
+         RestoreProofURLProtocol.respond = { request in
+             XCTAssertEqual(request.url?.path, "/owlai/iap/purchase-context")
+             XCTAssertEqual(request.httpMethod, "POST")
+             XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer device-session")
+             XCTAssertNil(request.value(forHTTPHeaderField: "X-Account-Authorization"))
+             XCTAssertEqual(try Self.json(request), ["product_id": StoreKitService.monthlyProductId])
+@@ -176,20 +226,153 @@ final class AnonymousPurchaseRestoreTests: XCTestCase {
+         let source = FakeRestoreEvidenceSource()
+         source.current = [evidence()]
+         let (service, _, cleanup) = service(source: source)
+         defer { cleanup() }
+         RestoreProofURLProtocol.respond = { _ in (200, Self.response(status: "premium", authority: "mobile_restore")) }
+         let restored = await service.restore()
+         XCTAssertTrue(restored)
+         XCTAssertEqual(source.syncCount, 1)
+     }
+ 
++    @MainActor
++    func testCancelledExplicitRestoreDoesNotApplyAuthorityOrDisplayAppleFailure() async {
++        let source = FakeRestoreEvidenceSource()
++        source.syncError = StoreKitError.userCancelled
++        let (service, store, cleanup) = service(source: source)
++        defer { cleanup() }
++        let restored = await service.restore()
++        XCTAssertFalse(restored)
++        XCTAssertEqual(source.syncCount, 1)
++        XCTAssertTrue(source.finished.isEmpty)
++        XCTAssertEqual(store.entitlement.status, "free")
++        XCTAssertNil(service.errorText)
++    }
++
++    @MainActor
++    func testCurrentYearlyRestoreSurvivesOlderMismatchedUnfinishedMonthlyOnTwoPasses() async {
++        let source = FakeRestoreEvidenceSource()
++        let old = ApplePurchaseEvidence(transactionId: "old-monthly", originalTransactionId: "shared-original",
++            productId: StoreKitService.monthlyProductId, jwsTransaction: "old-monthly-jws",
++            jwsAppTransaction: "signed-app-transaction", deviceVerificationId: deviceId)
++        let current = ApplePurchaseEvidence(transactionId: "current-yearly", originalTransactionId: "shared-original",
++            productId: StoreKitService.yearlyProductId, jwsTransaction: "current-yearly-jws",
++            jwsAppTransaction: "signed-app-transaction", deviceVerificationId: deviceId)
++        source.unfinished = [old]
++        source.current = [current]
++        let (service, store, cleanup) = service(source: source)
++        defer { cleanup() }
++        var submitted: [String] = []
++        RestoreProofURLProtocol.respond = { request in
++            let jws = try XCTUnwrap(Self.json(request)["jws_transaction"])
++            submitted.append(jws)
++            if jws == "old-monthly-jws" {
++                return (503, Data(#"{"code":"apple_identity_mismatch"}"#.utf8))
++            }
++            XCTAssertEqual(jws, "current-yearly-jws")
++            return (200, Self.response(status: "premium", authority: "mobile_restore",
++                productId: StoreKitService.yearlyProductId))
++        }
++        let firstRestore = await service.restore()
++        let secondRestore = await service.restore()
++        XCTAssertTrue(firstRestore)
++        XCTAssertTrue(secondRestore)
++        XCTAssertEqual(source.syncCount, 2)
++        XCTAssertEqual(submitted, ["current-yearly-jws", "old-monthly-jws",
++                                   "current-yearly-jws", "old-monthly-jws"])
++        XCTAssertEqual(source.finished, ["current-yearly", "current-yearly"])
++        XCTAssertEqual(store.entitlement.status, "premium")
++    }
++
++    @MainActor
++    func testCurrentGrantDoesNotHideLaterSameOriginalReconciliationFailure() async {
++        let source = FakeRestoreEvidenceSource()
++        source.current = [ApplePurchaseEvidence(transactionId: "current-yearly",
++            originalTransactionId: "shared-original", productId: StoreKitService.yearlyProductId,
++            jwsTransaction: "current-yearly-jws", jwsAppTransaction: "signed-app-transaction",
++            deviceVerificationId: deviceId)]
++        source.unfinished = [ApplePurchaseEvidence(transactionId: "unfinished-monthly",
++            originalTransactionId: "shared-original", productId: StoreKitService.monthlyProductId,
++            jwsTransaction: "unfinished-monthly-jws", jwsAppTransaction: "signed-app-transaction",
++            deviceVerificationId: deviceId)]
++        let (service, store, cleanup) = service(source: source)
++        defer { cleanup() }
++        RestoreProofURLProtocol.respond = { request in
++            let jws = try XCTUnwrap(Self.json(request)["jws_transaction"])
++            if jws == "current-yearly-jws" {
++                return (200, Self.response(status: "premium", authority: "mobile_restore",
++                    productId: StoreKitService.yearlyProductId))
++            }
++            XCTAssertEqual(jws, "unfinished-monthly-jws")
++            return (503, Data(#"{"code":"subscription_reconciliation_required"}"#.utf8))
++        }
++        let restored = await service.restore()
++        XCTAssertFalse(restored, "Explicit Restore cannot report success while reconciliation remains open")
++        XCTAssertEqual(source.finished, ["current-yearly"])
++        XCTAssertTrue(store.entitlement.wasEverPaid)
++        XCTAssertTrue(service.errorText?.localizedCaseInsensitiveContains("support") == true,
++            "A later reconciliation denial must remain visible after current proof succeeds")
++        XCTAssertFalse(store.canUseAI, "Reconciliation denial must close paid mutation confirmation")
++    }
++
++    @MainActor
++    func testDistinctUnfinishedTransactionsSharingOriginalAreIndividuallyAcknowledged() async {
++        let source = FakeRestoreEvidenceSource()
++        source.unfinished = [
++            ApplePurchaseEvidence(transactionId: "unfinished-1", originalTransactionId: "one-original",
++                productId: StoreKitService.monthlyProductId, jwsTransaction: "jws-1",
++                jwsAppTransaction: "signed-app-transaction", deviceVerificationId: deviceId),
++            ApplePurchaseEvidence(transactionId: "unfinished-2", originalTransactionId: "one-original",
++                productId: StoreKitService.yearlyProductId, jwsTransaction: "jws-2",
++                jwsAppTransaction: "signed-app-transaction", deviceVerificationId: deviceId)
++        ]
++        let (service, _, cleanup) = service(source: source)
++        defer { cleanup() }
++        var submitted: [String] = []
++        RestoreProofURLProtocol.respond = { request in
++            submitted.append(try XCTUnwrap(Self.json(request)["jws_transaction"]))
++            return (200, Self.response(status: "premium", authority: "mobile_restore"))
++        }
++        let discovered = await service.discoverApplePurchases(explicitRestore: false)
++        XCTAssertTrue(discovered)
++        XCTAssertEqual(Set(submitted), Set(["jws-1", "jws-2"]))
++        XCTAssertEqual(Set(source.finished), Set(["unfinished-1", "unfinished-2"]))
++    }
++
++    @MainActor
++    func testLaterCanonicalUnfinishedGrantAppliesAfterEarlierHistoryInSameDiscovery() async {
++        let source = FakeRestoreEvidenceSource()
++        source.unfinished = [
++            ApplePurchaseEvidence(transactionId: "history-1", originalTransactionId: "shared-original",
++                productId: StoreKitService.monthlyProductId, jwsTransaction: "history-jws",
++                jwsAppTransaction: "signed-app-transaction", deviceVerificationId: deviceId),
++            ApplePurchaseEvidence(transactionId: "canonical-2", originalTransactionId: "shared-original",
++                productId: StoreKitService.yearlyProductId, jwsTransaction: "canonical-jws",
++                jwsAppTransaction: "signed-app-transaction", deviceVerificationId: deviceId)
++        ]
++        let (service, store, cleanup) = service(source: source)
++        defer { cleanup() }
++        RestoreProofURLProtocol.respond = { request in
++            let jws = try XCTUnwrap(Self.json(request)["jws_transaction"])
++            if jws == "history-jws" {
++                return (200, Self.response(status: "expired_paid", authority: "mobile_restore"))
++            }
++            XCTAssertEqual(jws, "canonical-jws")
++            return (200, Self.response(status: "premium", authority: "mobile_restore",
++                productId: StoreKitService.yearlyProductId))
++        }
++        let discovered = await service.discoverApplePurchases(explicitRestore: false)
++        XCTAssertTrue(discovered)
++        XCTAssertEqual(source.finished, ["history-1", "canonical-2"])
++        XCTAssertEqual(store.entitlement.status, "premium")
++        XCTAssertTrue(store.canUseAI)
++    }
++
+     func testExplicitAppTransactionPermissionDoesNotLeakIntoLaterAutomaticCheck() async throws {
+         var sharedCalls = 0
+         var refreshCalls = 0
+         let loader = AppTransactionEvidenceLoader(shared: {
+             sharedCalls += 1
+             if sharedCalls == 1 { return "signed-app-transaction" }
+             throw URLError(.notConnectedToInternet)
+         }, refresh: {
+             refreshCalls += 1
+             return "refreshed-app-transaction"
+@@ -198,20 +381,72 @@ final class AnonymousPurchaseRestoreTests: XCTestCase {
+         XCTAssertEqual(explicit, "signed-app-transaction")
+         do {
+             _ = try await loader.jws(explicitRestore: false)
+             XCTFail("Automatic discovery must not use explicit Restore's prompt permission")
+         } catch {
+             XCTAssertEqual(sharedCalls, 2)
+             XCTAssertEqual(refreshCalls, 0)
+         }
+     }
+ 
++    func testLiveEvidenceBoundaryRejectsMissingDeviceIdBeforeStoreKitEnumeration() async {
++        let source = LiveStoreKitPurchaseEvidenceSource(
++            appTransactionLoader: AppTransactionEvidenceLoader(shared: { "signed-app-transaction" },
++                refresh: { XCTFail("Automatic check must not refresh AppTransaction"); return "" }),
++            deviceVerificationID: { nil })
++        do {
++            _ = try await source.currentEvidence()
++            XCTFail("A nil local device ID cannot produce a paired Apple envelope")
++        } catch ApplePurchaseEvidenceError.missingDeviceVerificationId {
++            // Validation happens before Transaction.currentEntitlements is read.
++        } catch { XCTFail("Unexpected evidence error: \(error)") }
++    }
++
++    func testLiveEvidenceBoundaryRejectsUnverifiedAppTransactionWithoutPrompt() async {
++        var refreshCalls = 0
++        let source = LiveStoreKitPurchaseEvidenceSource(
++            appTransactionLoader: AppTransactionEvidenceLoader(shared: {
++                throw ApplePurchaseEvidenceError.unverifiedAppTransaction
++            }, refresh: {
++                refreshCalls += 1
++                return "unexpected-refresh"
++            }), deviceVerificationID: { UUID() })
++        do {
++            _ = try await source.currentEvidence()
++            XCTFail("An unverified AppTransaction cannot be paired with a transaction")
++        } catch ApplePurchaseEvidenceError.unverifiedAppTransaction {
++            XCTAssertEqual(refreshCalls, 0)
++        } catch { XCTFail("Unexpected evidence error: \(error)") }
++    }
++
++    func testLiveCurrentEvidenceEligibilityExcludesExpiredRevokedAndUpgradedTransactions() {
++        let now = Date(timeIntervalSince1970: 2_000_000_000)
++        let later = now.addingTimeInterval(60)
++        let earlier = now.addingTimeInterval(-60)
++        let product = StoreKitService.monthlyProductId
++        XCTAssertTrue(LiveStoreKitPurchaseEvidenceSource.isEligibleCurrent(
++            productId: product, revocationDate: nil, isUpgraded: false,
++            expirationDate: later, now: now))
++        XCTAssertFalse(LiveStoreKitPurchaseEvidenceSource.isEligibleCurrent(
++            productId: product, revocationDate: nil, isUpgraded: false,
++            expirationDate: earlier, now: now))
++        XCTAssertFalse(LiveStoreKitPurchaseEvidenceSource.isEligibleCurrent(
++            productId: product, revocationDate: now, isUpgraded: false,
++            expirationDate: later, now: now))
++        XCTAssertFalse(LiveStoreKitPurchaseEvidenceSource.isEligibleCurrent(
++            productId: product, revocationDate: nil, isUpgraded: true,
++            expirationDate: later, now: now))
++        XCTAssertFalse(LiveStoreKitPurchaseEvidenceSource.isEligibleCurrent(
++            productId: "unrelated.product", revocationDate: nil, isUpgraded: false,
++            expirationDate: later, now: now))
++    }
++
+     @MainActor
+     func testBackendOutageLeavesTransactionUnfinishedAndKnownPaidHistoryReadable() async {
+         let source = FakeRestoreEvidenceSource()
+         source.current = [evidence()]
+         let (service, store, cleanup) = service(source: source)
+         defer { cleanup() }
+         store.update(Self.paid(status: "expired_paid"))
+         var serverCalls = 0
+         RestoreProofURLProtocol.respond = { _ in
+             serverCalls += 1
+@@ -292,20 +527,36 @@ final class AnonymousPurchaseRestoreTests: XCTestCase {
+         defer { cleanup() }
+         let missingGrant = String(data: Self.response(status: "premium", authority: "mobile_restore"), encoding: .utf8)!
+             .replacingOccurrences(of: "\"mobile_grant_expires_at\":\"2099-01-01T00:00:00Z\",", with: "")
+         RestoreProofURLProtocol.respond = { _ in (200, Data(missingGrant.utf8)) }
+         let restored = await service.discoverApplePurchases(explicitRestore: false)
+         XCTAssertFalse(restored)
+         XCTAssertTrue(source.finished.isEmpty)
+         XCTAssertEqual(store.entitlement.status, "free")
+     }
+ 
++    @MainActor
++    func testExpiredMobileGrantCannotFinishOrConfirmPaidMutation() async {
++        let source = FakeRestoreEvidenceSource()
++        source.current = [evidence()]
++        let (service, store, cleanup) = service(source: source)
++        defer { cleanup() }
++        let expiredGrant = String(data: Self.response(status: "premium", authority: "mobile_restore"),
++            encoding: .utf8)!.replacingOccurrences(of: "\"mobile_grant_expires_at\":\"2099-01-01T00:00:00Z\"",
++            with: "\"mobile_grant_expires_at\":\"2000-01-01T00:00:00Z\"")
++        RestoreProofURLProtocol.respond = { _ in (200, Data(expiredGrant.utf8)) }
++        let restored = await service.discoverApplePurchases(explicitRestore: false)
++        XCTAssertFalse(restored)
++        XCTAssertTrue(source.finished.isEmpty)
++        XCTAssertEqual(store.entitlement.status, "free")
++    }
++
+     @MainActor
+     func testEmptyActiveScanUsesBoundedLatestEvidenceToRetainExpiredPaidReads() async {
+         let source = FakeRestoreEvidenceSource()
+         source.historical = [evidence()]
+         let (service, store, cleanup) = service(source: source)
+         defer { cleanup() }
+         RestoreProofURLProtocol.respond = { _ in (200, Self.response(status: "expired_paid", authority: "mobile_restore")) }
+         let restored = await service.discoverApplePurchases(explicitRestore: false)
+         XCTAssertTrue(restored)
+         XCTAssertEqual(Set(source.historicalProductIds), Set([StoreKitService.monthlyProductId, StoreKitService.yearlyProductId]))
+@@ -320,20 +571,102 @@ final class AnonymousPurchaseRestoreTests: XCTestCase {
+         source.currentError = URLError(.cannotParseResponse)
+         let (service, store, cleanup) = service(source: source)
+         defer { cleanup() }
+         store.update(Self.paid(status: "expired_paid"))
+         let restored = await service.discoverApplePurchases(explicitRestore: false)
+         XCTAssertFalse(restored)
+         XCTAssertTrue(store.entitlement.wasEverPaid)
+         XCTAssertNotNil(service.errorText)
+     }
+ 
++    @MainActor
++    func testPublicRefreshRetainsAppleCheckFailureWhenTokenRefreshSucceeds() async {
++        let source = FakeRestoreEvidenceSource()
++        source.currentError = ApplePurchaseEvidenceError.unverifiedAppTransaction
++        let (service, store, cleanup) = service(source: source)
++        defer { cleanup() }
++        store.update(Self.paid(status: "expired_paid"))
++        RestoreProofURLProtocol.respond = { request in
++            XCTAssertEqual(request.url?.path, "/owlai/iap/token")
++            return (200, Self.freeTokenResponse)
++        }
++        await service.refreshTokenAndEntitlement()
++        XCTAssertTrue(service.errorText?.contains("Restore Purchases") == true)
++        XCTAssertTrue(store.entitlement.wasEverPaid)
++        XCTAssertFalse(store.canUseAI)
++    }
++
++    @MainActor
++    func testPublicRefreshRetainsReconciliationGuidanceAfterTokenSuccess() async {
++        let source = FakeRestoreEvidenceSource()
++        source.current = [evidence()]
++        let (service, _, cleanup) = service(source: source)
++        defer { cleanup() }
++        RestoreProofURLProtocol.respond = { request in
++            if request.url?.path == "/owlai/iap/restore" {
++                return (503, Data(#"{"code":"subscription_reconciliation_required"}"#.utf8))
++            }
++            XCTAssertEqual(request.url?.path, "/owlai/iap/token")
++            return (200, Self.freeTokenResponse)
++        }
++        await service.refreshTokenAndEntitlement()
++        XCTAssertTrue(service.errorText?.localizedCaseInsensitiveContains("support") == true)
++        XCTAssertTrue(source.finished.isEmpty)
++    }
++
++    @MainActor
++    func testEmptySuccessfulAppleCheckAndTokenRefreshHaveNoError() async {
++        let source = FakeRestoreEvidenceSource()
++        let (service, store, cleanup) = service(source: source)
++        defer { cleanup() }
++        RestoreProofURLProtocol.respond = { request in
++            XCTAssertEqual(request.url?.path, "/owlai/iap/token")
++            return (200, Self.freeTokenResponse)
++        }
++        await service.refreshTokenAndEntitlement()
++        XCTAssertNil(service.errorText)
++        XCTAssertEqual(store.entitlement.status, "free")
++    }
++
++    @MainActor
++    func testPublicRefreshRenewsStaleLinkedAccountConfirmationAfterIndependentAppleCheck() async {
++        let source = FakeRestoreEvidenceSource()
++        var targetStore: EntitlementStore?
++        var accountRefreshes = 0
++        let profile = AccountProfileDTO(id: "linked-account", email: nil, displayName: nil, provider: "apple")
++        let (service, store, cleanup) = service(source: source,
++            accountProfile: { profile }, refreshAccount: {
++                accountRefreshes += 1
++                targetStore?.setAccountEntitlement(EntitlementDTO(status: "premium",
++                    productId: StoreKitService.monthlyProductId, expiresAt: "2099-01-01T00:00:00Z",
++                    isTrial: false, autoRenew: true, wasEverPaid: true,
++                    resolutionSource: "account", purchaseIsLinked: true))
++            })
++        defer { cleanup() }
++        targetStore = store
++        store.selectAccountIdentity(profile.id)
++        store.setAccountEntitlement(EntitlementDTO(status: "premium",
++            productId: StoreKitService.monthlyProductId, expiresAt: "2099-01-01T00:00:00Z",
++            isTrial: false, autoRenew: true, wasEverPaid: true,
++            resolutionSource: "account", purchaseIsLinked: true))
++        store.selectAccountIdentity(nil)
++        store.selectAccountIdentity(profile.id)
++        XCTAssertFalse(store.canUseAI, "Restored account read history has no fresh paid confirmation")
++        RestoreProofURLProtocol.respond = { request in
++            XCTAssertEqual(request.url?.path, "/owlai/iap/token")
++            return (200, Self.freeTokenResponse)
++        }
++        await service.refreshTokenAndEntitlement()
++        XCTAssertEqual(accountRefreshes, 1)
++        XCTAssertTrue(store.canUseAI)
++    }
++
+     @MainActor
+     func testMigrationEraFreeResponseCannotEraseKnownPaidHistoryBeforeAppleRestoration() {
+         let suite = "Task3B-migration-\(UUID().uuidString)"
+         let defaults = UserDefaults(suiteName: suite)!
+         defer { defaults.removePersistentDomain(forName: suite) }
+         let store = EntitlementStore(defaults: defaults)
+         store.update(Self.paid(status: "expired_paid"))
+         store.update(EntitlementDTO(status: "free", productId: nil, expiresAt: nil,
+                                     isTrial: false, autoRenew: false, wasEverPaid: false,
+                                     resolutionSource: "device", purchaseIsLinked: false))
+@@ -524,68 +857,214 @@ final class AnonymousPurchaseRestoreTests: XCTestCase {
+         await fulfillment(of: [began], timeout: 2)
+         generation = UUID()
+         release?.resume(returning: [evidence()])
+         let restored = await pending.value
+         XCTAssertFalse(restored)
+         XCTAssertEqual(store.entitlement.status, "free")
+         XCTAssertFalse(service.isBusy)
+     }
+ 
+     @MainActor
+-    func testOlderFailedRestoreCannotReplaceNewerSuccessfulGrantOrErrorState() async {
++    func testLateAppleEnumerationErrorCannotOverwriteNewerAcknowledgedGrant() async {
+         let source = FakeRestoreEvidenceSource()
++        let began = expectation(description: "Older Apple enumeration is suspended")
++        var release: CheckedContinuation<[ApplePurchaseEvidence], Error>?
++        source.currentOperation = {
++            began.fulfill()
++            return try await withCheckedThrowingContinuation { release = $0 }
++        }
+         let (service, store, cleanup) = service(source: source)
+         defer { cleanup() }
+-        let began = expectation(description: "Older restore reached fake backend")
+-        let release = DispatchSemaphore(value: 0)
+-        var requests = 0
+         RestoreProofURLProtocol.respond = { _ in
+-            requests += 1
+-            if requests == 1 {
+-                began.fulfill()
+-                guard release.wait(timeout: .now() + 5) == .success else { throw URLError(.timedOut) }
+-                return (503, Data(#"{"code":"apple_unavailable"}"#.utf8))
++            (200, Self.response(status: "premium", authority: "mobile_restore"))
++        }
++        let older = Task { await service.discoverApplePurchases(explicitRestore: false) }
++        await fulfillment(of: [began], timeout: 2)
++        let newer = try? await service.processPurchaseEvidence(evidence())
++        XCTAssertEqual(newer?.appliedToCurrentSession, true)
++        XCTAssertNil(service.errorText)
++        release?.resume(throwing: ApplePurchaseEvidenceError.unverifiedAppTransaction)
++        let oldResult = await older.value
++        XCTAssertFalse(oldResult)
++        XCTAssertEqual(store.entitlement.status, "premium")
++        XCTAssertNil(service.errorText, "Earlier enumeration failure must not replace newer success")
++    }
++
++    @MainActor
++    func testOuterForegroundRefreshCannotApplyOlderFreeTokenAfterNewerAppleGrant() async {
++        let source = FakeRestoreEvidenceSource()
++        let began = expectation(description: "Older foreground Apple check is suspended")
++        var release: CheckedContinuation<[ApplePurchaseEvidence], Never>?
++        source.currentOperation = {
++            began.fulfill()
++            return await withCheckedContinuation { release = $0 }
++        }
++        let (service, store, cleanup) = service(source: source)
++        defer { cleanup() }
++        var tokenCalls = 0
++        RestoreProofURLProtocol.respond = { request in
++            if request.url?.path == "/owlai/iap/token" {
++                tokenCalls += 1
++                return (200, Self.freeTokenResponse)
+             }
++            XCTAssertEqual(request.url?.path, "/owlai/iap/restore")
+             return (200, Self.response(status: "premium", authority: "mobile_restore"))
+         }
++        let older = Task { await service.refreshTokenAndEntitlement() }
++        await fulfillment(of: [began], timeout: 2)
++        let newer = try? await service.processPurchaseEvidence(evidence())
++        XCTAssertEqual(newer?.appliedToCurrentSession, true)
++        release?.resume(returning: [])
++        await older.value
++        XCTAssertEqual(tokenCalls, 0, "An old foreground operation cannot mint fresh token authority")
++        XCTAssertEqual(store.entitlement.status, "premium")
++        XCTAssertTrue(store.canUseAI)
++    }
++
++    @MainActor
++    func testOldDiscoveryCannotResnapshotAfterAnotherOperationAcceptedUnderReplacementKey() async {
++        let source = FakeRestoreEvidenceSource()
++        let began = expectation(description: "Old-key Apple enumeration is suspended")
++        var release: CheckedContinuation<[ApplePurchaseEvidence], Never>?
++        var enumerationCalls = 0
++        source.currentOperation = {
++            enumerationCalls += 1
++            if enumerationCalls == 1 {
++                began.fulfill()
++                return await withCheckedContinuation { release = $0 }
++            }
++            return [self.evidence()]
++        }
++        var keyId = "old-key"
++        let (service, store, cleanup) = service(source: source, installationKeyId: { keyId })
++        defer { cleanup() }
++        RestoreProofURLProtocol.respond = { request in
++            let jws = try XCTUnwrap(Self.json(request)["jws_transaction"])
++            if jws == "newer-jws" {
++                return (200, Self.response(status: "premium", authority: "mobile_restore"))
++            }
++            return (200, Self.response(status: "expired_paid", authority: "mobile_restore"))
++        }
++        let older = Task { await service.discoverApplePurchases(explicitRestore: false) }
++        await fulfillment(of: [began], timeout: 2)
++        keyId = "replacement-key"
++        let newerEvidence = ApplePurchaseEvidence(transactionId: "newer-transaction",
++            originalTransactionId: "newer-original", productId: StoreKitService.monthlyProductId,
++            jwsTransaction: "newer-jws", jwsAppTransaction: "signed-app-transaction",
++            deviceVerificationId: deviceId)
++        let newer = try? await service.processPurchaseEvidence(newerEvidence)
++        XCTAssertEqual(newer?.appliedToCurrentSession, true)
++        release?.resume(returning: [])
++        _ = await older.value
++        XCTAssertEqual(enumerationCalls, 1,
++            "An older discovery cannot retry Apple evidence after a newer accepted operation")
++        XCTAssertEqual(store.entitlement.status, "premium")
++        XCTAssertTrue(store.canUseAI)
++    }
++
++    @MainActor
++    func testLatePublicPurchaseFailureCannotOverwriteNewerAcknowledgedGrant() async {
++        let source = FakeRestoreEvidenceSource()
++        let began = expectation(description: "Older Apple purchase is suspended")
++        var release: CheckedContinuation<PurchaseOperationResult, Error>?
++        let (service, store, cleanup) = service(source: source, purchaseOperation: { _, _ in
++            began.fulfill()
++            return try await withCheckedThrowingContinuation { release = $0 }
++        }, initialPurchaseContext: appToken)
++        defer { cleanup() }
++        RestoreProofURLProtocol.respond = { _ in
++            (200, Self.response(status: "premium", authority: "mobile_restore"))
++        }
++        let older = Task { await service.purchase(productId: StoreKitService.monthlyProductId) }
++        await fulfillment(of: [began], timeout: 2)
++        let newer = try? await service.processPurchaseEvidence(evidence())
++        XCTAssertEqual(newer?.appliedToCurrentSession, true)
++        release?.resume(throwing: URLError(.notConnectedToInternet))
++        let oldResult = await older.value
++        XCTAssertFalse(oldResult)
++        XCTAssertEqual(store.entitlement.status, "premium")
++        XCTAssertNil(service.errorText, "Earlier purchase failure must not replace newer success")
++        XCTAssertFalse(service.isBusy)
++    }
++
++    @MainActor
++    func testOldSessionEnumerationErrorCannotMarkNewSameAccountSessionFailed() async {
++        let source = FakeRestoreEvidenceSource()
++        let began = expectation(description: "Old account session is enumerating Apple evidence")
++        var release: CheckedContinuation<[ApplePurchaseEvidence], Error>?
++        source.currentOperation = {
++            began.fulfill()
++            return try await withCheckedThrowingContinuation { release = $0 }
++        }
++        var generation = UUID()
++        let (service, store, cleanup) = service(source: source,
++            accountSessionGeneration: { generation })
++        defer { cleanup() }
++        let older = Task { await service.discoverApplePurchases(explicitRestore: false) }
++        await fulfillment(of: [began], timeout: 2)
++        generation = UUID() // Same Owl identity, a new authenticated session generation.
++        release?.resume(throwing: URLError(.notConnectedToInternet))
++        let oldResult = await older.value
++        XCTAssertFalse(oldResult)
++        XCTAssertNil(service.errorText)
++        XCTAssertEqual(store.entitlement.status, "free")
++        XCTAssertFalse(service.isBusy)
++    }
++
++    @MainActor
++    func testOlderFailedRestoreCannotReplaceNewerSuccessfulGrantOrErrorState() async {
++        let source = FakeRestoreEvidenceSource()
++        let (service, store, cleanup) = service(source: source)
++        defer { cleanup() }
++        let began = expectation(description: "Older restore reached fake backend")
++        let replies = DeferredRestoreHTTP()
++        RestoreProofURLProtocol.respondAsync = { _, reply in
++            replies.receive(reply, firstArrived: { began.fulfill() },
++                laterBody: Self.response(status: "premium", authority: "mobile_restore"))
++        }
+         let older = Task { try await service.processPurchaseEvidence(evidence()) }
+         await fulfillment(of: [began], timeout: 2)
+         let newer = try? await service.processPurchaseEvidence(evidence())
+-        release.signal()
++        XCTAssertEqual(newer?.appliedToCurrentSession, true,
++            "Newer response must apply before the older response is released")
++        XCTAssertTrue(replies.releaseFirst(status: 503,
++            body: Data(#"{"code":"apple_unavailable"}"#.utf8)))
+         _ = try? await older.value
+-        XCTAssertEqual(requests, 2)
+-        XCTAssertEqual(newer?.appliedToCurrentSession, true)
++        XCTAssertEqual(replies.requests, 2)
+         XCTAssertEqual(store.entitlement.status, "premium")
+         XCTAssertNil(service.errorText)
+     }
+ 
+     private func evidence() -> ApplePurchaseEvidence {
+         ApplePurchaseEvidence(transactionId: "transaction-1", originalTransactionId: "original-1",
+             productId: StoreKitService.monthlyProductId, jwsTransaction: "signed-transaction",
+             jwsAppTransaction: "signed-app-transaction", deviceVerificationId: deviceId)
+     }
+ 
+     @MainActor
+     private func service(source: FakeRestoreEvidenceSource,
+-                         purchaseOperation: ((String, UUID) async throws -> PurchaseOperationResult)? = nil,
+-                         initialPurchaseContext: UUID? = nil,
+-                         installationKeyId: @escaping () -> String? = { "fake-key" },
++                          purchaseOperation: ((String, UUID) async throws -> PurchaseOperationResult)? = nil,
++                          initialPurchaseContext: UUID? = nil,
++                          accountProfile: @escaping () async -> AccountProfileDTO? = { nil },
++                          refreshAccount: @escaping () async -> Void = {},
++                          installationKeyId: @escaping () -> String? = { "fake-key" },
+                          accountSessionGeneration: @escaping () async -> UUID = {
+                              UUID(uuidString: "99999999-9999-9999-9999-999999999999")!
+                          })
+         -> (StoreKitService, EntitlementStore, () -> Void) {
+         let suite = "Task3B-service-\(UUID().uuidString)"
+         let defaults = UserDefaults(suiteName: suite)!
+         let store = EntitlementStore(defaults: defaults)
+         var purchaseContext = initialPurchaseContext
+         let service = StoreKitService(api: api(), transactionUpdates: NoRestoreTransactionUpdates(),
+-            entitlements: store, accountProfile: { nil }, persistToken: { _, _ in },
++            entitlements: store, accountProfile: accountProfile, refreshAccount: refreshAccount,
++            persistToken: { _, _ in },
+             evidenceSource: source, purchaseOperation: purchaseOperation,
+             installationKeyId: installationKeyId,
+             accountSessionGeneration: accountSessionGeneration,
+             cachedPurchaseContext: { _ in purchaseContext },
+             savePurchaseContext: { _, token in purchaseContext = token })
+         return (service, store, { defaults.removePersistentDomain(forName: suite) })
+     }
+ 
+     private func api(accountTokenProvider: @escaping () async throws -> String? = { nil }) -> APIClient {
+         let config = URLSessionConfiguration.ephemeral
+@@ -599,22 +1078,25 @@ final class AnonymousPurchaseRestoreTests: XCTestCase {
+             ] })
+     }
+ 
+     private static func paid(status: String) -> EntitlementDTO {
+         EntitlementDTO(status: status, productId: StoreKitService.monthlyProductId,
+             expiresAt: status == "premium" ? "2099-01-01T00:00:00Z" : "2000-01-01T00:00:00Z",
+             isTrial: false, autoRenew: status == "premium", wasEverPaid: true,
+             resolutionSource: "device", purchaseIsLinked: false)
+     }
+ 
+-    private static func response(status: String, authority: String) -> Data {
+-        Data("{\"access_token\":\"fake-grant\",\"expires_in\":3600,\"purchase_authority\":\"\(authority)\",\"mobile_grant_expires_at\":\"2099-01-01T00:00:00Z\",\"entitlement\":{\"status\":\"\(status)\",\"product_id\":\"\(StoreKitService.monthlyProductId)\",\"expires_at\":\"2099-01-01T00:00:00Z\",\"is_trial\":false,\"auto_renew\":true,\"was_ever_paid\":true,\"resolution_source\":\"\(authority == "mobile_restore" ? "mobile_restore" : "device")\",\"purchase_is_linked\":false}}".utf8)
++    private static let freeTokenResponse = Data(#"{"access_token":"free-grant","expires_in":3600,"entitlement":{"status":"free","product_id":null,"expires_at":null,"is_trial":false,"auto_renew":false,"was_ever_paid":false,"resolution_source":"device","purchase_is_linked":false}}"#.utf8)
++
++    private static func response(status: String, authority: String,
++                                 productId: String = StoreKitService.monthlyProductId) -> Data {
++        Data("{\"access_token\":\"fake-grant\",\"expires_in\":3600,\"purchase_authority\":\"\(authority)\",\"mobile_grant_expires_at\":\"2099-01-01T00:00:00Z\",\"entitlement\":{\"status\":\"\(status)\",\"product_id\":\"\(productId)\",\"expires_at\":\"2099-01-01T00:00:00Z\",\"is_trial\":false,\"auto_renew\":true,\"was_ever_paid\":true,\"resolution_source\":\"\(authority == "mobile_restore" ? "mobile_restore" : "device")\",\"purchase_is_linked\":false}}".utf8)
+     }
+ 
+     private static func json(_ request: URLRequest) throws -> [String: String] {
+         let body = body(of: request)
+         return try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: String])
+     }
+ 
+     private static func body(of request: URLRequest) -> Data {
+         if let body = request.httpBody { return body }
+         guard let stream = request.httpBodyStream else { return Data() }
+diff --git a/FlashCardAITests/AppAttestSessionResumeTests.swift b/FlashCardAITests/AppAttestSessionResumeTests.swift
+index 65443d0..9e4fab8 100644
+--- a/FlashCardAITests/AppAttestSessionResumeTests.swift
++++ b/FlashCardAITests/AppAttestSessionResumeTests.swift
+@@ -1,31 +1,54 @@
+ import Foundation
+ import DeviceCheck
++import StoreKit
+ import XCTest
+ @testable import FlashCardAI
+ 
+ private final class FakeAppAttestSessionStorage: AppAttestSessionStorage {
+     var savedKey: String?
+     var savedSession: AppAttestKeychainStore.DeviceSession?
+     var clearedSession = 0
+     var clearedAll = 0
+     init(key: String?, session: AppAttestKeychainStore.DeviceSession? = nil) {
+         savedKey = key
+         savedSession = session
+     }
+     func keyId() -> String? { savedKey }
+     func session() -> AppAttestKeychainStore.DeviceSession? { savedSession }
+     func save(_ session: AppAttestKeychainStore.DeviceSession) throws { savedSession = session }
+     func clearSession() { clearedSession += 1; savedSession = nil }
+     func clearAll() { clearedAll += 1; savedKey = nil; savedSession = nil }
+ }
+ 
++private final class CoordinatorRestoreEvidenceSource: StoreKitPurchaseEvidenceSource {
++    var finished: [String] = []
++    var synchronizeCalls = 0
++    func currentEvidence() async throws -> [ApplePurchaseEvidence] {
++        [ApplePurchaseEvidence(transactionId: "verified-transaction", originalTransactionId: "original-1",
++            productId: StoreKitService.monthlyProductId, jwsTransaction: "signed-transaction",
++            jwsAppTransaction: "signed-app-transaction",
++            deviceVerificationId: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")]
++    }
++    func latestHistoricalEvidence(productIds: [String]) async throws -> [ApplePurchaseEvidence] { [] }
++    func synchronize() async throws { synchronizeCalls += 1 }
++    func finish(transactionId: String) async { finished.append(transactionId) }
++}
++
++private struct NoCoordinatorRestoreUpdates: StoreKitTransactionUpdates {
++    @MainActor
++    func observe(_ handle: @escaping @MainActor (VerificationResult<StoreKit.Transaction>) async -> Void)
++        -> StoreKitTransactionObservation {
++        StoreKitTransactionObservation(task: Task {})
++    }
++}
++
+ private final class ResumeProofURLProtocol: URLProtocol {
+     static var respond: ((URLRequest) throws -> (Int, Data))?
+ 
+     override class func canInit(with request: URLRequest) -> Bool { true }
+     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+     override func startLoading() {
+         do {
+             guard let respond = Self.respond else { throw URLError(.badServerResponse) }
+             let (status, body) = try respond(request)
+             let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
+@@ -85,21 +108,21 @@ final class AppAttestSessionResumeTests: XCTestCase {
+         var sent = 0
+         var recoveryCount = 0
+         var headerCount = 0
+         ResumeProofURLProtocol.respond = { request in
+             sent += 1
+             XCTAssertEqual(request.url?.path, "/owlai/iap/token")
+             XCTAssertEqual(request.value(forHTTPHeaderField: "X-App-Attest-Challenge-Id"), "challenge-\(sent)")
+             if sent == 1 { return (403, Data(#"{"code":"invalid_device_proof"}"#.utf8)) }
+             return (200, Self.tokenResponse)
+         }
+-        let client = api(recovery: { recoveryCount += 1; return true }, headers: {
++        let client = api(recovery: { recoveryCount += 1; return true }, headers: { _, _, _ in
+             headerCount += 1
+             return [
+                 "X-App-Attest-Key-Id": "existing-key",
+                 "X-App-Attest-Challenge-Id": "challenge-\(headerCount)",
+                 "X-App-Attest-Assertion": "fake-assertion-\(headerCount)"
+             ]
+         })
+         let response = try await client.iapToken()
+         XCTAssertEqual(response.accessToken, "paid-access")
+         XCTAssertEqual(sent, 2)
+@@ -129,87 +152,288 @@ final class AppAttestSessionResumeTests: XCTestCase {
+             case "/owlai/app-attest/assertion-challenge":
+                 XCTAssertEqual(request.value(forHTTPHeaderField: "X-App-Attest-Key-Id"), "existing-key")
+                 return (200, Data(#"{"challenge":"bm9uY2U=","challenge_id":"challenge-1"}"#.utf8))
+             case "/owlai/app-attest/resume":
+                 XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+                 XCTAssertEqual(Self.body(of: request), Data("{}".utf8))
+                 return (200, Data(#"{"device_token":"new-jwt","expires_at":"2099-01-01T00:00:00Z"}"#.utf8))
+             default: XCTFail("Unexpected route"); return (500, Data())
+             }
+         }
++        var purchaseClears = 0
++        var tokenClears = 0
+         let coordinator = AIIntegrityCoordinator(sessionStorage: storage, generateAssertion: { key, hash in
+             XCTAssertEqual(key, "existing-key")
+             XCTAssertEqual(hash.count, 32)
+             assertionCalls += 1
+             return Data("proof".utf8)
+-        })
++        }, clearPurchaseContext: { purchaseClears += 1 }, clearAccessToken: { tokenClears += 1 })
+         await coordinator.configure(api())
+         let resumed = await coordinator.resumeDeviceSession()
+         XCTAssertTrue(resumed)
+         XCTAssertEqual(storage.savedKey, "existing-key")
+         XCTAssertEqual(storage.savedSession?.deviceToken, "new-jwt")
+         XCTAssertEqual(storage.clearedAll, 0)
++        XCTAssertEqual(purchaseClears, 0)
++        XCTAssertEqual(tokenClears, 0)
+         XCTAssertEqual(assertionCalls, 1)
+         XCTAssertEqual(networkCalls, 2)
+     }
+ 
+     func testCoordinatorPreservesValidKeyAndPaidSessionOnNetworkFailure() async {
+         let storage = FakeAppAttestSessionStorage(key: "existing-key", session: .init(
+             deviceToken: "old-jwt", expiresAt: Date(timeIntervalSince1970: 0), keyId: "existing-key"))
+         var networkCalls = 0
+         ResumeProofURLProtocol.respond = { _ in
+             networkCalls += 1
+             return (503, Data(#"{"code":"temporary_unavailable"}"#.utf8))
+         }
+-        let coordinator = AIIntegrityCoordinator(sessionStorage: storage, generateAssertion: { _, _ in Data("proof".utf8) })
++        var purchaseClears = 0
++        var tokenClears = 0
++        let coordinator = AIIntegrityCoordinator(sessionStorage: storage, generateAssertion: { _, _ in Data("proof".utf8) },
++            clearPurchaseContext: { purchaseClears += 1 }, clearAccessToken: { tokenClears += 1 })
+         await coordinator.configure(api())
+         let resumed = await coordinator.resumeDeviceSession()
+         XCTAssertFalse(resumed)
+         XCTAssertEqual(networkCalls, 1)
+         XCTAssertEqual(storage.savedKey, "existing-key")
+         XCTAssertEqual(storage.savedSession?.deviceToken, "old-jwt")
+         XCTAssertEqual(storage.clearedAll, 0)
++        XCTAssertEqual(purchaseClears, 0)
++        XCTAssertEqual(tokenClears, 0)
+     }
+ 
+     func testCoordinatorRotatesOnlyGenuinelyInvalidLocalAppAttestKey() async {
+         let storage = FakeAppAttestSessionStorage(key: "invalid-local-key")
+         ResumeProofURLProtocol.respond = { _ in
+             (200, Data(#"{"challenge":"bm9uY2U=","challenge_id":"challenge-1"}"#.utf8))
+         }
+         let invalidKey = NSError(domain: DCError.errorDomain, code: DCError.invalidKey.rawValue)
++        var purchaseClears = 0
++        var tokenClears = 0
+         let coordinator = AIIntegrityCoordinator(sessionStorage: storage, generateAssertion: { _, _ in
+             throw invalidKey
+-        })
++        }, clearPurchaseContext: { purchaseClears += 1 }, clearAccessToken: { tokenClears += 1 })
+         await coordinator.configure(api())
+         let resumed = await coordinator.resumeDeviceSession()
+         XCTAssertFalse(resumed)
+         XCTAssertEqual(storage.clearedAll, 1)
++        XCTAssertEqual(purchaseClears, 1)
++        XCTAssertEqual(tokenClears, 1)
+         XCTAssertNil(storage.savedKey)
+     }
+ 
+-    private func api(deviceToken: @escaping () async -> String? = { "device-session" },
++    func testPublicProtectedRequestReplacesInvalidKeyDespiteUnexpiredJwtThenRestoresAppleEvidence() async {
++        let storage = FakeAppAttestSessionStorage(key: "invalid-key", session: .init(
++            deviceToken: "old-jwt", expiresAt: Date(timeIntervalSince1970: 4_070_908_800), keyId: "invalid-key"))
++        var clears = 0
++        var registrations = 0
++        var tokenRequests = 0
++        var restoreRequests = 0
++        let invalidKey = NSError(domain: DCError.errorDomain, code: DCError.invalidKey.rawValue)
++        let coordinator = AIIntegrityCoordinator(sessionStorage: storage, generateAssertion: { key, _ in
++            if key == "invalid-key" { throw invalidKey }
++            XCTAssertEqual(key, "replacement-key")
++            return Data("new-proof".utf8)
++        }, clearPurchaseContext: { clears += 1 }, clearAccessToken: { clears += 1 },
++            supportsAppAttest: { true }, registerInstallation: {
++                registrations += 1
++                storage.savedKey = "replacement-key"
++                storage.savedSession = .init(deviceToken: "replacement-jwt",
++                    expiresAt: Date(timeIntervalSince1970: 4_070_908_800), keyId: "replacement-key")
++            })
++        ResumeProofURLProtocol.respond = { request in
++            switch request.url?.path {
++            case "/owlai/app-attest/assertion-challenge":
++                return (200, Data(#"{"challenge":"bm9uY2U=","challenge_id":"challenge-1"}"#.utf8))
++            case "/owlai/iap/token":
++                tokenRequests += 1
++                XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer replacement-jwt")
++                XCTAssertEqual(request.value(forHTTPHeaderField: "X-App-Attest-Key-Id"), "replacement-key")
++                return (200, Self.tokenResponse)
++            case "/owlai/iap/restore":
++                restoreRequests += 1
++                XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer replacement-jwt")
++                XCTAssertEqual(request.value(forHTTPHeaderField: "X-App-Attest-Key-Id"), "replacement-key")
++                return (200, Self.restoreResponse)
++            default: XCTFail("Unexpected route"); return (500, Data())
++            }
++        }
++        let client = api(deviceToken: { await coordinator.deviceSessionTokenForProtectedRequest() },
++            recovery: { await coordinator.recoverFromUnauthorized() },
++            invalidKeyRecovery: { await coordinator.recoverInvalidKeyIfNeeded() },
++            headers: { path, body, bearer in
++                await coordinator.headersForAIRequest(path: path, body: body, bearerToken: bearer)
++            })
++        await coordinator.configure(client)
++        do {
++            _ = try await client.iapToken()
++            _ = try await client.iapRestore(IapRestoreAPIRequest(jwsTransaction: "signed-transaction",
++                jwsAppTransaction: "signed-app-transaction",
++                deviceVerificationId: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"))
++        } catch { XCTFail("A genuine invalid key should recover through the ordinary public request: \(error)") }
++        XCTAssertEqual(registrations, 1)
++        XCTAssertEqual(clears, 2, "Both fake purchase-context and token stores must be invalidated exactly once")
++        XCTAssertEqual(tokenRequests, 1)
++        XCTAssertEqual(restoreRequests, 1)
++        XCTAssertEqual(storage.savedKey, "replacement-key")
++    }
++
++    func testValidJwtUnknownKeyChallengeReplacesKeyWithoutRealKeychainWrites() async {
++        let storage = FakeAppAttestSessionStorage(key: "unknown-key", session: .init(
++            deviceToken: "old-jwt", expiresAt: Date(timeIntervalSince1970: 4_070_908_800), keyId: "unknown-key"))
++        var clears = 0
++        var registrations = 0
++        let coordinator = AIIntegrityCoordinator(sessionStorage: storage,
++            generateAssertion: { _, _ in Data("proof".utf8) },
++            clearPurchaseContext: { clears += 1 }, clearAccessToken: { clears += 1 },
++            supportsAppAttest: { true }, registerInstallation: {
++                registrations += 1
++                storage.savedKey = "replacement-key"
++                storage.savedSession = .init(deviceToken: "replacement-jwt",
++                    expiresAt: Date(timeIntervalSince1970: 4_070_908_800), keyId: "replacement-key")
++            })
++        ResumeProofURLProtocol.respond = { request in
++            if request.url?.path == "/owlai/app-attest/assertion-challenge" {
++                if request.value(forHTTPHeaderField: "X-App-Attest-Key-Id") == "unknown-key" {
++                    return (401, Data(#"{"code":"invalid_device"}"#.utf8))
++                }
++                return (200, Data(#"{"challenge":"bm9uY2U=","challenge_id":"challenge-2"}"#.utf8))
++            }
++            XCTAssertEqual(request.url?.path, "/owlai/iap/token")
++            XCTAssertEqual(request.value(forHTTPHeaderField: "X-App-Attest-Key-Id"), "replacement-key")
++            return (200, Self.tokenResponse)
++        }
++        let client = api(deviceToken: { await coordinator.deviceSessionTokenForProtectedRequest() },
++            recovery: { await coordinator.recoverFromUnauthorized() },
++            invalidKeyRecovery: { await coordinator.recoverInvalidKeyIfNeeded() },
++            headers: { path, body, bearer in
++                await coordinator.headersForAIRequest(path: path, body: body, bearerToken: bearer)
++            })
++        await coordinator.configure(client)
++        do { _ = try await client.iapToken() }
++        catch { XCTFail("Typed unknown-key challenge should replace the key once: \(error)") }
++        XCTAssertEqual(registrations, 1)
++        XCTAssertEqual(clears, 2)
++        XCTAssertEqual(storage.savedKey, "replacement-key")
++    }
++
++    func testOrdinaryProofNetworkFailurePreservesValidKeyAndCaches() async {
++        let storage = FakeAppAttestSessionStorage(key: "valid-key", session: .init(
++            deviceToken: "valid-jwt", expiresAt: Date(timeIntervalSince1970: 4_070_908_800),
++            keyId: "valid-key"))
++        var clears = 0
++        var registrations = 0
++        var tokenRequests = 0
++        let coordinator = AIIntegrityCoordinator(sessionStorage: storage,
++            generateAssertion: { _, _ in Data("proof".utf8) },
++            clearPurchaseContext: { clears += 1 }, clearAccessToken: { clears += 1 },
++            supportsAppAttest: { true }, registerInstallation: { registrations += 1 })
++        ResumeProofURLProtocol.respond = { request in
++            if request.url?.path == "/owlai/app-attest/assertion-challenge" {
++                return (503, Data(#"{"code":"temporary_unavailable"}"#.utf8))
++            }
++            tokenRequests += 1
++            return (200, Self.tokenResponse)
++        }
++        let client = api(deviceToken: { await coordinator.deviceSessionTokenForProtectedRequest() },
++            recovery: { await coordinator.recoverFromUnauthorized() },
++            invalidKeyRecovery: { await coordinator.recoverInvalidKeyIfNeeded() },
++            headers: { path, body, bearer in
++                await coordinator.headersForAIRequest(path: path, body: body, bearerToken: bearer)
++            })
++        await coordinator.configure(client)
++        do { _ = try await client.iapToken(); XCTFail("An unavailable assertion challenge cannot authorize a token") }
++        catch { XCTAssertEqual((error as? APIError)?.localizedDescription, APIError.deviceIntegrityUnavailable.localizedDescription) }
++        XCTAssertEqual(tokenRequests, 0)
++        XCTAssertEqual(registrations, 0)
++        XCTAssertEqual(clears, 0)
++        XCTAssertEqual(storage.savedKey, "valid-key")
++        XCTAssertEqual(storage.savedSession?.deviceToken, "valid-jwt")
++    }
++
++    @MainActor
++    func testPublicStoreKitRestoreAppliesPairedProofAfterKeyReplacementWithinSameOperation() async {
++        let storage = FakeAppAttestSessionStorage(key: "invalid-key", session: .init(
++            deviceToken: "old-jwt", expiresAt: Date(timeIntervalSince1970: 4_070_908_800),
++            keyId: "invalid-key"))
++        let suite = "Task3B-coordinator-restore-\(UUID().uuidString)"
++        let defaults = UserDefaults(suiteName: suite)!
++        defer { defaults.removePersistentDomain(forName: suite) }
++        let entitlements = EntitlementStore(defaults: defaults)
++        let source = CoordinatorRestoreEvidenceSource()
++        var replacementCount = 0
++        var restoreRequests = 0
++        let invalidKey = NSError(domain: DCError.errorDomain, code: DCError.invalidKey.rawValue)
++        let coordinator = AIIntegrityCoordinator(sessionStorage: storage, generateAssertion: { key, _ in
++            if key == "invalid-key" { throw invalidKey }
++            return Data("replacement-proof".utf8)
++        }, clearPurchaseContext: {}, clearAccessToken: {}, supportsAppAttest: { true },
++            registerInstallation: {
++                replacementCount += 1
++                storage.savedKey = "replacement-key"
++                storage.savedSession = .init(deviceToken: "replacement-jwt",
++                    expiresAt: Date(timeIntervalSince1970: 4_070_908_800), keyId: "replacement-key")
++            })
++        ResumeProofURLProtocol.respond = { request in
++            if request.url?.path == "/owlai/app-attest/assertion-challenge" {
++                return (200, Data(#"{"challenge":"bm9uY2U=","challenge_id":"challenge-1"}"#.utf8))
++            }
++            XCTAssertEqual(request.url?.path, "/owlai/iap/restore")
++            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer replacement-jwt")
++            restoreRequests += 1
++            return (200, Self.restoreResponse)
++        }
++        let client = api(entitlementStore: entitlements,
++            deviceToken: { await coordinator.deviceSessionTokenForProtectedRequest() },
++            recovery: { await coordinator.recoverFromUnauthorized() },
++            invalidKeyRecovery: { await coordinator.recoverInvalidKeyIfNeeded() },
++            headers: { path, body, bearer in
++                await coordinator.headersForAIRequest(path: path, body: body, bearerToken: bearer)
++            })
++        await coordinator.configure(client)
++        let service = StoreKitService(api: client, transactionUpdates: NoCoordinatorRestoreUpdates(),
++            entitlements: entitlements, accountProfile: { nil }, refreshAccount: {},
++            persistToken: { _, _ in },
++            evidenceSource: source, installationKeyId: { storage.savedKey },
++            accountSessionGeneration: { UUID(uuidString: "99999999-9999-9999-9999-999999999999")! },
++            cachedPurchaseContext: { _ in nil }, savePurchaseContext: { _, _ in })
++        let restored = await service.restore()
++        XCTAssertTrue(restored, "The same public Restore must re-prove under the replacement key")
++        XCTAssertEqual(replacementCount, 1)
++        XCTAssertEqual(source.synchronizeCalls, 1)
++        XCTAssertEqual(restoreRequests, 2, "One acknowledged stale proof and one bounded re-proof under the new key")
++        XCTAssertTrue(source.finished.contains("verified-transaction"))
++        XCTAssertEqual(entitlements.entitlement.status, "premium")
++    }
++
++    private func api(entitlementStore: EntitlementStore? = nil,
++                     deviceToken: @escaping () async -> String? = { "device-session" },
+                      recovery: @escaping () async -> Bool = { false },
+-                     headers: @escaping () async -> [String: String] = {
++                     invalidKeyRecovery: @escaping () async -> Bool = { false },
++                      headers: @escaping (String, Data, String) async -> [String: String] = { _, _, _ in
+                          ["X-App-Attest-Key-Id": "existing-key",
+                           "X-App-Attest-Challenge-Id": "fresh-challenge",
+                           "X-App-Attest-Assertion": "fake-assertion"]
+                      }) -> APIClient {
+         let config = URLSessionConfiguration.ephemeral
+         config.protocolClasses = [ResumeProofURLProtocol.self]
+-        return APIClient(session: URLSession(configuration: config), baseURL: URL(string: "https://offline.invalid")!,
++        return APIClient(session: URLSession(configuration: config), entitlementStore: entitlementStore,
++            baseURL: URL(string: "https://offline.invalid")!,
+             deviceTokenProvider: deviceToken, accountTokenProvider: { nil },
+             accountSessionGenerationProvider: { UUID(uuidString: "99999999-9999-9999-9999-999999999999")! },
+-            deviceSessionRecovery: recovery,
+-            integrityHeadersProvider: { _, _, _ in await headers() })
++            deviceSessionRecovery: recovery, invalidKeyRecovery: invalidKeyRecovery,
++            integrityHeadersProvider: headers)
+     }
+ 
+     private static let tokenResponse = Data(#"{"access_token":"paid-access","expires_in":3600,"entitlement":{"status":"premium","product_id":"monthly","expires_at":"2099-01-01T00:00:00Z","is_trial":false,"auto_renew":true,"was_ever_paid":true,"resolution_source":"device","purchase_is_linked":false}}"#.utf8)
++    private static let restoreResponse = Data(#"{"access_token":"paid-access","expires_in":3600,"purchase_authority":"mobile_restore","mobile_grant_expires_at":"2099-01-01T00:00:00Z","entitlement":{"status":"premium","product_id":"monthly","expires_at":"2099-01-01T00:00:00Z","is_trial":false,"auto_renew":true,"was_ever_paid":true,"resolution_source":"mobile_restore","purchase_is_linked":false}}"#.utf8)
+ 
+     private static func body(of request: URLRequest) -> Data {
+         if let body = request.httpBody { return body }
+         guard let stream = request.httpBodyStream else { return Data() }
+         stream.open()
+         defer { stream.close() }
+         var body = Data()
+         var buffer = [UInt8](repeating: 0, count: 1024)
+         while stream.hasBytesAvailable {
+             let count = stream.read(&buffer, maxLength: buffer.count)
+diff --git a/FlashCardAITests/ReviewCardRepositoryTests.swift b/FlashCardAITests/ReviewCardRepositoryTests.swift
+index b90ccee..a99bf96 100644
+--- a/FlashCardAITests/ReviewCardRepositoryTests.swift
++++ b/FlashCardAITests/ReviewCardRepositoryTests.swift
+@@ -1277,20 +1277,27 @@ final class ReviewCardRepositoryTests: XCTestCase {
+         }
+         guard sqlite3_step(statement) == SQLITE_ROW else {
+             throw LocalDatabaseError.stepFailed(String(cString: sqlite3_errmsg(db)))
+         }
+         return try decode(statement)
+     }
+ }
+ 
+ @MainActor
+ final class WordRepositoryV10OwnershipTests: XCTestCase {
++    private static let entitlementDefaultKeys = [EntitlementStore.snapshotDefaultsKey,
++        "FlashCardAI.entitlement.deviceSnapshot", "FlashCardAI.entitlement.accountSnapshot",
++        "FlashCardAI.entitlement.linkedPurchase", "FlashCardAI.entitlement.provenIndependentPurchase",
++        "FlashCardAI.entitlement.updatedAt", "FlashCardAI.entitlement.accountReadHistory"]
++    private var previousEntitlementState: EntitlementStore.OfflineFixtureState?
++    private var previousEntitlementDefaults: [String: Any]?
++
+     private enum DuplicateSaveOutcome: Equatable {
+         case succeeded
+         case alreadyInFlight(UUID)
+         case unexpectedFailure(String)
+     }
+ 
+     private enum SQLiteSnapshotValue: Equatable {
+         case null
+         case integer(Int64)
+         case real(Double)
+@@ -1336,20 +1343,25 @@ final class WordRepositoryV10OwnershipTests: XCTestCase {
+             integrityHeadersProvider: { _, _, _ in [
+                 "X-App-Attest-Key-Id": "test-key",
+                 "X-App-Attest-Assertion": "test-assertion",
+                 "X-App-Attest-Challenge-Id": "test-challenge"
+             ] }
+         )
+     }
+ 
+     override func setUpWithError() throws {
+         try super.setUpWithError()
++        previousEntitlementDefaults = Dictionary(uniqueKeysWithValues:
++            Self.entitlementDefaultKeys.compactMap { key in
++                UserDefaults.standard.object(forKey: key).map { (key, $0) }
++            })
++        previousEntitlementState = EntitlementStore.shared.beginHostedOfflineFixture()
+         WordRepositoryURLProtocol.responseGate = nil
+         directory = FileManager.default.temporaryDirectory
+             .appendingPathComponent("WordRepositoryV10OwnershipTests-\(UUID().uuidString)")
+         try FileManager.default.createDirectory(
+             at: directory,
+             withIntermediateDirectories: true
+         )
+         database = try LocalDatabase(
+             url: directory.appendingPathComponent("flashcard.sqlite"),
+             primaryDirection: .learningToNative,
+@@ -1374,20 +1386,33 @@ final class WordRepositoryV10OwnershipTests: XCTestCase {
+         words = nil
+         reviewCards = nil
+         lockedIDs = nil
+         database = nil
+         directory = nil
+         try super.tearDownWithError()
+     }
+ 
+     @MainActor
+     override func tearDown() async throws {
++        defer {
++            if let previousEntitlementState, let previousEntitlementDefaults {
++                EntitlementStore.shared.endHostedOfflineFixture(previousEntitlementState)
++                for key in Self.entitlementDefaultKeys {
++                    UserDefaults.standard.removeObject(forKey: key)
++                }
++                for (key, value) in previousEntitlementDefaults {
++                    UserDefaults.standard.set(value, forKey: key)
++                }
++            }
++            previousEntitlementState = nil
++            previousEntitlementDefaults = nil
++        }
+         for _ in 0..<80 {
+             if teardownDatabase == nil { break }
+             try await Task.sleep(nanoseconds: 25_000_000)
+         }
+         WordRepositoryURLProtocol.responseGate = nil
+         if let directory = teardownDirectory {
+             if teardownDatabase == nil {
+                 try FileManager.default.removeItem(at: directory)
+             } else {
+                 XCTFail("Queued V10 device work still owns SQLite after teardown; preserving \(directory.path)")
+diff --git a/FlashCardAITests/SharedAccountSyncTests.swift b/FlashCardAITests/SharedAccountSyncTests.swift
+index 2eba5dc..5de9c00 100644
+--- a/FlashCardAITests/SharedAccountSyncTests.swift
++++ b/FlashCardAITests/SharedAccountSyncTests.swift
+@@ -947,21 +947,22 @@ final class SharedAccountSessionTests: XCTestCase {
+         store.update(account, accountAuthorized: true)
+         XCTAssertEqual(store.entitlement.productId, "guest")
+         XCTAssertEqual(defaults.object(forKey: "FlashCardAI.entitlement.updatedAt") as? Date, checked,
+             "An ignored response is not a current guest access confirmation")
+     }
+ 
+     @MainActor
+     private func storeKit(store: EntitlementStore, api: APIClient? = nil, persist: @escaping (String, Int) throws -> Void = { _, _ in }) -> StoreKitService {
+         let account = AccountProfileModel(client: client(storage: MemorySharedAccountCredentials()), entitlements: store)
+         return StoreKitService(api: api ?? deviceClient(state: AccountRequestState(), guest: true), transactionUpdates: NoStoreKitTransactionUpdates(),
+-            account: account, entitlements: store, accountProfile: { nil }, persistToken: persist)
++            account: account, entitlements: store, accountProfile: { nil }, refreshAccount: {},
++            persistToken: persist)
+     }
+ 
+     private func tokenResponse(status: String = "premium") -> Data {
+         Data("{\"access_token\":\"verified-token\",\"expires_in\":3600,\"entitlement\":\(entitlementJSON.replacingOccurrences(of: "premium", with: status))}".utf8)
+     }
+ 
+     func testExpiredSessionRefreshesOnceForConcurrentCallers() async throws {
+         let storage = MemorySharedAccountCredentials()
+         storage.value = try AccountWire.decoder().decode(AccountSessionDTO.self, from: Data(sessionJSON.replacingOccurrences(of: "2099-01-01", with: "2000-01-01").utf8))
+         let client = client(storage: storage)
+@@ -1076,21 +1077,22 @@ final class SharedAccountSessionTests: XCTestCase {
+     func testSharedAccountResponsePreservesIndependentGuestPurchaseOnLogout() {
+         let suite = "SharedAccountSessionTests.\(UUID().uuidString)"
+         let defaults = UserDefaults(suiteName: suite)!
+         defer { defaults.removePersistentDomain(forName: suite) }
+         let store = EntitlementStore(defaults: defaults)
+         let guest = EntitlementDTO(status: "premium", productId: "guest-yearly", expiresAt: "2099-01-01T00:00:00Z", isTrial: false, autoRenew: true, wasEverPaid: true, resolutionSource: "device", purchaseIsLinked: false)
+         let shared = EntitlementDTO(status: "premium", productId: "account-monthly", expiresAt: "2098-01-01T00:00:00Z", isTrial: false, autoRenew: true, wasEverPaid: true, resolutionSource: "account", purchaseIsLinked: false)
+         store.update(guest)
+         store.update(shared, accountAuthorized: true)
+         store.setAccountEntitlement(shared)
+-        XCTAssertEqual(store.entitlement.productId, "account-monthly")
++        // An independent active mobile purchase outranks an unrelated healthy Owl account.
++        XCTAssertEqual(store.entitlement.productId, "guest-yearly")
+         store.setAccountEntitlement(nil)
+         XCTAssertEqual(store.entitlement.productId, "guest-yearly")
+         XCTAssertEqual(EntitlementStore(defaults: defaults).entitlement.productId, "guest-yearly")
+     }
+ 
+     @MainActor
+     func testAccountResponseWithoutGuestPurchaseNeverBecomesGuestPremium() {
+         let suite = "SharedAccountSessionTests.\(UUID().uuidString)"
+         let defaults = UserDefaults(suiteName: suite)!
+         defer { defaults.removePersistentDomain(forName: suite) }
+diff --git a/Infrastructure/Networking/APIClient.swift b/Infrastructure/Networking/APIClient.swift
+index d6f1bef..563d43f 100644
+--- a/Infrastructure/Networking/APIClient.swift
++++ b/Infrastructure/Networking/APIClient.swift
+@@ -2,20 +2,21 @@ import Foundation
+ 
+ /// Device routes retain device JWTs and App Attest. Account identity is an independent header.
+ actor APIClient {
+     private let session: URLSession
+     private let baseURL: URL
+     private let deviceTokenProvider: () async -> String?
+     private let accountTokenProvider: () async throws -> String?
+     private let accountTokenRecovery: (String) async throws -> String?
+     private let accountSessionGenerationProvider: () async -> UUID
+     private let deviceSessionRecovery: () async -> Bool
++    private let invalidKeyRecovery: () async -> Bool
+     private let integrityHeadersProvider: (
+         _ path: String,
+         _ body: Data,
+         _ bearerToken: String
+     ) async -> [String: String]
+     private let encoder: JSONEncoder
+     private let decoder: JSONDecoder
+     // Optional isolated authority for access-response tests; live behavior is unchanged.
+     private let entitlementStore: EntitlementStore?
+ 
+@@ -31,40 +32,44 @@ actor APIClient {
+         },
+         accountTokenRecovery: @escaping (String) async throws -> String? = { rejected in
+             try await AccountSessionClient.shared.accessToken(rejectedToken: rejected)
+         },
+         accountSessionGenerationProvider: @escaping () async -> UUID = {
+             await AccountSessionClient.shared.sessionGeneration()
+         },
+         deviceSessionRecovery: @escaping () async -> Bool = {
+             await AIIntegrityCoordinator.shared.recoverFromUnauthorized()
+         },
++        invalidKeyRecovery: @escaping () async -> Bool = {
++            await AIIntegrityCoordinator.shared.recoverInvalidKeyIfNeeded()
++        },
+         integrityHeadersProvider: @escaping (
+             _ path: String,
+             _ body: Data,
+             _ bearerToken: String
+         ) async -> [String: String] = { path, body, bearerToken in
+             await AIIntegrityCoordinator.shared.headersForAIRequest(
+                 path: path,
+                 body: body,
+                 bearerToken: bearerToken
+             )
+         }
+     ) {
+         self.session = session
+         self.entitlementStore = entitlementStore
+         self.baseURL = baseURL
+         self.deviceTokenProvider = deviceTokenProvider
+         self.accountTokenProvider = accountTokenProvider
+         self.accountTokenRecovery = accountTokenRecovery
+         self.accountSessionGenerationProvider = accountSessionGenerationProvider
+         self.deviceSessionRecovery = deviceSessionRecovery
++        self.invalidKeyRecovery = invalidKeyRecovery
+         self.integrityHeadersProvider = integrityHeadersProvider
+         let enc = JSONEncoder()
+         enc.keyEncodingStrategy = .convertToSnakeCase
+         encoder = enc
+         let dec = JSONDecoder()
+         dec.keyDecodingStrategy = .convertFromSnakeCase
+         decoder = dec
+     }
+ 
+     func reviewTranslation(_ body: SecondaryReviewRequest) async throws -> SecondaryReviewContent {
+@@ -329,21 +334,23 @@ actor APIClient {
+            await accountSessionGenerationProvider() != requestGeneration { throw AccountSessionError.signedOut }
+         do {
+             let response = try await send()
+             if requiresStableAccountSession,
+                await accountSessionGenerationProvider() != requestGeneration { throw AccountSessionError.signedOut }
+             return response
+         } catch {
+             if requiresStableAccountSession,
+                await accountSessionGenerationProvider() != requestGeneration { throw AccountSessionError.signedOut }
+             guard let apiError = error as? APIError else { throw error }
+-            if !apiError.requiresFreshAssertion {
++            if case .deviceIntegrityUnavailable = apiError {
++                guard await invalidKeyRecovery() else { throw error }
++            } else if !apiError.requiresFreshAssertion {
+                 guard apiError.requiresDeviceSessionRecovery else { throw error }
+                 guard await deviceSessionRecovery() else { throw error }
+             }
+             if requiresStableAccountSession,
+                await accountSessionGenerationProvider() != requestGeneration { throw AccountSessionError.signedOut }
+             let response = try await send()
+             if requiresStableAccountSession,
+                await accountSessionGenerationProvider() != requestGeneration { throw AccountSessionError.signedOut }
+             return response
+         }
+@@ -411,23 +418,24 @@ actor APIClient {
+         }
+ 
+         return Self.resolvedBearerToken()
+     }
+ 
+     private func post<Response: Decodable>(path: String, bodyData: Data, bearerToken: String?, attachDeviceIntegrity: Bool, extraHeaders: [String: String] = [:]) async throws -> Response {
+         try await request(path: path, method: "POST", bodyData: bodyData, bearerToken: bearerToken, attachDeviceIntegrity: attachDeviceIntegrity, extraHeaders: extraHeaders)
+     }
+ 
+     private func accessFailure(code: Int, body: String?, path: String,
+-                               store: EntitlementStore, request: EntitlementStore.AuthorityRequest) async -> APIError {
++                               store: EntitlementStore?, request: EntitlementStore.AuthorityRequest?) async -> APIError {
+         let failure = APIError.httpStatus(code: code, body: body)
+-        if Self.isExpensiveAIPath(path), failure.isPaidAccessDenial {
++        if Self.isExpensiveAIPath(path), failure.isPaidAccessDenial,
++           let store, let request {
+             await MainActor.run {
+                 _ = store.closePaidMutationConfirmation(request: request)
+             }
+         }
+         return failure
+     }
+ 
+     private static func isIndependentMobilePurchasePath(_ path: String) -> Bool {
+         path == "/owlai/iap/purchase-context" || path == "/owlai/iap/verify" || path == "/owlai/iap/restore"
+     }
+@@ -454,22 +462,32 @@ actor APIClient {
+ 
+     private func request<Response: Decodable>(
+         path: String,
+         method: String,
+         bodyData: Data?,
+         bearerToken: String?,
+         attachDeviceIntegrity: Bool,
+         extraHeaders: [String: String] = [:]
+     ) async throws -> Response {
+         let requestGeneration = await accountSessionGenerationProvider()
+-        let authorityStore = await MainActor.run { entitlementStore ?? .shared }
+-        let authorityRequest = await authorityStore.beginAuthorityRequest()
++        // This layer changes entitlement authority only for paid AI denials. IAP proof, token,
++        // and App Attest requests are ordered by their outer StoreKit operation instead.
++        let authorityStore: EntitlementStore?
++        let authorityRequest: EntitlementStore.AuthorityRequest?
++        if Self.isExpensiveAIPath(path) {
++            let store = await MainActor.run { entitlementStore ?? .shared }
++            authorityStore = store
++            authorityRequest = await store.beginAuthorityRequest()
++        } else {
++            authorityStore = nil
++            authorityRequest = nil
++        }
+         guard let url = URL(string: path, relativeTo: baseURL) else { throw APIError.invalidURL }
+ 
+         var req = URLRequest(url: url)
+         req.httpMethod = method
+         if bodyData != nil {
+             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+         }
+         if let bearerToken {
+             req.setValue("Bearer \(bearerToken)", forHTTPHeaderField: "Authorization")
+         }
+diff --git a/Infrastructure/Purchases/EntitlementStore.swift b/Infrastructure/Purchases/EntitlementStore.swift
+index 365b9fe..32d7fa5 100644
+--- a/Infrastructure/Purchases/EntitlementStore.swift
++++ b/Infrastructure/Purchases/EntitlementStore.swift
+@@ -1,18 +1,18 @@
+ import Foundation
+ 
+ /// Ephemeral paid authority; persisted snapshots are retained content history only.
+ private final class PaidMutationConfirmation: @unchecked Sendable {
+     private let lock = NSLock()
+     private var checkedAt: Date?
+     private var entitlement: EntitlementDTO?
+-    func replace(_ next: EntitlementDTO, checkedAt date: Date?) {
++    func replace(_ next: EntitlementDTO?, checkedAt date: Date?) {
+         lock.lock(); entitlement = next; checkedAt = date; lock.unlock()
+     }
+     func snapshot(at now: Date) -> (entitlement: EntitlementDTO, confirmed: Bool) {
+         lock.lock(); defer { lock.unlock() }
+         let current = (entitlement ?? EntitlementStore.currentEntitlementSnapshot(now: now)).effective(at: now)
+         return (current, Self.isFresh(checkedAt, at: now))
+     }
+     static func isFresh(_ checkedAt: Date?, at now: Date) -> Bool {
+         guard let checkedAt else { return false }
+         let age = now.timeIntervalSince(checkedAt)
+@@ -121,20 +121,36 @@ final class EntitlementStore: ObservableObject {
+ 
+     func beginAuthorityRequest() -> AuthorityRequest {
+         nextAuthorityOrder += 1
+         return AuthorityRequest(identityEpoch: identityEpoch, order: nextAuthorityOrder)
+     }
+ 
+     func isCurrentAuthorityRequest(_ request: AuthorityRequest) -> Bool {
+         request.identityEpoch == identityEpoch && request.order > lastAcceptedAuthorityOrder
+     }
+ 
++    func isLatestIssuedAuthorityRequest(_ request: AuthorityRequest) -> Bool {
++        request.identityEpoch == identityEpoch && request.order == nextAuthorityOrder
++    }
++
++    /// A single outer operation may process several Apple envelopes or refresh its token. It
++    /// can advance its own order only while no independent operation has issued newer authority.
++    func continuingAuthorityRequest(after request: AuthorityRequest) -> AuthorityRequest? {
++        guard isLatestIssuedAuthorityRequest(request),
++              lastAcceptedAuthorityOrder <= request.order else { return nil }
++        return beginAuthorityRequest()
++    }
++
++    func isLastAcceptedAuthorityRequest(_ request: AuthorityRequest) -> Bool {
++        request.identityEpoch == identityEpoch && request.order == lastAcceptedAuthorityOrder
++    }
++
+     func isSameAuthorityIdentity(_ request: AuthorityRequest) -> Bool {
+         request.identityEpoch == identityEpoch
+     }
+ 
+     @discardableResult
+     private func acceptAuthority(_ request: AuthorityRequest) -> Bool {
+         guard isCurrentAuthorityRequest(request) else { return false }
+         lastAcceptedAuthorityOrder = request.order
+         return true
+     }
+@@ -268,20 +284,30 @@ final class EntitlementStore: ObservableObject {
+         fileprivate let identityEpoch: UUID
+         fileprivate let nextOrder: UInt64
+         fileprivate let acceptedOrder: UInt64
+         fileprivate let linked: Bool
+         fileprivate let provenIndependent: Bool
+         fileprivate let confirmation: (EntitlementDTO?, Date?)
+     }
+ 
+     func beginHostedOfflineFixture() -> OfflineFixtureState {
+         precondition(ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil)
++        return resetForOfflineFixture()
++    }
++
++    func beginDedicatedUIFixture() {
++        precondition(Bundle.main.bundleIdentifier == "com.mavrylo.owlai.uitest"
++            && ProcessInfo.processInfo.arguments.contains("-owl-ui-fixture"))
++        _ = resetForOfflineFixture()
++    }
++
++    private func resetForOfflineFixture() -> OfflineFixtureState {
+         let previous = OfflineFixtureState(device: deviceEntitlement, account: accountEntitlement,
+             selected: entitlement, accountID: accountID, accountHistory: accountReadHistory,
+             deviceCheckedAt: deviceCheckedAt, accountCheckedAt: accountCheckedAt,
+             identityEpoch: identityEpoch, nextOrder: nextAuthorityOrder,
+             acceptedOrder: lastAcceptedAuthorityOrder,
+             linked: defaults.bool(forKey: linkedPurchaseKey),
+             provenIndependent: defaults.bool(forKey: provenIndependentPurchaseKey),
+             confirmation: confirmation.captureForHostedTest())
+         deviceEntitlement = .free
+         accountEntitlement = nil
+diff --git a/Infrastructure/Purchases/StoreKitPurchaseEvidenceSource.swift b/Infrastructure/Purchases/StoreKitPurchaseEvidenceSource.swift
+index b9d59c9..ab5d00a 100644
+--- a/Infrastructure/Purchases/StoreKitPurchaseEvidenceSource.swift
++++ b/Infrastructure/Purchases/StoreKitPurchaseEvidenceSource.swift
+@@ -59,101 +59,110 @@ struct AppTransactionEvidenceLoader {
+         catch {
+             guard explicitRestore else { throw error }
+             return try await refresh()
+         }
+     }
+ }
+ 
+ actor LiveStoreKitPurchaseEvidenceSource: StoreKitPurchaseEvidenceSource {
+     private var transactions: [String: Transaction] = [:]
+     private let appTransactionLoader: AppTransactionEvidenceLoader
++    private let deviceVerificationID: () -> UUID?
+ 
+-    init(appTransactionLoader: AppTransactionEvidenceLoader = .live) {
++    init(appTransactionLoader: AppTransactionEvidenceLoader = .live,
++         deviceVerificationID: @escaping () -> UUID? = { AppStore.deviceVerificationID }) {
+         self.appTransactionLoader = appTransactionLoader
++        self.deviceVerificationID = deviceVerificationID
+     }
+ 
+     func currentEvidence() async throws -> [ApplePurchaseEvidence] {
+         try await currentEvidence(explicitRestore: false)
+     }
+ 
+     func currentEvidence(explicitRestore: Bool) async throws -> [ApplePurchaseEvidence] {
+         let appJWS = try await appTransactionJWS(allowRefresh: explicitRestore)
+-        let deviceId = try localDeviceId()
++        let deviceId = try deviceVerificationIdForEvidence()
+         var evidence: [ApplePurchaseEvidence] = []
+         for await result in Transaction.currentEntitlements {
+             let transaction = try verified(result)
+-            guard Self.allowedProductIds.contains(transaction.productID),
+-                  transaction.revocationDate == nil, !transaction.isUpgraded,
+-                  let expiry = transaction.expirationDate, expiry > Date() else { continue }
++            guard Self.isEligibleCurrent(productId: transaction.productID,
++                revocationDate: transaction.revocationDate, isUpgraded: transaction.isUpgraded,
++                expirationDate: transaction.expirationDate) else { continue }
+             evidence.append(makeEvidence(result, transaction: transaction, appJWS: appJWS, deviceId: deviceId))
+         }
+         return evidence
+     }
+ 
+     func latestHistoricalEvidence(productIds: [String]) async throws -> [ApplePurchaseEvidence] {
+         try await latestHistoricalEvidence(productIds: productIds, explicitRestore: false)
+     }
+ 
+     func latestHistoricalEvidence(productIds: [String], explicitRestore: Bool) async throws -> [ApplePurchaseEvidence] {
+         let appJWS = try await appTransactionJWS(allowRefresh: explicitRestore)
+-        let deviceId = try localDeviceId()
++        let deviceId = try deviceVerificationIdForEvidence()
+         var evidence: [ApplePurchaseEvidence] = []
+         var originals: Set<String> = []
+         for productId in productIds where Self.allowedProductIds.contains(productId) {
+             guard let result = await Transaction.latest(for: productId) else { continue }
+             let transaction = try verified(result)
+             let original = String(transaction.originalID)
+             guard originals.insert(original).inserted else { continue }
+             evidence.append(makeEvidence(result, transaction: transaction, appJWS: appJWS, deviceId: deviceId))
+         }
+         return evidence
+     }
+ 
+     func unfinishedEvidence() async throws -> [ApplePurchaseEvidence] {
+         let appJWS = try await appTransactionJWS(allowRefresh: false)
+-        let deviceId = try localDeviceId()
++        let deviceId = try deviceVerificationIdForEvidence()
+         var evidence: [ApplePurchaseEvidence] = []
+         for await result in Transaction.unfinished {
+             let transaction = try verified(result)
+             guard Self.allowedProductIds.contains(transaction.productID) else { continue }
+             evidence.append(makeEvidence(result, transaction: transaction, appJWS: appJWS, deviceId: deviceId))
+         }
+         return evidence
+     }
+ 
+     func evidence(for result: VerificationResult<Transaction>) async throws -> ApplePurchaseEvidence {
+         let transaction = try verified(result)
+         guard Self.allowedProductIds.contains(transaction.productID) else { throw ApplePurchaseEvidenceError.productUnavailable }
+         return makeEvidence(result, transaction: transaction, appJWS: try await appTransactionJWS(allowRefresh: false),
+-                            deviceId: try localDeviceId())
++                            deviceId: try deviceVerificationIdForEvidence())
+     }
+ 
+     func synchronize() async throws {
+         try await AppStore.sync()
+     }
+ 
+     func finish(transactionId: String) async {
+         guard let transaction = transactions.removeValue(forKey: transactionId) else { return }
+         await transaction.finish()
+     }
+ 
+     private func appTransactionJWS(allowRefresh: Bool) async throws -> String {
+         try await appTransactionLoader.jws(explicitRestore: allowRefresh)
+     }
+ 
+-    private func localDeviceId() throws -> String {
+-        guard let id = AppStore.deviceVerificationID else {
++    func deviceVerificationIdForEvidence() throws -> String {
++        guard let id = deviceVerificationID() else {
+             throw ApplePurchaseEvidenceError.missingDeviceVerificationId
+         }
+         return id.uuidString.lowercased()
+     }
+ 
++    static func isEligibleCurrent(productId: String, revocationDate: Date?,
++                                  isUpgraded: Bool, expirationDate: Date?, now: Date = Date()) -> Bool {
++        allowedProductIds.contains(productId) && revocationDate == nil && !isUpgraded
++            && expirationDate.map { $0 > now } == true
++    }
++
+     private func verified(_ result: VerificationResult<Transaction>) throws -> Transaction {
+         guard case .verified(let transaction) = result else { throw ApplePurchaseEvidenceError.unverifiedTransaction }
+         return transaction
+     }
+ 
+     private func makeEvidence(
+         _ result: VerificationResult<Transaction>, transaction: Transaction,
+         appJWS: String, deviceId: String
+     ) -> ApplePurchaseEvidence {
+         let transactionId = String(transaction.id)
+diff --git a/Infrastructure/Purchases/StoreKitService.swift b/Infrastructure/Purchases/StoreKitService.swift
+index cddafb4..72b6da3 100644
+--- a/Infrastructure/Purchases/StoreKitService.swift
++++ b/Infrastructure/Purchases/StoreKitService.swift
+@@ -85,74 +85,102 @@ final class StoreKitService: ObservableObject {
+ 
+     @Published private(set) var products: [Product] = []
+     @Published private(set) var isBusy = false
+     @Published var errorText: String?
+ 
+     let apiClient: APIClient
+     private var transactionObservation: StoreKitTransactionObservation?
+     private let account: AccountProfileModel
+     private let entitlements: EntitlementStore
+     private let accountProfile: () async -> AccountProfileDTO?
++    private let refreshAccount: @MainActor () async -> Void
+     private let persistToken: (String, Int) throws -> Void
+     private let evidenceSource: StoreKitPurchaseEvidenceSource?
+     private let purchaseOperation: ((String, UUID) async throws -> PurchaseOperationResult)?
+     private let installationKeyId: () -> String?
+     private let accountSessionGeneration: () async -> UUID
+     private let cachedPurchaseContext: (String) -> UUID?
+     private let savePurchaseContext: (String, UUID) throws -> Void
+     private var refreshRevision = UUID()
+     private var busyRevision = UUID()
+ 
+     private struct OperationSnapshot {
+         let keyId: String?
+         let accountGeneration: UUID
+         let authority: EntitlementStore.AuthorityRequest
+     }
+ 
++    private struct AppleDiscoveryResult {
++        let backendAcknowledged: Bool
++        let appliedToCurrentSession: Bool
++        let failure: Error?
++        let operation: OperationSnapshot
++    }
++
+     private func snapshot() async -> OperationSnapshot {
+         let keyId = installationKeyId()
+         let accountGeneration = await accountSessionGeneration()
+         return OperationSnapshot(keyId: keyId, accountGeneration: accountGeneration,
+                                  authority: entitlements.beginAuthorityRequest())
+     }
+ 
+     private func stillCurrent(_ operation: OperationSnapshot) async -> Bool {
+         guard installationKeyId() == operation.keyId,
+-              entitlements.isSameAuthorityIdentity(operation.authority) else { return false }
++              entitlements.isCurrentAuthorityRequest(operation.authority) else { return false }
+         return await accountSessionGeneration() == operation.accountGeneration
++            && installationKeyId() == operation.keyId
++    }
++
++    private func continuingOperation(after operation: OperationSnapshot) async -> OperationSnapshot? {
++        guard installationKeyId() == operation.keyId,
++              await accountSessionGeneration() == operation.accountGeneration,
++              installationKeyId() == operation.keyId,
++              let authority = entitlements.continuingAuthorityRequest(
++                after: operation.authority) else { return nil }
++        return OperationSnapshot(keyId: operation.keyId,
++            accountGeneration: operation.accountGeneration, authority: authority)
+     }
+ 
+     init(
+         api: APIClient,
+         transactionUpdates: StoreKitTransactionUpdates =
+             StoreKitTransactionUpdateSource.defaultUpdates(),
+         account: AccountProfileModel? = nil,
+         entitlements: EntitlementStore? = nil,
+         accountProfile: (() async -> AccountProfileDTO?)? = nil,
++        refreshAccount: (@MainActor () async -> Void)? = nil,
+         persistToken: ((String, Int) throws -> Void)? = nil,
+         evidenceSource: StoreKitPurchaseEvidenceSource? = nil,
+         purchaseOperation: ((String, UUID) async throws -> PurchaseOperationResult)? = nil,
+         installationKeyId: @escaping () -> String? = { AppAttestKeychainStore.loadKeyId() },
+         accountSessionGeneration: (() async -> UUID)? = nil,
+         cachedPurchaseContext: @escaping (String) -> UUID? = { AppAccountTokenStore.load(for: $0) },
+         savePurchaseContext: @escaping (String, UUID) throws -> Void = { try AppAccountTokenStore.save($1, for: $0) }
+     ) {
+         apiClient = api
+-        self.account = account ?? .shared
++        let selectedAccount = account ?? .shared
++        self.account = selectedAccount
+         self.entitlements = entitlements ?? .shared
+         self.accountProfile = accountProfile ?? { await AccountSessionClient.shared.profile() }
+         self.persistToken = persistToken ?? { try TokenStore.save(accessToken: $0, expiresIn: $1) }
+         #if DEBUG
+         let hostedTest = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+         #else
+         let hostedTest = false
+         #endif
++        if let refreshAccount {
++            self.refreshAccount = refreshAccount
++        } else if hostedTest {
++            self.refreshAccount = {}
++        } else {
++            self.refreshAccount = { await selectedAccount.refresh() }
++        }
+         if let evidenceSource {
+             self.evidenceSource = evidenceSource
+         } else {
+             self.evidenceSource = hostedTest ? nil : LiveStoreKitPurchaseEvidenceSource()
+         }
+         self.purchaseOperation = purchaseOperation
+         self.installationKeyId = installationKeyId
+         self.accountSessionGeneration = accountSessionGeneration ?? { await api.accountSessionGeneration() }
+         self.cachedPurchaseContext = cachedPurchaseContext
+         self.savePurchaseContext = savePurchaseContext
+@@ -160,107 +188,199 @@ final class StoreKitService: ObservableObject {
+             guard let self else { return }
+             await self.handleTransactionUpdate(result)
+         }
+     }
+ 
+     deinit {
+         transactionObservation?.cancel()
+     }
+ 
+     func discoverApplePurchases(explicitRestore: Bool) async -> Bool {
+-        guard let evidenceSource else { return false }
+-        let operation = await snapshot()
++        return (await discoverWithKeyRecovery(explicitRestore: explicitRestore)).result.backendAcknowledged
++    }
++
++    private func discoverWithKeyRecovery(
++        explicitRestore: Bool, initial: OperationSnapshot? = nil
++    ) async -> (result: AppleDiscoveryResult, operation: OperationSnapshot) {
++        let started: OperationSnapshot
++        if let initial { started = initial }
++        else { started = await snapshot() }
++        let first = await discoverApplePurchases(explicitRestore: explicitRestore, operation: started)
++        guard let newKey = installationKeyId(), newKey != first.operation.keyId,
++              await accountSessionGeneration() == started.accountGeneration,
++              installationKeyId() == newKey,
++              let nextAuthority = entitlements.continuingAuthorityRequest(after: first.operation.authority) else {
++            return (first, first.operation)
++        }
++        // A genuine App Attest key replacement invalidates the captured installation scope.
++        // Re-enumerate the full Apple evidence once under the new key, without another sync or
++        // AppTransaction refresh permission. Backend-acknowledged stale work may finish but not apply.
++        let replacement = OperationSnapshot(keyId: newKey,
++            accountGeneration: started.accountGeneration, authority: nextAuthority)
++        let second = await discoverApplePurchases(explicitRestore: false, operation: replacement)
++        return (second, second.operation)
++    }
++
++    private func discoverApplePurchases(
++        explicitRestore: Bool, operation: OperationSnapshot
++    ) async -> AppleDiscoveryResult {
++        guard let evidenceSource else {
++            return AppleDiscoveryResult(backendAcknowledged: false,
++                                        appliedToCurrentSession: false, failure: nil,
++                                        operation: operation)
++        }
+         let busyID = UUID()
+         busyRevision = busyID
+         isBusy = true
+         defer { if busyRevision == busyID { isBusy = false } }
+-        var processorStarted = false
+         do {
+             if explicitRestore { try await evidenceSource.synchronize() }
+             let current = try await evidenceSource.currentEvidence(explicitRestore: explicitRestore)
+             let historical = current.isEmpty
+                 ? try await evidenceSource.latestHistoricalEvidence(
+                     productIds: [Self.monthlyProductId, Self.yearlyProductId],
+                     explicitRestore: explicitRestore)
+                 : []
+             let unfinished = try await evidenceSource.unfinishedEvidence()
+-            var seenOriginals: Set<String> = []
++            let restoration = current.isEmpty ? historical : current
++            var activeOperation = operation
++            var processedEvidence = false
++            var seenTransactions: Set<String> = []
++            var restoredOriginals: Set<String> = []
+             var acknowledged = false
+-            for evidence in unfinished + current + historical {
+-                guard seenOriginals.insert(evidence.originalTransactionId).inserted else { continue }
+-                processorStarted = true
+-                let outcome = try await processPurchaseEvidence(evidence, operation: operation)
+-                acknowledged = acknowledged || outcome.backendAcknowledged
++            var applied = false
++            var firstFailure: Error?
++            for evidence in restoration {
++                guard seenTransactions.insert(evidence.transactionId).inserted else { continue }
++                if processedEvidence {
++                    guard let continued = await continuingOperation(after: activeOperation)
++                    else { break }
++                    activeOperation = continued
++                }
++                processedEvidence = true
++                do {
++                    let outcome = try await processPurchaseEvidence(evidence, operation: activeOperation)
++                    acknowledged = acknowledged || outcome.backendAcknowledged
++                    applied = applied || outcome.appliedToCurrentSession
++                    if outcome.backendAcknowledged { restoredOriginals.insert(evidence.originalTransactionId) }
++                } catch { if firstFailure == nil { firstFailure = error } }
+             }
+-            if explicitRestore && !acknowledged && busyRevision == busyID,
+-               await stillCurrent(operation) {
++            for evidence in unfinished {
++                guard seenTransactions.insert(evidence.transactionId).inserted else { continue }
++                let obsoleteInRestoredChain = restoredOriginals.contains(evidence.originalTransactionId)
++                if processedEvidence && !obsoleteInRestoredChain {
++                    guard let continued = await continuingOperation(after: activeOperation)
++                    else { break }
++                    activeOperation = continued
++                }
++                processedEvidence = true
++                do {
++                    let outcome = try await processPurchaseEvidence(evidence, operation: activeOperation)
++                    acknowledged = acknowledged || outcome.backendAcknowledged
++                    applied = applied || outcome.appliedToCurrentSession
++                } catch {
++                    // The backend may reject an obsolete upgraded transaction after the current
++                    // one in the same chain was accepted. Only that exact mismatch is benign;
++                    // reconciliation and other failures still need visible guidance.
++                    let apiError = error as? APIError
++                    let obsoleteMismatch = obsoleteInRestoredChain
++                        && apiError?.stableCode == "apple_identity_mismatch"
++                    if !obsoleteMismatch {
++                        if firstFailure == nil { firstFailure = error }
++                        if obsoleteInRestoredChain, busyRevision == busyID,
++                           let reporting = await continuingOperation(after: activeOperation) {
++                            activeOperation = reporting
++                            if apiError?.isPaidAccessDenial == true {
++                                entitlements.closePaidMutationConfirmation(request: reporting.authority)
++                            }
++                            errorText = error.localizedDescription
++                        }
++                    }
++                }
++            }
++            if explicitRestore && !acknowledged && firstFailure == nil && busyRevision == busyID,
++               await stillCurrent(activeOperation) {
+                 errorText = "No Apple purchase was found."
+             }
+-            return acknowledged
++            return AppleDiscoveryResult(backendAcknowledged: acknowledged,
++                                        appliedToCurrentSession: applied, failure: firstFailure,
++                                        operation: activeOperation)
+         } catch {
+             if let storeKitError = error as? StoreKitError,
+-               case .userCancelled = storeKitError { return false }
+-            if !processorStarted && busyRevision == busyID, await stillCurrent(operation) {
++               case .userCancelled = storeKitError {
++                return AppleDiscoveryResult(backendAcknowledged: false,
++                                            appliedToCurrentSession: false, failure: nil,
++                                            operation: operation)
++            }
++            if busyRevision == busyID, await stillCurrent(operation) {
+                 errorText = error.localizedDescription
+             }
+-            return false
++            return AppleDiscoveryResult(backendAcknowledged: false,
++                                        appliedToCurrentSession: false, failure: error,
++                                        operation: operation)
+         }
+     }
+ 
+     func purchaseWithEvidence(productId: String) async -> Bool {
+         guard [Self.monthlyProductId, Self.yearlyProductId].contains(productId) else {
+             errorText = ApplePurchaseEvidenceError.productUnavailable.localizedDescription
+             return false
+         }
+         if ["premium", "trial", "grace"].contains(entitlements.entitlement.status),
+-           ["device", "mobile_restore"].contains(entitlements.entitlement.resolutionSource ?? "") {
++            ["device", "mobile_restore"].contains(entitlements.entitlement.resolutionSource ?? "") {
+             await refreshTokenAndEntitlement()
+             return ["premium", "trial", "grace"].contains(entitlements.entitlement.status)
+         }
++        let initial = await snapshot()
+         let busyID = UUID()
+         busyRevision = busyID
+         isBusy = true
+         errorText = nil
+         defer { if busyRevision == busyID { isBusy = false } }
+         var operation: OperationSnapshot?
+         var processorStarted = false
+         do {
+             if installationKeyId() == nil && evidenceSource is LiveStoreKitPurchaseEvidenceSource {
+                 await AIIntegrityCoordinator.shared.ensureDeviceRegistrationIfPossible()
+             }
+-            let captured = await snapshot()
++            guard entitlements.isCurrentAuthorityRequest(initial.authority),
++                  await accountSessionGeneration() == initial.accountGeneration else { return false }
++            let captured = OperationSnapshot(keyId: installationKeyId(),
++                accountGeneration: initial.accountGeneration, authority: initial.authority)
+             operation = captured
+             guard let keyId = installationKeyId() else { throw APIError.noBearerToken }
+             let token: UUID
+             if let cached = cachedPurchaseContext(keyId) {
+                 token = cached
+             } else {
+                 token = try await apiClient.iapPurchaseContext(productId: productId).appAccountToken
+                 guard installationKeyId() == keyId else { return false }
+                 try savePurchaseContext(keyId, token)
+             }
++            guard await stillCurrent(captured) else { return false }
+             let result: PurchaseOperationResult
+             if let purchaseOperation {
+                 result = try await purchaseOperation(productId, token)
+             } else {
+                 result = try await livePurchase(productId: productId, token: token)
+             }
+             switch result {
+             case .cancelled, .pending:
+                 return false
+             case .verified(let evidence):
+                 // A changed installation must prove the Apple envelope under the new key.
+                 guard installationKeyId() == keyId else { return false }
+                 processorStarted = true
+                 return try await processPurchaseEvidence(evidence, operation: captured).appliedToCurrentSession
+             }
+         } catch let error as APIError where error.stableCode == "subscription_already_active" {
++            guard let operation, await stillCurrent(operation) else { return false }
+             await refreshTokenAndEntitlement()
+             return ["premium", "trial", "grace"].contains(entitlements.entitlement.status)
+         } catch {
+             if let storeKitError = error as? StoreKitError,
+                case .userCancelled = storeKitError { return false }
+             if !processorStarted && busyRevision == busyID {
+                 if let operation {
+                     if await stillCurrent(operation) { errorText = error.localizedDescription }
+                 } else {
+                     errorText = error.localizedDescription
+@@ -274,21 +394,21 @@ final class StoreKitService: ObservableObject {
+         let operation = await snapshot()
+         return try await processPurchaseEvidence(evidence, operation: operation)
+     }
+ 
+     private func processPurchaseEvidence(
+         _ evidence: ApplePurchaseEvidence, operation: OperationSnapshot
+     ) async throws -> PurchaseProcessingOutcome {
+         let refreshID = UUID()
+         refreshRevision = refreshID
+         guard let keyId = installationKeyId() else { throw APIError.noBearerToken }
+-        let authorityRequest = entitlements.beginAuthorityRequest()
++        let authorityRequest = operation.authority
+         do {
+             let response: IapVerifyAPIResponse
+             if cachedPurchaseContext(keyId) != nil {
+                 do {
+                     response = try await apiClient.iapVerify(jwsTransaction: evidence.jwsTransaction)
+                 } catch let error as APIError where error.stableCode == "purchase_owner_proof_required" {
+                     response = try await apiClient.iapRestore(restoreRequest(for: evidence))
+                 }
+             } else {
+                 response = try await apiClient.iapRestore(restoreRequest(for: evidence))
+@@ -298,40 +418,38 @@ final class StoreKitService: ObservableObject {
+                 guard let grantExpiry = response.mobileGrantExpiresAt.flatMap(ServerDateParser.date),
+                       let entitlementExpiry = response.entitlement.expiresAt.flatMap(ServerDateParser.date),
+                       grantExpiry > Date(), entitlementExpiry > Date(),
+                       entitlementExpiry <= grantExpiry else {
+                     throw ApplePurchaseEvidenceError.invalidMobileGrant
+                 }
+             }
+             // The backend has durably resolved this transaction, even if this UI request is stale.
+             await evidenceSource?.finish(transactionId: evidence.transactionId)
+             guard refreshRevision == refreshID,
+-                  installationKeyId() == keyId,
+-                  await stillCurrent(operation),
+-                  entitlements.isCurrentAuthorityRequest(authorityRequest) else {
++                   installationKeyId() == keyId,
++                   await stillCurrent(operation) else {
+                 return PurchaseProcessingOutcome(backendAcknowledged: true, appliedToCurrentSession: false)
+             }
+             do { try persistToken(response.accessToken, response.expiresIn) }
+             catch {
+                 errorText = error.localizedDescription
+                 return PurchaseProcessingOutcome(backendAcknowledged: true, appliedToCurrentSession: false)
+             }
+             let applied = entitlements.update(response.entitlement,
+                                               accountAuthorized: false,
+                                               purchaseAuthority: response.purchaseAuthority,
+                                               request: authorityRequest)
+             if applied { errorText = nil }
+             return PurchaseProcessingOutcome(backendAcknowledged: true, appliedToCurrentSession: applied)
+         } catch {
+             if refreshRevision == refreshID, installationKeyId() == keyId,
+-               await stillCurrent(operation),
+-               entitlements.isCurrentAuthorityRequest(authorityRequest) {
++               await stillCurrent(operation) {
+                 if let apiError = error as? APIError, apiError.isPaidAccessDenial {
+                     entitlements.closePaidMutationConfirmation(request: authorityRequest)
+                 }
+                 errorText = error.localizedDescription
+             }
+             throw error
+         }
+     }
+ 
+     private func restoreRequest(for evidence: ApplePurchaseEvidence) -> IapRestoreAPIRequest {
+@@ -363,52 +481,68 @@ final class StoreKitService: ObservableObject {
+         } catch {
+             errorText = error.localizedDescription
+         }
+     }
+ 
+     func purchase(productId: String) async -> Bool {
+         await purchaseWithEvidence(productId: productId)
+     }
+ 
+     func restore() async -> Bool {
+-        let operation = await snapshot()
+-        let acknowledged = await discoverApplePurchases(explicitRestore: true)
+-        guard acknowledged, await stillCurrent(operation) else { return false }
++        let (discovery, operation) = await discoverWithKeyRecovery(explicitRestore: true)
++        guard discovery.failure == nil, discovery.appliedToCurrentSession,
++              installationKeyId() == operation.keyId,
++              entitlements.isLastAcceptedAuthorityRequest(operation.authority),
++              await accountSessionGeneration() == operation.accountGeneration else { return false }
+         return ["premium", "trial", "grace"].contains(entitlements.entitlement.status)
+     }
+ 
+     func refreshTokenAndEntitlement() async {
+         // Startup and foreground both pass through this method. StoreKit discovery is an
+         // independent device operation and must precede optional account work.
+-        if evidenceSource != nil { _ = await discoverApplePurchases(explicitRestore: false) }
++        let started = await snapshot()
++        let discovery: AppleDiscoveryResult?
++        if evidenceSource != nil {
++            discovery = (await discoverWithKeyRecovery(explicitRestore: false,
++                initial: started)).result
++        } else {
++            discovery = nil
++        }
++        let lastOperation = discovery?.operation ?? started
++        guard let operation = await continuingOperation(after: lastOperation) else { return }
+         let refreshID = UUID()
+         refreshRevision = refreshID
+-        let accountAuthorized = await accountProfile() != nil
+-        guard refreshRevision == refreshID else { return }
+-        let authorityRequest = entitlements.beginAuthorityRequest()
++        let profile = await accountProfile()
++        guard refreshRevision == refreshID, await stillCurrent(operation) else { return }
+         do {
+             let response = try await apiClient.iapToken()
+-            guard refreshRevision == refreshID, entitlements.isCurrentAuthorityRequest(authorityRequest) else { return }
++            guard refreshRevision == refreshID, await stillCurrent(operation) else { return }
+             try persistToken(response.accessToken, response.expiresIn)
+-            entitlements.update(response.entitlement, accountAuthorized: accountAuthorized,
+-                                purchaseAuthority: response.purchaseAuthority, request: authorityRequest)
+-            errorText = nil
++            entitlements.update(response.entitlement, accountAuthorized: profile != nil,
++                                purchaseAuthority: response.purchaseAuthority,
++                                request: operation.authority)
++            if discovery?.failure == nil { errorText = nil }
+         } catch {
+-            guard refreshRevision == refreshID, entitlements.isCurrentAuthorityRequest(authorityRequest) else { return }
++            guard refreshRevision == refreshID, await stillCurrent(operation) else { return }
+             if let apiError = error as? APIError, apiError.isPaidAccessDenial {
+-                entitlements.closePaidMutationConfirmation(request: authorityRequest)
++                entitlements.closePaidMutationConfirmation(request: operation.authority)
+             } else if case APIError.httpStatus(let code, _) = error, code == 403 {
+                 // Keep the existing token-endpoint 403 behavior for legacy bodies.
+-                entitlements.closePaidMutationConfirmation(request: authorityRequest)
++                entitlements.closePaidMutationConfirmation(request: operation.authority)
+             }
+             errorText = error.localizedDescription
+         }
++        // The separate account confirmation can be renewed after independent mobile proof and
++        // token work. A failed Owl refresh remains in its own model and cannot gate mobile access.
++        if profile != nil, await accountSessionGeneration() == operation.accountGeneration {
++            await refreshAccount()
++        }
+     }
+ 
+     @discardableResult
+     func verifyWithBackend(jwsTransaction: String) async throws -> Bool {
+         let refreshID = UUID()
+         refreshRevision = refreshID
+         let keyId = installationKeyId()
+         let generation = await accountSessionGeneration()
+         let accountAuthorized = await accountProfile() != nil
+         guard refreshRevision == refreshID, installationKeyId() == keyId,
+diff --git a/Infrastructure/Security/AppAttest/AIIntegrityCoordinator.swift b/Infrastructure/Security/AppAttest/AIIntegrityCoordinator.swift
+index b0b66ea..9a34c78 100644
+--- a/Infrastructure/Security/AppAttest/AIIntegrityCoordinator.swift
++++ b/Infrastructure/Security/AppAttest/AIIntegrityCoordinator.swift
+@@ -26,32 +26,45 @@ import Foundation
+ /// Never blocks the whole app: on failure returns empty headers (degraded mode); server may reject with 403.
+ actor AIIntegrityCoordinator {
+     static let shared = AIIntegrityCoordinator()
+ 
+     private static let clientDataVersionHeader = "X-App-Attest-Client-Data-V"
+     private static let clientDataVersion = "1"
+ 
+     private var api: APIClient?
+     private let sessionStorage: AppAttestSessionStorage
+     private let generateAssertion: (String, Data) async throws -> Data
++    private let clearPurchaseContext: () -> Void
++    private let clearAccessToken: () -> Void
++    private let supportsAppAttest: () -> Bool
++    private let registerInstallation: (() async throws -> Void)?
+     private let registrationOperation = DeviceRegistrationOperation()
++    private var invalidKeyForRecovery: String?
+     /// Avoid hammering missing endpoints.
+     private var backendEndpointsUnavailable = false
+ 
+     init(
+         sessionStorage: AppAttestSessionStorage = KeychainAppAttestSessionStorage(),
+         generateAssertion: @escaping (String, Data) async throws -> Data = { keyId, hash in
+             try await DCAppAttestService.shared.generateAssertion(keyId, clientDataHash: hash)
+-        }
++        },
++        clearPurchaseContext: @escaping () -> Void = { AppAccountTokenStore.clear() },
++        clearAccessToken: @escaping () -> Void = { TokenStore.clear() },
++        supportsAppAttest: @escaping () -> Bool = { DCAppAttestService.shared.isSupported },
++        registerInstallation: (() async throws -> Void)? = nil
+     ) {
+         self.sessionStorage = sessionStorage
+         self.generateAssertion = generateAssertion
++        self.clearPurchaseContext = clearPurchaseContext
++        self.clearAccessToken = clearAccessToken
++        self.supportsAppAttest = supportsAppAttest
++        self.registerInstallation = registerInstallation
+     }
+ 
+     func resumeDeviceSession() async -> Bool {
+         guard let api, let keyId = sessionStorage.keyId() else { return false }
+         let path = "/owlai/app-attest/resume"
+         let body = Data("{}".utf8)
+         do {
+             let challenge = try await api.appAttestFetchAssertionChallenge(requestPath: path, keyId: keyId)
+             guard let nonce = Data(base64Encoded: challenge.challenge) else {
+                 throw APIError.decodingFailed("Invalid App Attest challenge")
+@@ -63,33 +76,24 @@ actor AIIntegrityCoordinator {
+                 "X-App-Attest-Key-Id": keyId,
+                 "X-App-Attest-Challenge-Id": challenge.challengeId,
+                 "X-App-Attest-Assertion": assertion.base64EncodedString(),
+                 Self.clientDataVersionHeader: Self.clientDataVersion
+             ])
+             try sessionStorage.save(.init(deviceToken: response.deviceToken,
+                                           expiresAt: DeviceSessionExpiry.resolved(fromServerString: response.expiresAt),
+                                           keyId: keyId))
+             return true
+         } catch {
+-            let localFailure = error as NSError
+-            let invalidLocalKey = localFailure.domain == DCError.errorDomain
+-                && localFailure.code == DCError.invalidKey.rawValue
+-            if case APIError.httpStatus(401, _) = error {
+-                // The resume route has no bearer: a 401 rejects this installation key.
+-                sessionStorage.clearAll()
+-                AppAccountTokenStore.clear()
+-                TokenStore.clear()
+-            } else if invalidLocalKey {
+-                // DeviceCheck explicitly reports this secure-enclave key as unusable.
+-                sessionStorage.clearAll()
+-                AppAccountTokenStore.clear()
+-                TokenStore.clear()
++            if isInvalidLocalKey(error) || isUnknownKeyChallenge(error) {
++                // Only an unusable local key or the server's typed unknown-key response can
++                // replace the installation. Network and proof-order failures preserve it.
++                invalidateInstallation()
+             }
+             AppLog.integrity("App Attest session resume failed: \(error.localizedDescription)")
+             return false
+         }
+     }
+ 
+     func configure(_ api: APIClient) {
+         self.api = api
+     }
+ 
+@@ -113,52 +117,56 @@ actor AIIntegrityCoordinator {
+         guard !backendEndpointsUnavailable else { return }
+ 
+         let keyId = sessionStorage.keyId()
+         let session = sessionStorage.session()
+         if let keyId, let session, session.keyId == keyId, !isSessionExpired(session) {
+             return
+         }
+         if session != nil, keyId == nil || session?.keyId != keyId {
+             sessionStorage.clearSession()
+         }
+-        if let keyId, DCAppAttestService.shared.isSupported {
++        if let keyId, supportsAppAttest() {
+             if await resumeDeviceSession() { return }
+             // An outage or rejected assertion preserves the key for retry. Only 401 unknown-key
+             // clears it inside resumeDeviceSession and permits a fresh registration below.
+             if sessionStorage.keyId() == keyId { return }
+         }
+ 
+         do {
+-            try await registerDeviceIfNeeded(using: api)
++            if let registerInstallation {
++                try await registerInstallation()
++            } else {
++                try await registerDeviceIfNeeded(using: api)
++            }
+         } catch {
+             if isEndpointMissing(error) {
+                 backendEndpointsUnavailable = true
+                 AppLog.integrity("App Attest backend routes not available (404). AI calls proceed without device headers until the API is implemented.")
+             } else {
+                 AppLog.integrity("App Attest bootstrap failed: \(error.localizedDescription)")
+             }
+         }
+     }
+ 
+     /// Headers to merge into an expensive AI `URLRequest`. Never throws — failures degrade to zero extra headers.
+     func headersForAIRequest(path: String, body: Data, bearerToken: String) async -> [String: String] {
+-        guard DCAppAttestService.shared.isSupported else { return [:] }
++        guard supportsAppAttest() else { return [:] }
+         guard APIConfiguration.isTransportAcceptableForAttest else { return [:] }
+         guard !backendEndpointsUnavailable else { return [:] }
+         guard let api else { return [:] }
+         // Phase 3 will pass the device-JWT here as the AI bearer; for now require a non-empty bearer.
+         guard !bearerToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return [:] }
+ 
+         await ensureDeviceRegistrationIfPossible()
+ 
+         guard let keyId = sessionStorage.keyId() else { return [:] }
+-        guard let session = AppAttestKeychainStore.loadDeviceSessionForCurrentKey(), !isSessionExpired(session) else {
++        guard let session = sessionForCurrentKey(), !isSessionExpired(session) else {
+             return [:]
+         }
+ 
+         do {
+             let challengePayload = try await api.appAttestFetchAssertionChallenge(requestPath: path, keyId: keyId)
+             guard let challengeData = Data(base64Encoded: challengePayload.challenge) else {
+                 AppLog.integrity("Invalid base64 challenge from server.")
+                 return [:]
+             }
+ 
+@@ -175,35 +183,38 @@ actor AIIntegrityCoordinator {
+                 "X-App-Attest-Key-Id": keyId,
+                 "X-App-Attest-Assertion": assertion.base64EncodedString(),
+                 "X-App-Attest-Challenge-Id": challengePayload.challengeId,
+                 Self.clientDataVersionHeader: Self.clientDataVersion
+             ]
+             if !isSessionExpired(session) {
+                 headers["X-App-Device-Token"] = session.deviceToken
+             }
+             return headers
+         } catch {
++            if isInvalidLocalKey(error) || isUnknownKeyChallenge(error) {
++                invalidKeyForRecovery = keyId
++            }
+             if isEndpointMissing(error) {
+                 backendEndpointsUnavailable = true
+             }
+             AppLog.integrity("Assertion headers skipped: \(error.localizedDescription)")
+             return [:]
+         }
+     }
+ 
+     func deviceSessionTokenForProtectedRequest() async -> String? {
+         guard APIConfiguration.isTransportAcceptableForAttest else { return nil }
+         guard !backendEndpointsUnavailable else { return nil }
+ 
+         await ensureDeviceRegistrationIfPossible()
+ 
+-        guard let session = AppAttestKeychainStore.loadDeviceSessionForCurrentKey(),
++        guard let session = sessionForCurrentKey(),
+               !isSessionExpired(session) else {
+             return nil
+         }
+ 
+         return session.deviceToken
+     }
+ 
+     private func registerDeviceIfNeeded(using api: APIClient) async throws {
+         let service = DCAppAttestService.shared
+ 
+@@ -299,32 +310,74 @@ actor AIIntegrityCoordinator {
+         guard let exp = session.expiresAt else { return true }
+         return exp < Date()
+     }
+ 
+     /// Resume the installation after a rejected or expired device JWT. A network or proof error
+     /// preserves the key; only a server unknown-key response can replace the installation.
+     func recoverFromUnauthorized() async -> Bool {
+         await registrationOperation.run(requiringFreshRegistration: true) {
+             await self.performDeviceRegistration(forceRefresh: true)
+         }
+-        guard let session = AppAttestKeychainStore.loadDeviceSessionForCurrentKey(),
++        guard let session = sessionForCurrentKey(),
+               !isSessionExpired(session) else {
+             return false
+         }
+         return true
+     }
+ 
++    /// Called only when a protected request could not build proof headers. A normal outage has
++    /// no invalid-key marker, so this cannot rotate a healthy installation or consume a retry.
++    func recoverInvalidKeyIfNeeded() async -> Bool {
++        guard let invalidKey = invalidKeyForRecovery else { return false }
++        await registrationOperation.run(requiringFreshRegistration: true) {
++            await self.replaceInvalidKey(invalidKey)
++        }
++        if invalidKeyForRecovery == invalidKey { invalidKeyForRecovery = nil }
++        guard sessionStorage.keyId() != invalidKey,
++              let session = sessionForCurrentKey(), !isSessionExpired(session) else { return false }
++        return true
++    }
++
++    private func replaceInvalidKey(_ invalidKey: String) async {
++        guard sessionStorage.keyId() == invalidKey else { return }
++        invalidateInstallation()
++        await performDeviceRegistration(forceRefresh: false)
++    }
++
+     private func isEndpointMissing(_ error: Error) -> Bool {
+         guard let apiErr = error as? APIError, case let .httpStatus(code, _) = apiErr else { return false }
+         return code == 404 || code == 501
+     }
+ 
++    private func sessionForCurrentKey() -> AppAttestKeychainStore.DeviceSession? {
++        guard let keyId = sessionStorage.keyId(), let session = sessionStorage.session(),
++              session.keyId == keyId else { return nil }
++        return session
++    }
++
++    private func invalidateInstallation() {
++        sessionStorage.clearAll()
++        clearPurchaseContext()
++        clearAccessToken()
++    }
++
++    private func isInvalidLocalKey(_ error: Error) -> Bool {
++        let failure = error as NSError
++        return failure.domain == DCError.errorDomain && failure.code == DCError.invalidKey.rawValue
++    }
++
++    private func isUnknownKeyChallenge(_ error: Error) -> Bool {
++        guard let apiError = error as? APIError,
++              case .httpStatus(401, _) = apiError else { return false }
++        return apiError.stableCode == "invalid_device"
++    }
++
+     private static func assertionClientDataHash(
+         challengeBytes: Data,
+         requestBody: Data,
+         requestPath: String,
+         challengeId: String
+     ) -> Data {
+         let sep = Data([0x1F])
+         var payload = Data()
+         payload.append(challengeBytes)
+         payload.append(sep)
