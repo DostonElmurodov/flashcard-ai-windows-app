@@ -5,7 +5,7 @@ The user authorized deploying all paid-access/security changes and publishing th
 ## Verified candidates
 
 - Backend application source before operations tooling: a6e2362c8e624338c564bfd88499cd1835c956c1. Build-only run 36755060543 at aa5fda0bc9718e82540fd32f177a4e4eadbf035c passed 811 tests, full-history Gitleaks and the application dependency scan. [Pinned image and warning limits](backend-image.md): sha256:bacebddb25d6afa9771982f5ce2a5da5113a6c1ced70a9098fb7f7100c463c29. Deployment was skipped; latest was not moved by build-only mode.
-- Windows commit 5ddeede967d9ef11dc864b1b14e493822f2e36ed, version 0.1.35: 112 tests, installer build and packaged Learn smoke passed. Independent candidate review found no blocking scoped issue. Installer and source retain the security changes.
+- Windows commit 40278b2, version 0.1.35: 116 tests, updated installer build and packaged Add cards restart smoke passed; prior packaged Learn smoke passed at 5ddeede967d9ef11dc864b1b14e493822f2e36ed. Independent candidate review found no blocking scoped issue. Installer and source retain the security changes.
 - iOS source 5d2d5bebfc66a63e9d12df6a271a51c133ed7be3: Mac run 36730138820 passed 694 tests and unsigned Release checks. No signed-device or App Store release is claimed.
 
 ## Verified server and backup
@@ -28,4 +28,10 @@ Still required: approved AI request limits and cumulative provider spending cap;
 
 ## Agent accounting
 
-40 of the authorized 40 agents have been used. Agent 40 independently reviewed local rehearsal and encrypted export; 52 focused Linux tests passed. Permission for two additional deployment agents is pending. Agents 31/33/35/37/39 reviewed preflight, inventory, backup, rehearsal and fixture-scan work. Agents 32/34/36/38 implemented the corresponding increments; same-task follow-ups reuse their agents. Agents 27–30 covered Windows packaging, backend preflight, workflow preparation and Windows candidate review. Root owns commits, pushes, live execution and publication.
+43 of the authorized 60 agents have been used. Agent 40 independently reviewed local rehearsal and encrypted export; 52 focused Linux tests passed. Agents 41–43 implemented and independently reviewed the approved Windows sync cadence and Add cards preference. Agents 31/33/35/37/39 reviewed preflight, inventory, backup, rehearsal and fixture-scan work. Agents 32/34/36/38 implemented the corresponding increments; same-task follow-ups reuse their agents. Agents 27–30 covered Windows packaging, backend preflight, workflow preparation and Windows candidate review. Root owns commits, pushes, live execution and publication.
+
+## Additional approved Windows changes
+
+Windows commit 40278b2 adds startup / active-dirty 20-minute / active-clean 6-hour / inactive 12-hour sync, plus workspace-scoped remembered Add cards method. Full suite 116/116, build and Electron restart preference smoke passed. Independent review finding fixed and closed. See [change evidence](windows-sync-and-entry.md). The previously recorded installer hash is superseded. Updated installer packaging succeeded, 147364716 bytes, SHA-256 6CC66913334DF3D9F780F95737BEB0FFDF780E1DD7A364680089E321D64EE909. The Add cards reopen/restart/zero-AI-call smoke also passed against the packaged executable. The installer remains unsigned and unpublished.
+
+The user subsequently approved 10 free AI operations total for the lifetime of the quota subject, not a daily allowance. This decision is not implemented by the Windows scheduling change. Paid limits and cumulative provider-spend cap remain unapproved.
