@@ -1,6 +1,6 @@
 # Full release preparation — 2026-09-30
 
-The user authorized deploying all paid-access/security changes and publishing the Windows release with Learn search and Add cards. A UI-only release is not the chosen scope. No production cutover or public Windows 0.1.35 release has happened yet.
+The user authorized deploying all paid-access/security changes and publishing the Windows release with Learn search and Add cards. A UI-only release is not the chosen scope. Windows 0.1.35 is published as the latest GitHub release from 40278b212553dd3d01109c5e37d1a15c9b89b319. Backend production cutover remains pending.
 
 ## Verified candidates
 
@@ -24,14 +24,18 @@ The reviewed server-side rehearsal tool was committed locally as 3716736. Its 4.
 
 The prior build attempt stopped after 811 passing tests on three historical JWT findings. Official Apple Git blob metadata proved they are unchanged public mock fixtures. Exact historical fingerprints were reviewed; default scanner rules remain active. The replacement full-history scan passed.
 
-Still required: approved AI request limits and cumulative provider spending cap; actual App Store/TestFlight distribution and real Apple app ID; final deployed configuration and digest verification; coordinated Windows publication. Repository and production-environment variable-name queries returned no GitHub variables, supplying none of those missing settings. Never bypass migration issues by erasing them or blindly setting Ready.
+Still required: approved AI request limits and cumulative provider spending cap; actual App Store/TestFlight distribution and real Apple app ID; final deployed configuration and digest verification; remaining backend rollout (Windows publication completed). Repository and production-environment variable-name queries returned no GitHub variables, supplying none of those missing settings. Never bypass migration issues by erasing them or blindly setting Ready.
 
 ## Agent accounting
 
-43 of the authorized 60 agents have been used. Agent 40 independently reviewed local rehearsal and encrypted export; 52 focused Linux tests passed. Agents 41–43 implemented and independently reviewed the approved Windows sync cadence and Add cards preference. Agents 31/33/35/37/39 reviewed preflight, inventory, backup, rehearsal and fixture-scan work. Agents 32/34/36/38 implemented the corresponding increments; same-task follow-ups reuse their agents. Agents 27–30 covered Windows packaging, backend preflight, workflow preparation and Windows candidate review. Root owns commits, pushes, live execution and publication.
+44 of the authorized 60 agents have been used. Agent 40 independently reviewed local rehearsal and encrypted export; 52 focused Linux tests passed. Agents 41–43 implemented and independently reviewed the approved Windows sync cadence and Add cards preference. Agents 31/33/35/37/39 reviewed preflight, inventory, backup, rehearsal and fixture-scan work. Agents 32/34/36/38 implemented the corresponding increments; same-task follow-ups reuse their agents. Agents 27–30 covered Windows packaging, backend preflight, workflow preparation and Windows candidate review. Root owns commits, pushes, live execution and publication.
 
 ## Additional approved Windows changes
 
-Windows commit 40278b2 adds startup / active-dirty 20-minute / active-clean 6-hour / inactive 12-hour sync, plus workspace-scoped remembered Add cards method. Full suite 116/116, build and Electron restart preference smoke passed. Independent review finding fixed and closed. See [change evidence](windows-sync-and-entry.md). The previously recorded installer hash is superseded. Updated installer packaging succeeded, 147364716 bytes, SHA-256 6CC66913334DF3D9F780F95737BEB0FFDF780E1DD7A364680089E321D64EE909. The Add cards reopen/restart/zero-AI-call smoke also passed against the packaged executable. The installer remains unsigned and unpublished.
+Windows commit 40278b2 adds startup / active-dirty 20-minute / active-clean 6-hour / inactive 12-hour sync, plus workspace-scoped remembered Add cards method. Full suite 116/116, build and Electron restart preference smoke passed. Independent review finding fixed and closed. See [change evidence](windows-sync-and-entry.md). The previously recorded installer hash is superseded. Updated installer packaging succeeded, 147364716 bytes, SHA-256 6CC66913334DF3D9F780F95737BEB0FFDF780E1DD7A364680089E321D64EE909. The Add cards reopen/restart/zero-AI-call smoke also passed against the packaged executable. The unsigned installer is published in GitHub release v0.1.35. Its uploaded size and SHA-256 match the local candidate.
 
 The user subsequently approved 10 free AI operations total for the lifetime of the quota subject, not a daily allowance. This decision is not implemented by the Windows scheduling change. Paid limits and cumulative provider-spend cap remain unapproved.
+
+## Published Windows release
+
+[Windows v0.1.35](https://github.com/DostonElmurodov/flashcard-ai-windows-app/releases/tag/v0.1.35) is public, non-prerelease and latest. GitHub release ID 400422024; tag and target resolve to 40278b212553dd3d01109c5e37d1a15c9b89b319. Uploaded installer state, size and SHA-256 verified through GitHub API. Windows branch codex/paid-access-hardening was pushed and remote SHA verified. Agent 44 independently established source API compatibility with the existing server; see [compatibility evidence](windows-release-compatibility.md). No backend deployment or main-branch merge was performed. Server-side quota/spending changes remain pending and are disclosed in release notes.
