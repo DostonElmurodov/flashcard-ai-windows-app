@@ -25,3 +25,78 @@ test('signed-out API refresh exposes test mode without inventing a subscription 
   enabled=false;assert.deepEqual(await restarted.refreshEntitlement(),{profile:null,entitlement:null,testMode:false});
  }finally{await new Promise<void>(resolve=>server.close(()=>resolve()));rmSync(root,{recursive:true,force:true});}
 });
+
+test('HTTP refusals retain status and standard retry timing without replaying AI calls',async()=>{
+ const root=mkdtempSync(join(tmpdir(),'owl-api-errors-'));let status=429,code='quota',calls=0,retry='120';
+ const server=createServer((request,response)=>{calls++;response.statusCode=status;response.setHeader('Content-Type','application/json');if(retry)response.setHeader('Retry-After',retry);response.end(JSON.stringify({code}));});
+ await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));
+ try{
+  const address=server.address();assert.ok(address&&typeof address!=='string');const api=new Api(join(root,'account.enc'),()=>`http://127.0.0.1:${address.port}`);
+  (api as any).session={access_token:'fake',access_token_expires_at:new Date(Date.now()+3600000).toISOString(),refresh_token:'fake',profile:{id:'a',email:null}};
+  for(const value of [429,402,503]){(api as any).entitlement={status:'premium',expires_at:new Date(Date.now()+86400000).toISOString(),checked_at:new Date().toISOString(),was_ever_paid:true,is_trial:false,auto_renew:false};status=value;code=value===503?'subscription_reconciliation_required':'quota';const before=calls;
+   await assert.rejects(api.request('/owlai/account/ai/word-detail','POST',{}),(error:any)=>{assert.equal(error.status,value);if(value===402)assert.equal(api.state().entitlement,null);if(value===429){assert.equal(api.state().entitlement?.status,'premium');assert.equal(error.retryAfterSeconds,120);assert.match(error.message,/120/);}if(value===503){assert.match(error.message,/support|recover/i);assert.equal(api.state().entitlement?.status,'invalid_subscription');}return true;});assert.equal(calls,before+1);
+  }
+  status=503;code='apple_temporarily_unavailable';retry='';await assert.rejects(api.request('/owlai/account/ai/word-detail','POST',{}),/temporarily unavailable/i);
+  status=401;const before=calls;await assert.rejects(api.request('/owlai/account/ai/word-detail','POST',{}));assert.equal(calls,before+1,'AI denial is never automatically replayed');
+ }finally{await new Promise<void>(resolve=>server.close(()=>resolve()));rmSync(root,{recursive:true,force:true});}
+});
+
+import {retryAfterSeconds} from '../electron/api';
+test('standard Retry-After dates parse without guessing missing or malformed timing',()=>{
+ const now=Date.parse('2026-09-27T12:00:00Z');assert.equal(retryAfterSeconds('Sun, 27 Sep 2026 12:02:00 GMT',now),120);assert.equal(retryAfterSeconds(null,now),undefined);assert.equal(retryAfterSeconds('bad',now),undefined);
+});
+test('selected origin invalidation rejects late entitlement replies even on a round trip',async()=>{
+ const root=mkdtempSync(join(tmpdir(),'owl-generation-'));let release!:()=>void;
+ const server=createServer(async(request,response)=>{response.setHeader('Content-Type','application/json');if(request.url==='/owlai/config/feature-flags'){response.end('{"test_mode":false}');return;}await new Promise<void>(resolve=>release=resolve);response.end(JSON.stringify({status:'premium',expires_at:new Date(Date.now()+86400000).toISOString(),was_ever_paid:true}));});
+ await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));
+ try{const address=server.address();assert.ok(address&&typeof address!=='string');const first=`http://127.0.0.1:${address.port}`;let base=first;const api=new Api(join(root,'account.enc'),()=>base);(api as any).session={access_token:'fake',access_token_expires_at:new Date(Date.now()+3600000).toISOString(),profile:{id:'a',email:null}};
+ const pending=api.refreshEntitlement();while(!release)await new Promise(resolve=>setTimeout(resolve,1));const rejected=assert.rejects(pending);base='https://second.example.com';api.state();base=first;api.state();release();await rejected;assert.equal(api.state().entitlement,null);assert.equal(api.state().testMode,false);
+ }finally{await new Promise<void>(resolve=>server.close(()=>resolve()));rmSync(root,{recursive:true,force:true});}
+});
+
+test('a delayed error body cannot revoke the new account entitlement',async()=>{
+ const root=mkdtempSync(join(tmpdir(),'owl-body-')),original=globalThis.fetch;let finish!:(text:string)=>void;
+ try{globalThis.fetch=async()=>new Response(new ReadableStream({start(controller){finish=text=>{controller.enqueue(new TextEncoder().encode(text));controller.close();};}}),{status:503});
+ const api=new Api(join(root,'account.enc'),()=> 'http://127.0.0.1:9');const session={access_token:'fake',access_token_expires_at:new Date(Date.now()+3600000).toISOString(),profile:{id:'old',email:null}};(api as any).session=session;
+ const pending=api.request('/owlai/account/ai/word-detail','POST',{}),rejected=assert.rejects(pending);await new Promise(resolve=>setTimeout(resolve,0));api.clear();(api as any).session={...session,profile:{id:'new',email:null}};
+ const entitlement={status:'premium',expires_at:new Date(Date.now()+86400000).toISOString(),checked_at:new Date().toISOString(),was_ever_paid:true,is_trial:false,auto_renew:false};(api as any).entitlement=entitlement;
+ finish(JSON.stringify({code:'subscription_reconciliation_required'}));await rejected;assert.deepEqual(api.state().entitlement,entitlement);
+ }finally{globalThis.fetch=original;rmSync(root,{recursive:true,force:true});}
+});
+
+import {evaluateAccess} from '../shared/access-policy';
+for(const olderResult of ['premium','temporary','reconciliation'] as const)test('newer same-account authority wins over earlier '+olderResult,async()=>{
+ const root=mkdtempSync(join(tmpdir(),'owl-refresh-order-')),original=globalThis.fetch;
+ try{
+   const replies:((response:Response)=>void)[]=[];
+   globalThis.fetch=async input=>String(input).includes('feature-flags')?Response.json({test_mode:false}):new Promise<Response>(resolve=>replies.push(resolve));
+   const api=new Api(join(root,'account.enc'),()=> 'http://127.0.0.1:9');(api as any).session={access_token:'fake',access_token_expires_at:new Date(Date.now()+3600000).toISOString(),profile:{id:'a',email:null}};
+   const entitlement=(status:string)=>({status,expires_at:new Date(Date.now()+86400000).toISOString(),was_ever_paid:true,is_trial:false,auto_renew:false});
+   const older=api.refreshEntitlement();const handled=older.catch(()=>{});while(replies.length<1)await new Promise(resolve=>setTimeout(resolve,0));
+   let finishBody!:(text:string)=>void;replies[0](new Response(new ReadableStream({start(controller){finishBody=text=>{controller.enqueue(new TextEncoder().encode(text));controller.close();};}}),{status:olderResult==='premium'?200:503}));await new Promise(resolve=>setTimeout(resolve,0));
+   const newer=api.refreshEntitlement();while(replies.length<2)await new Promise(resolve=>setTimeout(resolve,0));
+   const newest=olderResult==='premium'?'revoked':'premium';replies[1](Response.json(entitlement(newest)));await newer;
+   const before=api.state().entitlement;
+   finishBody(JSON.stringify(olderResult==='premium'?entitlement('premium'):{code:olderResult==='reconciliation'?'subscription_reconciliation_required':'temporary'}));await handled;
+   assert.deepEqual(api.state().entitlement,before,olderResult+' must not overwrite the newer accepted response');assert.equal(evaluateAccess(api.state(),'add',101).allow,newest==='premium');
+ }finally{globalThis.fetch=original;rmSync(root,{recursive:true,force:true});}
+});
+
+for(const denial of ['payment','reconciliation','temporary'] as const)test('accepted direct '+denial+' denial invalidates an earlier premium body',async()=>{
+ const root=mkdtempSync(join(tmpdir(),'owl-direct-order-')),original=globalThis.fetch;let finishBody!:(text:string)=>void,refreshCount=0;
+ try{
+  const premium={status:'premium',expires_at:new Date(Date.now()+86400000).toISOString(),checked_at:new Date().toISOString(),was_ever_paid:true,is_trial:false,auto_renew:false};
+  globalThis.fetch=async input=>{
+   const path=new URL(String(input)).pathname;
+   if(path==='/owlai/config/feature-flags')return Response.json({test_mode:false});
+   if(path==='/owlai/account/entitlement'){refreshCount++;return refreshCount>1?Response.json(premium):new Response(new ReadableStream({start(controller){finishBody=text=>{controller.enqueue(new TextEncoder().encode(text));controller.close();};}}));}
+   if(path==='/owlai/account/ai/word-detail')return Response.json({code:denial==='reconciliation'?'subscription_reconciliation_required':denial==='payment'?'subscription_required':'temporary'},{status:denial==='payment'?402:503});
+   throw new Error('Unexpected fake request: '+path);
+  };
+  const api=new Api(join(root,'account.enc'),()=> 'http://127.0.0.1:9');(api as any).session={access_token:'fake',access_token_expires_at:new Date(Date.now()+3600000).toISOString(),profile:{id:'a',email:null}};(api as any).entitlement=premium;
+  const older=api.refreshEntitlement();while(!finishBody)await new Promise(resolve=>setTimeout(resolve,0));
+  await assert.rejects(api.request('/owlai/account/ai/word-detail','POST',{}));const denied=api.state().entitlement;assert.equal(evaluateAccess(api.state(),'add',101).allow,false);
+  finishBody(JSON.stringify(premium));await older;assert.deepEqual(api.state().entitlement,denied);assert.equal(evaluateAccess(api.state(),'add',101).allow,false);
+  await api.refreshEntitlement();assert.equal(api.state().entitlement?.status,'premium');assert.equal(evaluateAccess(api.state(),'add',101).allow,true,'A genuinely later refresh can confirm lawful Premium');
+ }finally{globalThis.fetch=original;rmSync(root,{recursive:true,force:true});}
+});

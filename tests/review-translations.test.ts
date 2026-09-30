@@ -12,7 +12,7 @@ async function fixture(){
  const store=await Store.open(path,'account-a'),deck=store.saveDeck({name:'Travel'});
  store.addWords(deck.id,[{word:'journey',translation:'путешествие'}]);
  store.saveSettings({secondaryReviewLanguage:'es'});
- const context:TranslationWorkspace={store,scope:'1:account-a',apiBase:'https://api.example.com',account:{profile:{id:'a',email:'a@example.com'},entitlement:{status:'premium',is_trial:false,auto_renew:true,was_ever_paid:true},testMode:false}};
+ const context:TranslationWorkspace={store,scope:'1:account-a',apiBase:'https://api.example.com',account:{profile:{id:'a',email:'a@example.com'},entitlement:{status:'premium',expires_at:new Date(Date.now()+86400000).toISOString(),checked_at:new Date().toISOString(),is_trial:false,auto_renew:true,was_ever_paid:true},testMode:false}};
  return {root,path,store,deck,id:store.snapshot().words[0].id,context,cleanup:()=>{store.close();rmSync(root,{recursive:true,force:true});}};
 }
 
@@ -51,7 +51,7 @@ test('disabled, missing-card, signed-out, and locked requests cannot invoke AI; 
   f.context.account={profile:null,entitlement:null,testMode:true};await assert.rejects(service.get(f.id));
   f.context.account={profile:{id:'a',email:null},entitlement:{status:'expired_paid',is_trial:false,auto_renew:false,was_ever_paid:true},testMode:false};await assert.rejects(service.get(f.id));
   assert.equal(calls,0);
-  f.context.account.entitlement!.status='premium';assert.deepEqual(await service.get(f.id),spanish);assert.equal(calls,1);
+  f.context.account.entitlement={...f.context.account.entitlement!,status:'premium',expires_at:new Date(Date.now()+86400000).toISOString(),checked_at:new Date().toISOString()};assert.deepEqual(await service.get(f.id),spanish);assert.equal(calls,1);
  }finally{f.cleanup();}
 });
 
@@ -110,5 +110,37 @@ test('AI preview rejects a late result after the secondary language or account c
   f.store.saveSettings({secondaryReviewLanguage:'es'});
   const next=service.preview('airport','ru','en-us'),accountRejected=assert.rejects(next);
   f.context.scope='changed';complete(spanish);await accountRejected;
+ }finally{f.cleanup();}
+});
+
+test('cached translations require eligible saved card and stale entitlement cannot invoke AI',async()=>{
+ const f=await fixture();let calls=0;
+ try{
+  const service=new ReviewTranslations(()=>f.context,async()=>{calls++;return spanish;});await service.get(f.id);
+  f.store.addWords(f.deck.id,Array.from({length:10},(_,i)=>({word:'earlier'+i,translation:'value'})));
+  const snap=f.store.snapshot();f.store.applySync(snap.decks,snap.words.map(w=>({...w,createdAt:w.id===f.id?'2026-01-02':'2026-01-01'})),[]);
+  f.context.account.entitlement!.status='revoked';f.store.bindAccess(()=>f.context.account);
+  await assert.rejects(service.get(f.id));assert.equal(calls,1);
+  f.context.account.entitlement!.status='premium';f.context.account.entitlement!.expires_at=new Date(Date.now()-1000).toISOString();
+  await assert.rejects(service.preview('new-word','ru','en-us'));assert.equal(calls,1);
+ }finally{f.cleanup();}
+});
+
+test('late AI response cannot populate cache after authority expires',async()=>{
+ const f=await fixture();let complete!:(value:unknown)=>void;
+ try{const service=new ReviewTranslations(()=>f.context,()=>new Promise(resolve=>complete=resolve));const pending=service.get(f.id),rejected=assert.rejects(pending);f.context.account.entitlement!.status='revoked';complete(spanish);await rejected;
+ }finally{f.cleanup();}
+});
+
+test('draft preview cannot bypass saved-card cache restrictions after paid access ends',async()=>{
+ const f=await fixture();let calls=0;
+ try{
+  f.store.addWords(f.deck.id,Array.from({length:10},(_,i)=>({word:'earlier'+i,translation:'value'})));const snap=f.store.snapshot();f.store.applySync(snap.decks,snap.words.map(w=>({...w,createdAt:w.id===f.id?'2026-01-02':'2026-01-01'})),[]);f.store.bindAccess(()=>f.context.account);
+  const service=new ReviewTranslations(()=>f.context,async()=>{calls++;return spanish;});await service.get(f.id);
+  f.context.account.entitlement!.status='expired_paid';assert.deepEqual(await service.get(f.id),spanish,'Eligible saved paid cache remains readable');
+  await assert.rejects(service.preview('journey','ru','en-us'));
+  f.context.account.entitlement!.status='revoked';await assert.rejects(service.get(f.id));await assert.rejects(service.preview('journey','ru','en-us'));
+  f.context.account.entitlement!.status='premium';f.context.account.entitlement!.expires_at=new Date(Date.now()-1000).toISOString();await assert.rejects(service.preview('journey','ru','en-us'));
+  f.context.account.profile=null;await assert.rejects(service.preview('journey','ru','en-us'));assert.equal(calls,1);
  }finally{f.cleanup();}
 });

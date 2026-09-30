@@ -1,0 +1,84 @@
+import { _electron as electron } from 'playwright';
+import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
+import { mkdirSync } from 'node:fs';
+import { join,resolve } from 'node:path';
+import { Store } from '../electron/store';
+
+async function main(){
+ console.log('learn-header smoke: starting');
+const root=resolve('test-results/learn-header-'+Date.now()),data=join(root,'profile');mkdirSync(data,{recursive:true});
+let app:Awaited<ReturnType<typeof electron.launch>>|undefined,store:Store|undefined;
+const server=createServer((request,response)=>{
+ response.setHeader('Content-Type','application/json');
+ if(request.url==='/owlai/config/feature-flags')return response.end(JSON.stringify({test_mode:false}));
+ if(request.url==='/owlai/account/desktop/email/session')return response.end(JSON.stringify({access_token:'local-fake',refresh_token:'local-fake',access_token_expires_at:new Date(Date.now()+3600000).toISOString(),profile:{id:'local-a',email:'local@example.test'}}));
+ if(request.url==='/owlai/account/entitlement')return response.end(JSON.stringify({status:'premium',expires_at:new Date(Date.now()+86400000).toISOString(),is_trial:false,auto_renew:false,was_ever_paid:true}));
+ response.statusCode=404;response.end('{}');
+});
+try{
+ await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));const address=server.address();assert.ok(address&&typeof address!=='string');const origin=`http://127.0.0.1:${address.port}`;
+ try{store=await Store.open(join(data,'owl.sqlite'));store.saveSettings({apiBase:origin,onboardingComplete:true,keepInTray:false,launchAtLogin:false,reminders:false,dailyGoal:200});}finally{store?.close();store=undefined;}
+ app=await electron.launch({executablePath:process.env.OWL_TEST_EXECUTABLE,args:process.env.OWL_TEST_EXECUTABLE?[]:['.'],env:{...process.env,OWL_TEST_DATA_DIR:data},timeout:30000});
+ const page=await app.firstWindow();
+ console.log('learn-header smoke: signed in');
+ const learnNav=()=>page.locator('.sidebar nav').getByRole('button',{name:/^Learn/});
+ const call=(name,args=[])=>page.evaluate(async({name,args})=>{const snapshot=await window.owl.snapshot();window.owl.activateWorkspace(snapshot.scopeRevision);return window.owl.forWorkspace(snapshot.scopeRevision)[name](...args);},{name,args});
+ await call('login',['local@example.test','fixture-only']);await call('refreshEntitlement');
+ const first=await page.evaluate(async()=>{const snapshot=await window.owl.snapshot();window.owl.activateWorkspace(snapshot.scopeRevision);const owl=window.owl.forWorkspace(snapshot.scopeRevision);const deck=await owl.saveDeck({name:'Travel'});await owl.addWords(deck.id,[{word:'journey',translation:'trip',notes:'long notes'}]);return deck.id;});
+ await page.reload();
+ console.log('learn-header smoke: search ready');
+ const search=page.getByLabel('Search cards');
+ console.log('learn-header smoke: search located');
+ await search.fill('journey');await page.getByText('journey',{exact:true}).waitFor();
+ console.log('learn-header smoke: word search');
+ await search.fill('trip');await page.getByText('journey',{exact:true}).waitFor();
+ console.log('learn-header smoke: translation search');
+ await search.fill('long notes');await page.getByText('journey',{exact:true}).waitFor();
+ console.log('learn-header smoke: notes search');
+ await search.fill('not-a-card');await page.getByText('No words found',{exact:true}).waitFor();assert.equal(await page.getByText('journey',{exact:true}).count(),0);
+ await search.fill('');await page.getByText('journey',{exact:true}).waitFor();
+ await page.getByLabel('Filter set').focus();await assert.equal(await page.evaluate(()=>document.activeElement?.getAttribute('aria-label')),'Filter set');
+ await page.keyboard.press('Control+f');await page.waitForFunction(()=>document.activeElement?.getAttribute('aria-label')==='Search cards');await assert.equal(await page.evaluate(()=>document.activeElement?.getAttribute('placeholder')),'Find a word…');
+ console.log('learn-header smoke: shortcut');
+ await page.getByRole('button',{name:'Add cards',exact:true}).click();
+ console.log('learn-header smoke: selected deck');
+ await page.getByRole('heading',{name:'Add cards',exact:true}).waitFor();
+ await assert.equal(await page.locator('.page-heading p').innerText(),'Travel');
+ await learnNav().click();
+ await page.evaluate(async()=>{const snapshot=await window.owl.snapshot();window.owl.activateWorkspace(snapshot.scopeRevision);return window.owl.forWorkspace(snapshot.scopeRevision).saveDeck({name:'Food'});});
+ await page.reload();
+ await page.getByLabel('Filter set').selectOption('');
+ await page.getByRole('button',{name:'Add cards',exact:true}).click();
+ await page.getByRole('dialog').getByRole('heading',{name:'Choose a set',exact:true}).waitFor();
+ await page.keyboard.press('Escape');await assert.equal(await page.getByRole('dialog').count(),0);
+ await page.getByRole('button',{name:'Add cards',exact:true}).click();
+ await page.getByRole('dialog').getByRole('heading',{name:'Choose a set',exact:true}).waitFor();
+ await page.getByRole('dialog').getByRole('button',{name:'Food',exact:true}).click();
+ console.log('learn-header smoke: chooser selected');
+ await page.getByRole('heading',{name:'Add cards',exact:true}).waitFor();
+ await assert.equal(await page.locator('.page-heading p').innerText(),'Food');
+ await learnNav().click();
+ await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setSize(1400,800));
+ await page.screenshot({path:resolve('test-results/learn-header-1400.png'),fullPage:true});
+ await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setSize(940,680));
+ const [headingBox,searchBox,addBox]=await Promise.all([page.getByRole('heading',{name:'Learn',exact:true}).boundingBox(),search.boundingBox(),page.getByRole('button',{name:'Add cards',exact:true}).boundingBox()]);
+ assert.ok(headingBox&&searchBox&&addBox&&Math.abs(headingBox.y-searchBox.y)<20&&Math.abs(searchBox.y-addBox.y)<10,'Learn, search, and Add cards must stay on one row');
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth));
+ await page.screenshot({path:resolve('test-results/learn-header-940.png'),fullPage:true});
+ console.log('learn-header smoke: screenshot saved');
+ await page.getByTitle('Delete card').click();
+ await page.getByRole('button',{name:'Delete',exact:true}).click();
+ await page.locator('.word-section').getByRole('button',{name:'Create a set',exact:true}).click();
+ await page.getByRole('heading',{name:'Create a flashcard set',exact:true}).waitFor();
+ await learnNav().click();
+ await page.evaluate(async()=>{const snapshot=await window.owl.snapshot();window.owl.activateWorkspace(snapshot.scopeRevision);const owl=window.owl.forWorkspace(snapshot.scopeRevision);for(const deck of (await owl.snapshot()).decks)await owl.deleteDeck(deck.id);});
+ await page.reload();
+ await page.getByRole('button',{name:'Add cards',exact:true}).click();
+ await page.getByRole('heading',{name:'Create a flashcard set',exact:true}).waitFor();
+ await learnNav().click();
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth));
+ console.log('PASS: Learn header search retains word, translation, notes, and Ctrl+F; Add cards targets the selected set, chooses a set when needed, routes empty workspaces to set creation, and fits at the minimum window width.');
+}finally{try{await app?.close();}finally{if(server.listening)await new Promise<void>(resolve=>server.close(()=>resolve()));}}
+}
+main().catch(error=>{console.error(error);process.exitCode=1;});

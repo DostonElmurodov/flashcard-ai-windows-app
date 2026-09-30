@@ -11,7 +11,7 @@ try{
  browser=await chromium.launch({executablePath,headless:true});
  const page=await browser.newPage({viewport:{width:1120,height:900}});page.setDefaultTimeout(6000);
  const errors=[];page.on('pageerror',error=>errors.push(String(error)));
- await page.goto(server.resolvedUrls.local[0]+'tests/fixtures/secondary-review.html');
+ await page.goto(server.resolvedUrls.local[0]+'tests/fixtures/secondary-review.html',{waitUntil:'domcontentloaded',timeout:30000});
  const toggle=page.getByRole('checkbox',{name:'Second language in review',exact:true});
  assert.equal(await toggle.isChecked(),false);
  await toggle.click();await page.getByRole('heading',{name:'Choose a second language',exact:true}).waitFor();
