@@ -48,25 +48,36 @@
 .button.secondary{background:var(--surface);color:var(--ink)}
 .button.destructive{background:#b52e43;color:#fff}
 .button:hover{transform:none;filter:brightness(1.08)}
-.sidebar{background:#132340;color:#f3f6ff;border-color:#2c4163}
-.sidebar .brand,.sidebar .brand>span{color:#f3f6ff}
-.sidebar .brand-ai,.sidebar .brand>svg{color:#94adff}
-.sidebar .brand small,.sidebar .nav-label,.sidebar .sidebar-empty{color:#afbed8}
-.sidebar .nav-item{color:#c4d0e5}
-.sidebar .nav-item:hover{color:#fff;background:#213654}
+/* Only the selected light accent changes the dark sidebar palette. */
+:root[data-theme=light][data-accent=teal]{
+ --sidebar-bg:#10352f;--sidebar-border:#28534a;--sidebar-card:#173e36;--sidebar-card-border:#609888;
+ --sidebar-hover:#1b4940;--sidebar-primary:#f3f6f4;--sidebar-muted:#b7d0c9;--sidebar-nav:#c9ded7;
+ --sidebar-brand:#86cdb8;--sidebar-focus:#a5e7ce;
+}
+:root[data-theme=light][data-accent=rose]{
+ --sidebar-bg:#341a29;--sidebar-border:#583447;--sidebar-card:#3d2030;--sidebar-card-border:#98617a;
+ --sidebar-hover:#482337;--sidebar-primary:#f8f1f4;--sidebar-muted:#d7bfc9;--sidebar-nav:#e5d0da;
+ --sidebar-brand:#e1a1ba;--sidebar-focus:#f2c2d5;
+}
+.sidebar{background:var(--sidebar-bg,#132340);color:var(--sidebar-primary,#f3f6ff);border-color:var(--sidebar-border,#2c4163)}
+.sidebar .brand,.sidebar .brand>span{color:var(--sidebar-primary,#f3f6ff)}
+.sidebar .brand-ai,.sidebar .brand>svg{color:var(--sidebar-brand,#94adff)}
+.sidebar .brand small,.sidebar .nav-label,.sidebar .sidebar-empty{color:var(--sidebar-muted,#afbed8)}
+.sidebar .nav-item{color:var(--sidebar-nav,#c4d0e5)}
+.sidebar .nav-item:hover{color:var(--sidebar-primary,#fff);background:var(--sidebar-hover,#213654)}
 .sidebar .nav-item.active{background:var(--action);color:#fff}
 .sidebar .nav-count{background:#fff;color:var(--action)}
-.sidebar .create-nav{background:#1c3151;border:1px solid #6884be;color:#fff}
-.sidebar .create-nav:hover{background:#294570}
-.sidebar .sidebar-divider{background:#304667}
-.sidebar .sidebar-set{color:#c4d0e5}
-.sidebar .sidebar-set:hover,.sidebar .sidebar-set.chosen{background:#263d60;color:#fff}
-.sidebar .set-dot{background:#8faaff}
-.sidebar .premium-nudge{background:#1c3151;border-color:#405a83}
-.sidebar .premium-mini,.sidebar .premium-nudge button{color:#ccd8ff}
-.sidebar .premium-nudge p{color:#b8c8e1}
-.sidebar .account-nav{color:#fff;border-color:#304667}
-.sidebar .account-nav small,.sidebar .account-nav>svg{color:#afbed8}
+.sidebar .create-nav{background:var(--sidebar-card,#1c3151);border:1px solid var(--sidebar-card-border,#6884be);color:var(--sidebar-primary,#fff)}
+.sidebar .create-nav:hover{background:var(--sidebar-hover,#294570)}
+.sidebar .sidebar-divider{background:var(--sidebar-border,#304667)}
+.sidebar .sidebar-set{color:var(--sidebar-nav,#c4d0e5)}
+.sidebar .sidebar-set:hover,.sidebar .sidebar-set.chosen{background:var(--sidebar-hover,#263d60);color:var(--sidebar-primary,#fff)}
+.sidebar .set-dot{background:var(--sidebar-brand,#8faaff)}
+.sidebar .premium-nudge{background:var(--sidebar-card,#1c3151);border-color:var(--sidebar-border,#405a83)}
+.sidebar .premium-mini,.sidebar .premium-nudge button{color:var(--sidebar-brand,#ccd8ff)}
+.sidebar .premium-nudge p{color:var(--sidebar-muted,#b8c8e1)}
+.sidebar .account-nav{color:var(--sidebar-primary,#fff);border-color:var(--sidebar-border,#304667)}
+.sidebar .account-nav small,.sidebar .account-nav>svg{color:var(--sidebar-muted,#afbed8)}
 .avatar{background:var(--action);color:#fff}
 .topbar{background:var(--surface)}
 .breadcrumb,.page-heading p,.local-badge,.page-footer{color:var(--muted)}
@@ -98,7 +109,7 @@
 .swatch.teal{background:#147466}
 .swatch.rose{background:#a53560}
 .search-field kbd,.word-tools select{color:var(--muted)}
-.sidebar button:focus-visible{outline:3px solid #c5d5ff;outline-offset:3px}
+.sidebar button:focus-visible{outline:3px solid var(--sidebar-focus,#c5d5ff);outline-offset:3px}
 
 /* Midnight Mint follows the same compact layout as the light theme. */
 :root[data-theme=dark] .sidebar{background:#111318;color:var(--ink);border-color:var(--border)}
@@ -253,7 +264,7 @@ body{padding-top:36px}
 .app-shell{min-height:calc(100vh - 36px)}
 .app-shell .sidebar{top:36px}
 :root,:root *{scrollbar-color:var(--border) transparent}
-.app-shell .sidebar{scrollbar-color:#405475 transparent}
+.app-shell .sidebar{scrollbar-color:var(--sidebar-border,#405475) transparent}
 .card-entry-fields{display:grid;grid-template-columns:minmax(0,1fr)}
 .card-entry-fields textarea{min-height:110px;resize:vertical}
 
